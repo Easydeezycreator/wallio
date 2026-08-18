@@ -380,7 +380,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 }
 @media (min-width:700px){
   body{font-size:17px}
-  main{max-width:none}
+  main{max-width:none;padding:0 14px}
   header{padding:calc(9px + env(safe-area-inset-top)) 18px 8px}
   header svg{width:26px;height:26px;flex-basis:26px}
   header .wm{font-size:17px}
@@ -434,7 +434,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 }
 @media (min-width:1120px){
   body{font-size:18px}
-  main{max-width:none}
+  main{max-width:none;padding:0 14px}
   input,select,textarea{font-size:18px;min-height:42px}
   label{font-size:10px}
   .cellrow .lbl,.cellrow .lbl .fo{font-size:16.5px}
@@ -572,6 +572,7 @@ html.solo-parte body{padding-bottom:14px}
 html.solo-parte main > section:not(#v-parte){display:none !important}
 html.solo-parte #v-parte{display:block !important}
 html.solo-parte header .st, html.solo-parte #chipVis{display:none}
+a.lang{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
 
 /* ---- la tira: de qué proyecto y qué rollo es esto ---- */
 .tira{position:sticky;top:54px;z-index:15;background:var(--bg);
@@ -902,7 +903,6 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
   font:700 12px/1.15 var(--ui,inherit);letter-spacing:.07em;text-transform:uppercase;
   color:#1a1206;background:linear-gradient(180deg,#f2c56b,#e0a33c);
   border:1px solid rgba(255,255,255,.55)}
-.portada button{flex:0 0 auto;margin-left:auto}
 html.solo-parte .portada{display:none}
 
 /* ---- el aviso de jornada nueva, en la tira del parte ---- */
@@ -945,7 +945,6 @@ html.solo-parte .portada{display:none}
 <section id="v-prod" class="on">
   <div class="portada" id="portadaEleccion" hidden>
     <a class="abrirparte" href="parte/">Solo el parte de cámara</a>
-    <button class="ghost" onclick="portadaFuera()">Uso la plataforma entera</button>
   </div>
   <div class="card">
     <h2>Producción</h2>
@@ -4345,17 +4344,13 @@ function cargaParte(file){
    Quien viene solo por el parte no tiene por qué pasear por ocho pestañas.
    El aviso sale arriba al abrir; si eliges la plataforma entera, no se
    vuelve a enseñar en este dispositivo.                                */
-/* La elección sale SIEMPRE que se abre la app: la opción del parte es
-   prioritaria y tiene que estar ahí aunque haya trabajo empezado.
-   «Uso la plataforma entera» solo la esconde hasta la próxima apertura:
-   no se guarda nada, así que siempre se puede volver. */
+/* La opción del parte vive SIEMPRE arriba, sin botón de quitarla: se
+   puede elegir en cualquier momento. Solo desaparece en la app suelta
+   del parte, donde no pinta nada. */
 function pintaPortada(){
   const p = $("portadaEleccion"); if (!p) return;
   try { localStorage.removeItem("wallio.portada.v1"); } catch(e){}  // lo que guardó la versión vieja ya no manda
   p.hidden = (typeof SOLO_PARTE !== "undefined" && SOLO_PARTE);
-}
-function portadaFuera(){
-  const p = $("portadaEleccion"); if (p) p.hidden = true;
 }
 
 /* ============ EL PARTE COMO APP APARTE ============
@@ -4372,6 +4367,14 @@ function modoParteSolo(){
   document.title = traduce("WALLIO · Parte de cámara");
   const wl = document.querySelector("header .wl");
   if (wl) wl.textContent = traduce("Parte de cámara");
+  // la vuelta a la principal: pidió poder regresar si eligió «solo el parte»
+  const bl = $("btnLang");
+  if (bl && !$("volverPlataforma")){
+    const a = document.createElement("a");
+    a.id = "volverPlataforma"; a.href = "../"; a.className = "lang";
+    a.textContent = "Plataforma";
+    bl.parentNode.insertBefore(a, bl);
+  }
   show("parte");
   const dd = $("pp_bloque");
   if (dd && !(S.prod.proyecto || "").trim()){
@@ -5271,7 +5274,7 @@ const EN = {
 "Prod.":"Prod.","Parte de cámara":"Camera report",
 "Otro servidor":"Other server",
 "Solo el parte de cámara":"Camera report only",
-"Uso la plataforma entera":"I use the whole platform",
+"Plataforma":"Platform",
 "Empezar la jornada siguiente":"Start the next day",
 "Jornada nueva":"New day",
 "Se guarda el parte de esta jornada y se empieza la siguiente: la fecha pasa a hoy, el número de jornada sube uno y el rollo sigue la numeración. Las tomas se vacían; todo lo demás se conserva.":
