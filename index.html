@@ -3987,7 +3987,6 @@ function totales(){
 function estadoPestanas(){
   const P = S.prod, I = S.instr, L = S.lens, t = totales();
   const est = {
-    prod:  !!(P.proyecto && P.fecha && P.por && P.casa),
     optica: !!(L.serial && L.marca),
     equipo: S.formats.length > 0 && S.focos.filter(Boolean).length > 0,
     captura: t.done > 0,
@@ -3996,7 +3995,10 @@ function estadoPestanas(){
   };
   document.querySelectorAll("nav button").forEach(b => {
     const v = b.dataset.v, ok = est[v];
-    if (!(v in est)) return;              // el buzón no es una fase del trabajo
+    if (!(v in est)){                     // ni Producción, ni Buzón, ni la Guía llevan chip
+      const i0 = b.querySelector("i"); if (i0) i0.remove();
+      return;
+    }
     let i = b.querySelector("i");
     if (!i){ i = document.createElement("i"); b.appendChild(i); }
     if (v === "captura"){ i.className = ok ? "ok" : "no"; i.textContent = t.done ? String(t.done) : "—"; }
@@ -4343,16 +4345,16 @@ function cargaParte(file){
    Quien viene solo por el parte no tiene por qué pasear por ocho pestañas.
    El aviso sale arriba al abrir; si eliges la plataforma entera, no se
    vuelve a enseñar en este dispositivo.                                */
-const PORTADA_VISTA = "wallio.portada.v1";
+/* La elección sale SIEMPRE que se abre la app: la opción del parte es
+   prioritaria y tiene que estar ahí aunque haya trabajo empezado.
+   «Uso la plataforma entera» solo la esconde hasta la próxima apertura:
+   no se guarda nada, así que siempre se puede volver. */
 function pintaPortada(){
   const p = $("portadaEleccion"); if (!p) return;
-  let vista = "";
-  try { vista = localStorage.getItem(PORTADA_VISTA) || ""; } catch(e){}
-  const hayTrabajo = (S.prod.proyecto || "").trim() || Object.keys(S.takes || {}).length;
-  p.hidden = !!vista || !!hayTrabajo || (typeof SOLO_PARTE !== "undefined" && SOLO_PARTE);
+  try { localStorage.removeItem("wallio.portada.v1"); } catch(e){}  // lo que guardó la versión vieja ya no manda
+  p.hidden = (typeof SOLO_PARTE !== "undefined" && SOLO_PARTE);
 }
 function portadaFuera(){
-  try { localStorage.setItem(PORTADA_VISTA, "plataforma"); } catch(e){}
   const p = $("portadaEleccion"); if (p) p.hidden = true;
 }
 
@@ -5701,7 +5703,10 @@ new MutationObserver(muts => {
    puede ir por la nube de la casa de renta. Va por un buzón propio, y
    en el navegador no hay ninguna clave: solo esta dirección. Mientras
    esté vacía, lo escrito se guarda en el dispositivo y no se pierde. */
-const BUZON = "";                     // https://wallio-buzon.<lo-tuyo>.workers.dev
+const BUZON = "https://wallio-buzon.focuswaldo.workers.dev";   // su Worker, desplegado el 18/08/2026
+/* el buzón solo habla desde la app publicada: las copias de prueba
+   (127.0.0.1, file://, el Mac) guardan en local y no lo molestan */
+const BUZON_VIVO = function(){ return !!BUZON && /(^|\.)wallioapp\.com$/.test(location.hostname); };
 const BZ_LOCAL = "wallio.buzon.v1";   // lo que aún no ha salido de aquí
 const BZ_VISTO = "wallio.visita.v1";
 
@@ -5739,7 +5744,7 @@ function cuentaVisita(){
   const hoy = new Date().toISOString().slice(0, 10);
   let ya = null;
   try { ya = localStorage.getItem(BZ_VISTO); } catch(e){}
-  if (!BUZON){ pintaVisitas(null); return; }
+  if (!BUZON_VIVO()){ pintaVisitas(null); return; }      // las copias de prueba no cuentan
   const app = (typeof SOLO_PARTE !== "undefined" && SOLO_PARTE) ? "parte" : "plataforma";
   const ruta = ya === hoy ? "/resumen" : "/visita?app=" + app;
   fetch(BUZON.replace(/\/+$/, "") + ruta, {method: ya === hoy ? "GET" : "POST"})
@@ -5763,7 +5768,7 @@ function mandaComentario(){
   const limpia = function(){
     ["bz_texto", "bz_nombre", "bz_correo", "bz_rol"].forEach(function(k){ $(k).value = ""; });
   };
-  if (!BUZON){
+  if (!BUZON_VIVO()){
     const l = bzPendientes(); l.push(dato); bzGuarda(l);
     limpia();
     bzMsg(traduce("Guardado en este dispositivo: el buzón todavía no está conectado, pero no se pierde."), "ok");
@@ -5788,7 +5793,7 @@ function mandaComentario(){
 }
 /* lo que quedó guardado sin conexión sale solo en cuanto hay red */
 function bzDrena(){
-  if (!BUZON) return;
+  if (!BUZON_VIVO()) return;
   const l = bzPendientes();
   if (!l.length) return;
   const uno = l[0];
