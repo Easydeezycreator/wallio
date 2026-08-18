@@ -892,18 +892,17 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 
 }  /* fin de @media screen */
 
-/* ---- la elección de la portada: plataforma entera o solo el parte ---- */
+/* ---- la portada: el parte solo, opción prioritaria, en amarillo ---- */
 .portada{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
-  margin:12px 11px 0;padding:12px 14px;border:1px solid var(--line);border-radius:6px}
-.portada .t{flex:1 1 230px;min-width:0}
-.portada .t b{display:block;font:650 14px/1.35 var(--ui,inherit)}
-.portada .t span{display:block;color:var(--tx2);font:12.5px/1.5 var(--ui,inherit);margin-top:2px}
-.portada a.abrirparte{flex:0 0 auto;display:inline-flex;align-items:center;min-height:40px;
-  padding:0 16px;border-radius:3px;text-decoration:none;
-  font:600 11px/1.15 var(--ui,inherit);letter-spacing:.06em;text-transform:uppercase;
-  color:#0a0d11;background:linear-gradient(180deg,#f6f9fc,#dde3ec);
-  border:1px solid rgba(255,255,255,.85)}
-.portada button{flex:0 0 auto}
+  margin:12px 11px 0;padding:11px 14px;border-radius:6px;
+  border:1.5px solid rgba(224,163,60,.8);
+  background:linear-gradient(180deg,rgba(224,163,60,.17),rgba(224,163,60,.06))}
+.portada a.abrirparte{flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;
+  padding:0 18px;border-radius:4px;text-decoration:none;
+  font:700 12px/1.15 var(--ui,inherit);letter-spacing:.07em;text-transform:uppercase;
+  color:#1a1206;background:linear-gradient(180deg,#f2c56b,#e0a33c);
+  border:1px solid rgba(255,255,255,.55)}
+.portada button{flex:0 0 auto;margin-left:auto}
 html.solo-parte .portada{display:none}
 
 /* ---- el aviso de jornada nueva, en la tira del parte ---- */
@@ -945,10 +944,7 @@ html.solo-parte .portada{display:none}
 <!-- ===================== 0 · PRODUCCIÓN ===================== -->
 <section id="v-prod" class="on">
   <div class="portada" id="portadaEleccion" hidden>
-    <div class="t"><b>¿Vienes solo por el parte de cámara?</b>
-      <span>El parte tiene su propia app: producción, rollos y tomas, y nada más.
-      Empieza pidiendo los datos de producción, con el mismo formato que aquí.</span></div>
-    <a class="abrirparte" href="parte/">Abrir la app del parte</a>
+    <a class="abrirparte" href="parte/">Solo el parte de cámara</a>
     <button class="ghost" onclick="portadaFuera()">Uso la plataforma entera</button>
   </div>
   <div class="card">
@@ -1467,6 +1463,7 @@ html.solo-parte .portada{display:none}
 <!-- ===================== 8 · GUÍA ===================== -->
 <section id="v-guia">
   <div class="note"><b>Para qué existe WALLIO.</b> La plataforma está pensada para que las casas de renta de equipo tengan su propio stock de grids y ofrezcan ese servicio adicional a la producción cuando alquilan una óptica determinada: la óptica sale con su grid medido, y post lo descarga con un enlace.</div>
+  <div class="note"><b>Cómo se construye el stock.</b> Rodaje a rodaje: los asistentes de cámara que preparan su proyecto — o el técnico de la casa — capturan los grids en la prep siguiendo las especificaciones exactas de esta guía, y la casa pide que esa información se comparta a través del DIT. Cada prep suma una óptica medida al stock.</div>
   <div class="note"><b>Esta página es el manual.</b> Qué hace cada pestaña y qué tiene que cumplir un grid para que cualquier casa de VFX lo dé por bueno. Léela entera una vez; en rodaje se consulta en segundos.</div>
 
   <div class="card">
@@ -5122,7 +5119,7 @@ const EN = {
  "Saved on this device: the mailbox is not connected yet, but nothing is lost.",
 "Sin conexión ahora mismo: queda guardado aquí y se manda cuando vuelva.":
  "No connection right now: it stays here and goes out when it comes back.",
-"visitas":"visits","hoy":"today","comentarios":"comments",
+"visitas":"visits","hoy":"today","comentarios":"comments","solo el parte":"report only",
 "el contador todavía no está conectado":"the counter is not connected yet",
 "Buscar grids ya guardados":"Find stored grids","Buscar":"Search",
 "Desde el CSV del parte":"From the camera report CSV",
@@ -5271,10 +5268,7 @@ const EN = {
  "the link for this delivery opens the records of these lenses and their grids. If a lens goes to the workshop during the shoot, its grid stops being valid from that day.",
 "Prod.":"Prod.","Parte de cámara":"Camera report",
 "Otro servidor":"Other server",
-"¿Vienes solo por el parte de cámara?":"Here just for the camera report?",
-"El parte tiene su propia app: producción, rollos y tomas, y nada más. Empieza pidiendo los datos de producción, con el mismo formato que aquí.":
- "The report has its own app: production, rolls and takes, nothing else. It starts by asking for the production details, in the same format as here.",
-"Abrir la app del parte":"Open the report app",
+"Solo el parte de cámara":"Camera report only",
 "Uso la plataforma entera":"I use the whole platform",
 "Empezar la jornada siguiente":"Start the next day",
 "Jornada nueva":"New day",
@@ -5285,6 +5279,9 @@ const EN = {
 "Guía":"Guide",
 "WALLIO · Parte de cámara":"WALLIO · Camera Report",
 "Para qué existe WALLIO.":"What WALLIO is for.",
+"Cómo se construye el stock.":"How the stock gets built.",
+"Rodaje a rodaje: los asistentes de cámara que preparan su proyecto — o el técnico de la casa — capturan los grids en la prep siguiendo las especificaciones exactas de esta guía, y la casa pide que esa información se comparta a través del DIT. Cada prep suma una óptica medida al stock.":
+ "Shoot by shoot: the camera assistants prepping their project — or the house technician — capture the grids during prep following the exact specifications in this guide, and the house asks for that information to be shared through the DIT. Every prep adds one measured lens to the stock.",
 "La plataforma está pensada para que las casas de renta de equipo tengan su propio stock de grids y ofrezcan ese servicio adicional a la producción cuando alquilan una óptica determinada: la óptica sale con su grid medido, y post lo descarga con un enlace.":
  "The platform is built so equipment rental houses keep their own stock of grids and offer that extra service to the production when a given lens goes out on rental: the lens leaves with its measured grid, and post downloads it with a link.",
 "Esta página es el manual.":"This page is the manual.",
@@ -5730,7 +5727,9 @@ function pintaVisitas(d){
   c.innerHTML =
     '<span><b>' + bzNum(d.visitas) + "</b> " + traduce("visitas") + "</span>" +
     '<span><b>' + bzNum(d.hoy) + "</b> " + traduce("hoy") + "</span>" +
-    '<span><b>' + bzNum(d.comentarios) + "</b> " + traduce("comentarios") + "</span>";
+    '<span><b>' + bzNum(d.comentarios) + "</b> " + traduce("comentarios") + "</span>" +
+    (d.parte === undefined ? "" :
+      '<span><b>' + bzNum(d.parte) + "</b> " + traduce("solo el parte") + "</span>");
   const chip = $("chipVis");
   if (chip) chip.textContent = bzNum(d.visitas) + " " + traduce("visitas");
 }
@@ -5741,7 +5740,8 @@ function cuentaVisita(){
   let ya = null;
   try { ya = localStorage.getItem(BZ_VISTO); } catch(e){}
   if (!BUZON){ pintaVisitas(null); return; }
-  const ruta = ya === hoy ? "/resumen" : "/visita";
+  const app = (typeof SOLO_PARTE !== "undefined" && SOLO_PARTE) ? "parte" : "plataforma";
+  const ruta = ya === hoy ? "/resumen" : "/visita?app=" + app;
   fetch(BUZON.replace(/\/+$/, "") + ruta, {method: ya === hoy ? "GET" : "POST"})
     .then(function(r){ return r.json(); })
     .then(function(d){
