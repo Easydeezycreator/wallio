@@ -29,8 +29,8 @@ header{position:sticky;top:0;z-index:20;background:var(--bg);
  border-bottom:1.5px solid var(--tx);padding:calc(7px + env(safe-area-inset-top)) 11px 6px;
  display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
 header>*{min-width:0}
-header svg{width:22px;height:22px;flex:0 0 22px;margin-top:1px}
-header .wm{font:700 15px/1 var(--mono);letter-spacing:-.01em}
+header svg{width:28px;height:28px;flex:0 0 28px;margin-top:1px}
+header .wm{font:700 18px/1 var(--mono);letter-spacing:-.01em}
 header .wl{font:600 8px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;
  color:var(--tx3);margin-top:2px}
 header .sp{flex:1}
@@ -382,9 +382,9 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   body{font-size:17px}
   main{max-width:none;padding:0 14px}
   header{padding:calc(9px + env(safe-area-inset-top)) 18px 8px}
-  header svg{width:26px;height:26px;flex-basis:26px}
-  header .wm{font-size:17px}
-  header .wl{font-size:9px;letter-spacing:.18em}
+  header svg{width:34px;height:34px;flex-basis:34px}
+  header .wm{font-size:22px}
+  header .wl{font-size:10px;letter-spacing:.18em}
   header .st{font-size:11px}
   header .st b{font-size:16px}
   header .lang{min-height:32px;padding:0 12px;font-size:11.5px}
@@ -622,8 +622,8 @@ input,select,textarea,.big,.inv .kpi b,.inv .pc,.stat > div > div:first-child,
 header .st b,.tira span{font-variant-numeric:tabular-nums}
 
 /* ---------------- la marca ---------------- */
-header .wm{font:700 17px/1 var(--disp);letter-spacing:-.025em}
-header .wl{font:600 8.5px/1.4 var(--ui);letter-spacing:.19em;margin-top:3px}
+header .wm{font:700 20px/1 var(--disp);letter-spacing:-.025em}
+header .wl{font:600 9.5px/1.4 var(--ui);letter-spacing:.19em;margin-top:3px}
 /* La cifra de cobertura, en horizontal y pegada a la derecha: cuando la
    cabecera se parte en dos renglones —pasa al aparecer «Deshacer»— así
    queda alineada con los botones y no colgando a la izquierda. */
@@ -731,7 +731,7 @@ input[spellcheck=false],textarea[spellcheck=false],
   header .lang{min-height:38px}
 }
 @media (min-width:700px){
-  header .wm{font-size:19px}
+  header .wm{font-size:23px}
   .card h2{font-size:10px;padding:9px 16px}
   .note{font-size:14px}
 }
@@ -894,10 +894,7 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 }  /* fin de @media screen */
 
 /* ---- la portada: el parte solo, opción prioritaria, en amarillo ---- */
-.portada{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
-  margin:12px 11px 0;padding:11px 14px;border-radius:6px;
-  border:1.5px solid rgba(224,163,60,.8);
-  background:linear-gradient(180deg,rgba(224,163,60,.17),rgba(224,163,60,.06))}
+.portada{display:flex;margin:14px 11px 0;padding:0;border:0;background:none}
 .portada a.abrirparte{flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;
   padding:0 18px;border-radius:4px;text-decoration:none;
   font:700 12px/1.15 var(--ui,inherit);letter-spacing:.07em;text-transform:uppercase;
@@ -916,6 +913,38 @@ html.solo-parte .portada{display:none}
 @media (min-width:700px){
   #v-guia p,#v-guia li{font-size:14.5px}
   #v-guia ul{padding-left:20px}
+}
+
+/* ---- la página entera: las secciones se estiran a la ventana ---- */
+@media (min-width:900px){
+  main > section.on{display:flex;flex-direction:column;justify-content:space-evenly;
+    min-height:calc(100vh - 200px)}
+}
+/* ---- y en pantallas grandes todo crece un escalón más ---- */
+@media (min-width:1400px){
+  body{font-size:20px}
+  main{padding:0 24px}
+  main > section.on{min-height:calc(100vh - 230px)}
+  input,select,textarea{font-size:20px;min-height:52px;padding:11px 0}
+  label{font-size:11px;letter-spacing:.14em;margin-bottom:5px}
+  .f{padding:10px 0}
+  .grid{column-gap:44px}
+  .card h2{font-size:12.5px;letter-spacing:.22em;padding:12px 22px}
+  .card > *:not(h2){margin-left:22px;margin-right:22px;max-width:calc(100% - 44px)}
+  header svg{width:40px;height:40px;flex-basis:40px}
+  header .wm{font-size:26px}
+  header .wl{font-size:11px}
+  header .lang{min-height:36px;padding:0 14px;font-size:12.5px}
+  nav button{min-height:78px;font-size:13px}
+  nav button i{font-size:11px}
+  .portada a.abrirparte{min-height:54px;padding:0 26px;font-size:14px}
+  .note{font-size:15px}
+  .hint{font-size:14px}
+  #v-guia p,#v-guia li{font-size:16px}
+  .pick .t b{font-size:18px}
+  .big{font-size:40px}
+  .toma .row input{font-size:18px;min-height:40px}
+  .cellrow .lbl,.cellrow .lbl .fo{font-size:18px}
 }
 </style>
 </head>
@@ -996,8 +1025,6 @@ html.solo-parte .portada{display:none}
         <div class="f" id="fc_mo"><label>Montura</label><select id="lc_mount"></select></div>
         <div class="f" id="fc_xd"><label>Datos de lente en vivo</label><select id="lc_xd"></select></div>
       </div>
-      <div class="hint">Lo que escribas aquí se guarda igual que si estuviera en el catálogo.
-        Escribe la focal en milímetros; para un zoom, los dos extremos separados por guión.</div>
     </div>
     <div class="hint" id="l_resumen"></div>
   </div>
@@ -1047,7 +1074,6 @@ html.solo-parte .portada{display:none}
   <div class="card">
     <h2>2 · Con qué cámara</h2>
     <label>Cuerpo</label><select id="e_body"></select>
-    <div class="hint">Si tu cámara no está, elige «Otra — añadir a mano» al final de la lista.</div>
   </div>
   <div class="card" id="c_custom" style="display:none">
     <h2>Cámara no catalogada</h2>
@@ -1059,8 +1085,6 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Ancho activo (mm)</label><input id="x_w" inputmode="decimal" placeholder="27.99"></div>
       <div class="f"><label>Alto activo (mm)</label><input id="x_h" inputmode="decimal" placeholder="19.22"></div>
     </div>
-    <div class="hint">El área activa en milímetros es lo único imprescindible: es lo único que la
-      óptica ve. Dos cámaras con la misma área comparten grid.</div>
     <div class="btnrow" style="margin-top:11px"><button class="primary" onclick="addCustom()">Añadir formato</button></div>
   </div>
   <div class="card"><h2>Formatos a cubrir</h2><div id="listaFmt"></div></div>
@@ -1072,9 +1096,6 @@ html.solo-parte .portada{display:none}
       <button class="ghost" onclick="focosDelFabricante()">Distancias del fabricante</button>
     </div>
     <div class="hint" id="focoFab" style="color:var(--ok)"></div>
-    <div class="hint">Se colocan solas de más cerca a más lejos en cuanto sueltas el campo.
-      Entiende metros (2.40 · 2,40 m · 80 cm) y pies (3' · 3'6" · 18"). «Mínimo» va siempre
-      la primera e «INF» la última. Si borras una por error, la recuperas ahí mismo.</div>
   </div>
 </section>
 
@@ -1095,7 +1116,7 @@ html.solo-parte .portada{display:none}
       <button class="ghost" onclick="olvidaMhl()" id="mv_borrar" hidden>Olvidar volcado</button>
     </div>
     <input type="file" id="mv_file" accept=".mhl,.xml" hidden>
-    <div class="hint" id="mv_msg">Silverstack, YoYotta y ShotPut escriben un ASC MHL al volcar.
+    <div class="hint" id="mv_msg">
       Arrástralo aquí y la app rellena sola la huella y la ruta de cada celda.</div>
   </div>
   <div id="listaCaptura"></div>
@@ -1146,7 +1167,6 @@ html.solo-parte .portada{display:none}
     </div>
     <div id="rollExtra"></div>
     <div class="btnrow"><button onclick="addCampoRollo()">+ Añadir campo del rollo</button></div>
-    <div class="hint">Esto se hereda en cada toma nueva. En el rodaje solo tocas lo que cambia.</div>
   </div>
 
   <div class="card">
@@ -1157,15 +1177,10 @@ html.solo-parte .portada{display:none}
       <button onclick="nuevaToma(true)">+ Escena</button>
       <button class="ghost" onclick="borrarToma(-1)">Borrar última</button>
     </div>
-    <div class="hint">«+ Toma» repite la anterior y sube el número: es lo que cambia de verdad
-      entre toma y toma lo único que tienes que tocar. «+ Escena» empieza en toma 1.</div>
   </div>
 
   <div class="card">
     <h2>Campos adicionales</h2>
-    <p style="margin:0 0 9px;color:var(--tx2);font-size:13.5px">
-      Si esta producción pide algo que el parte no trae, añádelo aquí: aparece en cada toma,
-      en el PDF y en el CSV.</p>
     <div id="listaCampos"></div>
     <div class="btnrow"><button onclick="addCampo()">+ Añadir campo</button></div>
   </div>
@@ -1197,12 +1212,7 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <h2>Partes de este dispositivo</h2>
-    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
-      Cada vez que guardas o imprimes un parte queda aquí, en el propio teléfono, aunque no haya
-      cobertura. Sirve para volver al rollo de ayer sin buscar archivos.</p>
     <div id="pt_lista"></div>
-    <div class="hint">El CSV lleva una columna por dato, con el número de serie de la óptica en
-      cada toma, para que entre en una hoja de cálculo o en el software de laboratorio.</div>
   </div>
 </section>
 
@@ -1240,7 +1250,6 @@ html.solo-parte .portada{display:none}
         <button class="ghost" onclick="nubeAlta()">Crear cuenta</button>
         <button class="ghost" onclick="nbOtroServidor()">Otro servidor</button>
       </div>
-      <div class="hint">La contraseña no se guarda en ningún sitio: viaja a Supabase y ya está.</div>
     </div>
 
     <div id="nb_casa" hidden>
@@ -1252,7 +1261,6 @@ html.solo-parte .portada{display:none}
         <button class="primary" onclick="nubeUnir()">Unirme con el código</button>
         <button class="ghost" onclick="nubeCrearCasa()">Crear la casa</button>
       </div>
-      <div class="hint">El código solo sirve para darte de alta una vez. A partir de ahí manda tu cuenta.</div>
     </div>
 
     <div id="nb_trabajo" hidden>
@@ -1291,9 +1299,6 @@ html.solo-parte .portada{display:none}
           <option value="1280">Reducido a 1280 px — unos 5 MB por óptica</option>
         </select>
         <div class="hint" id="tg_ajuste_msg"></div>
-        <div class="hint">La plataforma no guarda los clips: un grid completo de una óptica en
-          ARRIRAW 4.6K Open Gate pasa de 50 GB. Guarda un fotograma de cada celda, que es lo que
-          hace que el archivo se pueda mirar años después, más el puntero y la huella del clip.</div>
       </div>
     </div>
   </div>
@@ -1342,8 +1347,6 @@ html.solo-parte .portada{display:none}
       <button onclick="guardarFicha()">Guardar archivo de ficha</button>
       <button class="danger" onclick="empezarDeCero()">Empezar de cero</button>
     </div>
-    <div class="hint">En iPad y Mac: al pulsar Generar PDF se abre la ventana de impresión; elige
-      <b>Guardar como PDF</b>. Es la forma nativa, sin instalar nada.</div>
   </div>
   <div class="card">
     <h2>Cómo crece la base de datos</h2>
