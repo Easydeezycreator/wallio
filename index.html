@@ -436,6 +436,18 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 .mv .bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .18s}
 .mv.hay .et{color:var(--ok)}
 @media print{.mv button{display:none!important}}
+
+.bz{display:grid;gap:9px}
+.bz .fila{display:flex;gap:9px;flex-wrap:wrap}
+.bz .fila>*{flex:1 1 150px;min-width:0}
+.bz textarea{min-height:96px;resize:vertical;font:inherit;width:100%}
+.bz .ok{color:var(--ok)} .bz .mal{color:#e0736a}
+.visitas{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;
+  padding:9px 11px;border-top:1px solid var(--line);font-size:12px;color:var(--tx2)}
+.visitas b{color:var(--tx);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+.visitas span{display:flex;gap:5px;align-items:baseline}
+#chipVis{font-size:11px;color:var(--tx3);letter-spacing:.04em}
+@media print{#v-prod .bz,.visitas{display:none!important}}
 </style>
 </head>
 <body>
@@ -452,6 +464,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   <button id="btnUndo" class="lang undo" onclick="deshacer()" hidden>Deshacer</button>
   <button id="btnLang" class="lang" onclick="cambiaIdioma()">EN</button>
   <div class="st"><b id="chipCov">—</b>cobertura</div>
+  <span id="chipVis"></span>
 </header>
 
 <main>
@@ -490,6 +503,34 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
       <div class="f"><label>Supervisor de VFX</label><input id="p_vfx"></div>
       <div class="f"><label>Contacto</label><input id="p_contacto" inputmode="email"></div>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Comentarios y sugerencias</h2>
+    <p style="margin:0 11px 11px;color:var(--tx2);font-size:13.5px">
+      Esto lo hace un foquista, no una empresa de software. Si algo te estorba, te falta
+      o te ha salvado un día de rodaje, dilo aquí. Se lee todo.</p>
+    <div class="bz" style="padding:0 11px 11px">
+      <div class="fila">
+        <select id="bz_tipo">
+          <option value="sugerencia">Sugerencia</option>
+          <option value="fallo">Algo que no funciona</option>
+          <option value="elogio">Me ha servido</option>
+          <option value="otro">Otra cosa</option>
+        </select>
+        <input id="bz_rol" placeholder="Tu función · 1er AC, DIT, casa de renta…">
+      </div>
+      <div class="fila">
+        <input id="bz_nombre" placeholder="Nombre (opcional)">
+        <input id="bz_correo" type="email" placeholder="Correo, si quieres respuesta (opcional)">
+      </div>
+      <textarea id="bz_texto" placeholder="Cuéntame"></textarea>
+      <div class="btnrow" style="margin:0">
+        <button class="primary" onclick="mandaComentario()">Enviar</button>
+      </div>
+      <div class="hint" id="bz_msg"></div>
+    </div>
+    <div class="visitas" id="visitasCaja"></div>
   </div>
 </section>
 
@@ -787,6 +828,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
     <div class="btnrow">
       <button class="primary" onclick="hacerPDF()">Generar PDF de la ficha</button>
       <button onclick="paquetePost()">Paquete para post</button>
+      <button onclick="versionesOptica()">Historial de archivos</button>
       <button onclick="guardarFicha()">Guardar archivo de ficha</button>
       <button class="danger" onclick="empezarDeCero()">Empezar de cero</button>
     </div>
@@ -1655,13 +1697,41 @@ function mvFuncion(cuerpo){
   return nbPide("/functions/v1/media", cuerpo)
     .catch(function(e){ return {error: String((e && e.message) || e)}; });
 }
-/* ruta dentro del almacén: casa / óptica / celda / archivo */
+/* ruta dentro del almacén: casa / óptica / celda / clase / sello-archivo
+   El sello de tiempo no es decorativo: R2 no tiene versionado, así que si
+   dos subidas compartieran nombre la segunda BORRARÍA a la primera sin
+   vuelta atrás. Con sello, cada subida es un archivo nuevo y lo anterior
+   sigue ahí para siempre. Nada se pisa nunca. */
+function mvSello(){
+  const d = new Date(), z = n => String(n).padStart(2, "0");
+  return d.getUTCFullYear() + z(d.getUTCMonth() + 1) + z(d.getUTCDate()) + "-" +
+         z(d.getUTCHours()) + z(d.getUTCMinutes()) + z(d.getUTCSeconds());
+}
 function mvRuta(fmtKey, foco, clase, nombre){
   if (!NB.casa || !S.lens.serial) return null;
   const opt = wlNorm(S.lens.marca) + "-" + wlNorm(S.lens.serial);
   const f = S.formats.find(x => x.key === fmtKey) || {};
   return NB.casa + "/" + opt + "/" + slug(f.fmt || fmtKey) + "__" + focoSlug(foco)
-         + "/" + clase + "-" + String(nombre || "clip").replace(/[^\w.\-]+/g, "_");
+         + "/" + clase + "/" + mvSello() + "-"
+         + String(nombre || "clip").replace(/[^\w.\-]+/g, "_");
+}
+/* todas las versiones que ha tenido esta óptica, incluidas las sustituidas */
+async function versionesOptica(){
+  const msg = $("mv_post_msg");
+  if (!NB.casa || !S.lens.serial){ if (msg) msg.textContent = traduce("Entra antes en la casa de renta."); return; }
+  const l = await nbPide("/rest/v1/rpc/versiones_de",
+                {p_casa: NB.casa, p_clave: claveFicha(S.lens.marca, S.lens.serial)})
+              .catch(function(){ return []; });
+  if (!l || !l.length){ if (msg) msg.textContent = traduce("Todavía no hay nada subido de esta óptica."); return; }
+  const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+  const cab = ["celda","clase","archivo","bytes","algoritmo","checksum","subido_por","fecha","ruta"];
+  const csv = "\ufeff" + [cab.join(",")].concat(l.map(function(m){
+    return [m.celda, MV_CLASES[m.clase] || m.clase, m.archivo, m.bytes, m.alg, m.hash,
+            m.correo, m.creado, m.ruta].map(q).join(",");
+  })).join("\r\n");
+  descargar(csv, "WALLIO_historial_" + norm(S.lens.serial) + ".csv", "text/csv");
+  if (msg) msg.textContent = traduce("Historial completo: ") + l.length +
+    traduce(" subidas, ninguna se ha perdido.");
 }
 /* SHA-256 solo si el archivo es manejable; si viene del MHL ya trae su huella */
 function mvHuella(file, t){
@@ -2432,7 +2502,7 @@ async function nubeTrae(clave){
           traduce("Lo que marques ahora se suma a lo que ya había."), "good");
   } catch(e){ nbMsg(e.message, "bad"); }
 }
-window.addEventListener("online", function(){ setTimeout(tgDrena, 400); });
+window.addEventListener("online", function(){ setTimeout(tgDrena, 400); setTimeout(bzDrena, 900); });
 window.addEventListener("online", function(){ nbPinta(); nbVaciaCola(); });
 window.addEventListener("offline", nbPinta);
 
@@ -3264,7 +3334,9 @@ const EN = {
 "sin subir":"not uploaded","subir":"upload","reintentar":"try again","cancelar":"cancel",
 "enlace":"link","subiendo…":"uploading…","subiendo ":"uploading ",
 "sin huella: impórtala del ASC MHL":"no checksum: import it from the ASC MHL",
-"Paquete para post":"Package for post",
+"Paquete para post":"Package for post","Historial de archivos":"File history",
+"Todavía no hay nada subido de esta óptica.":"Nothing has been uploaded for this lens yet.",
+"Historial completo: ":"Full history: "," subidas, ninguna se ha perdido.":" uploads, none of them lost.",
 "Para guardar los clips hace falta entrar en la casa de renta (pestaña Emitir).":
  "To store the clips you must sign in to the rental house (Issue tab).",
 "Entra antes en la casa de renta.":"Sign in to the rental house first.",
@@ -3288,6 +3360,24 @@ const EN = {
 "Ese testigo todavía no está en la nube.":"That witness frame is not in the cloud yet.",
 "La plataforma no guarda los clips: un grid completo de una óptica en ARRIRAW 4.6K Open Gate pasa de 50 GB. Guarda un fotograma de cada celda, que es lo que hace que el archivo se pueda mirar años después, más el puntero y la huella del clip.":
  "The platform does not store the clips: a full grid of one lens in ARRIRAW 4.6K Open Gate is over 50 GB. It stores one frame per cell, which is what makes the archive something you can still look at years later, plus the pointer and the checksum of the clip.",
+"Comentarios y sugerencias":"Comments and suggestions",
+"Esto lo hace un foquista, no una empresa de software. Si algo te estorba, te falta o te ha salvado un día de rodaje, dilo aquí. Se lee todo.":
+ "This is built by a focus puller, not a software company. If something gets in your way, is missing, or saved your shooting day, say so here. Everything gets read.",
+"Sugerencia":"Suggestion","Algo que no funciona":"Something is broken","Me ha servido":"It helped me",
+"Otra cosa":"Something else","Enviar":"Send","Cuéntame":"Tell me",
+"Tu función · 1er AC, DIT, casa de renta…":"Your role · 1st AC, DIT, rental house…",
+"Nombre (opcional)":"Name (optional)",
+"Correo, si quieres respuesta (opcional)":"Email, if you want a reply (optional)",
+"Escribe un poco más y te leo.":"Write a little more and I will read it.",
+"Ese correo no parece válido.":"That email does not look valid.",
+"Enviando…":"Sending…","No se pudo enviar.":"It could not be sent.",
+"Recibido. Gracias — se lee todo.":"Received. Thank you — everything gets read.",
+"Guardado en este dispositivo: el buzón todavía no está conectado, pero no se pierde.":
+ "Saved on this device: the mailbox is not connected yet, but nothing is lost.",
+"Sin conexión ahora mismo: queda guardado aquí y se manda cuando vuelva.":
+ "No connection right now: it stays here and goes out when it comes back.",
+"visitas":"visits","hoy":"today","comentarios":"comments",
+"el contador todavía no está conectado":"the counter is not connected yet",
 "Ancho activo (mm)":"Active width (mm)","Alto activo (mm)":"Active height (mm)",
 "Resolución (o «película»)":"Resolution (or «film»)","Añadir formato":"Add format",
 "Formatos a cubrir":"Formats to cover","3 · Distancias de foco":"3 · Focus distances",
@@ -3528,6 +3618,106 @@ new MutationObserver(muts => {
     if (n.nodeType === 1 || n.nodeType === 3) pinta(n);
 }).observe(document.body, {childList:true, subtree:true});
 
+
+/* ================= BUZÓN Y CONTADOR DE VISITAS =================
+   Lo usa cualquiera que abra la app, con cuenta o sin ella, así que no
+   puede ir por la nube de la casa de renta. Va por un buzón propio, y
+   en el navegador no hay ninguna clave: solo esta dirección. Mientras
+   esté vacía, lo escrito se guarda en el dispositivo y no se pierde. */
+const BUZON = "";                     // https://wallio-buzon.<lo-tuyo>.workers.dev
+const BZ_LOCAL = "wallio.buzon.v1";   // lo que aún no ha salido de aquí
+const BZ_VISTO = "wallio.visita.v1";
+
+function bzPendientes(){
+  try { return JSON.parse(localStorage.getItem(BZ_LOCAL) || "[]"); } catch(e){ return []; }
+}
+function bzGuarda(l){
+  try { localStorage.setItem(BZ_LOCAL, JSON.stringify(l.slice(-50))); } catch(e){}
+}
+function bzMsg(t, clase){
+  const m = $("bz_msg"); if (!m) return;
+  m.textContent = t; m.className = "hint " + (clase || "");
+}
+function bzNum(n){ return Number(n || 0).toLocaleString("es-ES"); }
+
+function pintaVisitas(d){
+  const c = $("visitasCaja");
+  if (!c) return;
+  if (!d){
+    c.innerHTML = '<span><b>—</b> ' + traduce("el contador todavía no está conectado") + "</span>";
+    return;
+  }
+  c.innerHTML =
+    '<span><b>' + bzNum(d.visitas) + "</b> " + traduce("visitas") + "</span>" +
+    '<span><b>' + bzNum(d.hoy) + "</b> " + traduce("hoy") + "</span>" +
+    '<span><b>' + bzNum(d.comentarios) + "</b> " + traduce("comentarios") + "</span>";
+  const chip = $("chipVis");
+  if (chip) chip.textContent = bzNum(d.visitas) + " " + traduce("visitas");
+}
+
+/* una visita por dispositivo y día: ni se infla la cuenta ni se molesta al servidor */
+function cuentaVisita(){
+  const hoy = new Date().toISOString().slice(0, 10);
+  let ya = null;
+  try { ya = localStorage.getItem(BZ_VISTO); } catch(e){}
+  if (!BUZON){ pintaVisitas(null); return; }
+  const ruta = ya === hoy ? "/resumen" : "/visita";
+  fetch(BUZON.replace(/\/+$/, "") + ruta, {method: ya === hoy ? "GET" : "POST"})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && !d.error){ pintaVisitas(d); try { localStorage.setItem(BZ_VISTO, hoy); } catch(e){} }
+    })
+    .catch(function(){ pintaVisitas(null); });
+}
+
+function mandaComentario(){
+  const texto = ($("bz_texto").value || "").trim();
+  if (texto.length < 4){ bzMsg(traduce("Escribe un poco más y te leo."), "mal"); return; }
+  const c = ($("bz_correo").value || "").trim();
+  if (c && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c)){
+    bzMsg(traduce("Ese correo no parece válido."), "mal"); return;
+  }
+  const dato = {tipo: $("bz_tipo").value, nombre: ($("bz_nombre").value || "").trim(),
+                correo: c, rol: ($("bz_rol").value || "").trim(), texto: texto,
+                version: (document.title || "") + " · " + new Date().toISOString().slice(0, 10)};
+  const limpia = function(){
+    ["bz_texto", "bz_nombre", "bz_correo", "bz_rol"].forEach(function(k){ $(k).value = ""; });
+  };
+  if (!BUZON){
+    const l = bzPendientes(); l.push(dato); bzGuarda(l);
+    limpia();
+    bzMsg(traduce("Guardado en este dispositivo: el buzón todavía no está conectado, pero no se pierde."), "ok");
+    return;
+  }
+  bzMsg(traduce("Enviando…"), "");
+  fetch(BUZON.replace(/\/+$/, "") + "/comentario", {
+    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(dato)
+  }).then(function(r){ return r.json().then(function(d){ return {ok: r.ok, d: d}; }); })
+    .then(function(x){
+      if (!x.ok || (x.d && x.d.error)){ bzMsg((x.d && x.d.error) || traduce("No se pudo enviar."), "mal"); return; }
+      limpia();
+      bzMsg(traduce("Recibido. Gracias — se lee todo."), "ok");
+      fetch(BUZON.replace(/\/+$/, "") + "/resumen").then(function(r){ return r.json(); })
+        .then(pintaVisitas).catch(function(){});
+    })
+    .catch(function(){
+      const l = bzPendientes(); l.push(dato); bzGuarda(l);
+      limpia();
+      bzMsg(traduce("Sin conexión ahora mismo: queda guardado aquí y se manda cuando vuelva."), "ok");
+    });
+}
+/* lo que quedó guardado sin conexión sale solo en cuanto hay red */
+function bzDrena(){
+  if (!BUZON) return;
+  const l = bzPendientes();
+  if (!l.length) return;
+  const uno = l[0];
+  fetch(BUZON.replace(/\/+$/, "") + "/comentario", {
+    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(uno)
+  }).then(function(r){ if (r.ok){ bzGuarda(l.slice(1)); setTimeout(bzDrena, 600); } })
+    .catch(function(){});
+}
+
 /* ---------------- guardado automático ---------------- */
 const CLAVE = "wallio.borrador.v1";
 let guardadoTimer = null;
@@ -3587,6 +3777,7 @@ fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
+cuentaVisita(); bzDrena();
 /* nube: se rellena lo guardado en este dispositivo y se intenta vaciar la cola */
 $("nb_url").value = NB.url; $("nb_key").value = NB.key;
 $("nb_correo").value = NB.correo; $("nb_nombre").value = NB.nombre;
