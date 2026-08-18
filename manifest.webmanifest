@@ -1,8 +1,8 @@
 {
   "name": "WALLIO · Lens Grid Platform",
   "short_name": "WALLIO",
-  "description": "Captura de lens grids, registro de calibración por número de serie y parte de cámara. Funciona sin cobertura.",
-  "lang": "es",
+  "description": "Lens grid capture, calibration history by serial number and the camera report. Works offline.",
+  "lang": "en",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",

@@ -380,7 +380,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 }
 @media (min-width:700px){
   body{font-size:17px}
-  main{max-width:1180px}
+  main{max-width:none}
   header{padding:calc(9px + env(safe-area-inset-top)) 18px 8px}
   header svg{width:26px;height:26px;flex-basis:26px}
   header .wm{font-size:17px}
@@ -434,7 +434,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 }
 @media (min-width:1120px){
   body{font-size:18px}
-  main{max-width:1300px}
+  main{max-width:none}
   input,select,textarea{font-size:18px;min-height:42px}
   label{font-size:10px}
   .cellrow .lbl,.cellrow .lbl .fo{font-size:16.5px}
@@ -891,6 +891,33 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 }
 
 }  /* fin de @media screen */
+
+/* ---- la elección de la portada: plataforma entera o solo el parte ---- */
+.portada{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  margin:12px 11px 0;padding:12px 14px;border:1px solid var(--line);border-radius:6px}
+.portada .t{flex:1 1 230px;min-width:0}
+.portada .t b{display:block;font:650 14px/1.35 var(--ui,inherit)}
+.portada .t span{display:block;color:var(--tx2);font:12.5px/1.5 var(--ui,inherit);margin-top:2px}
+.portada a.abrirparte{flex:0 0 auto;display:inline-flex;align-items:center;min-height:40px;
+  padding:0 16px;border-radius:3px;text-decoration:none;
+  font:600 11px/1.15 var(--ui,inherit);letter-spacing:.06em;text-transform:uppercase;
+  color:#0a0d11;background:linear-gradient(180deg,#f6f9fc,#dde3ec);
+  border:1px solid rgba(255,255,255,.85)}
+.portada button{flex:0 0 auto}
+html.solo-parte .portada{display:none}
+
+/* ---- el aviso de jornada nueva, en la tira del parte ---- */
+.tira button.jsig{border-color:rgba(111,211,166,.5);color:#6fd3a6;margin-right:8px}
+
+/* ---- la guía: el manual dentro de la app ---- */
+#v-guia p{margin:9px 11px;font-size:13px;line-height:1.65;color:var(--tx2)}
+#v-guia ul{margin:6px 11px 12px;padding-left:18px;color:var(--tx2)}
+#v-guia li{font-size:13px;line-height:1.6;margin:6px 0}
+#v-guia p b,#v-guia li b{color:var(--tx);font-weight:600}
+@media (min-width:700px){
+  #v-guia p,#v-guia li{font-size:14.5px}
+  #v-guia ul{padding-left:20px}
+}
 </style>
 </head>
 <body>
@@ -917,8 +944,13 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 
 <!-- ===================== 0 · PRODUCCIÓN ===================== -->
 <section id="v-prod" class="on">
-  <div class="note"><b>Toda captura empieza aquí.</b> Sin estos datos el registro no se puede
-    archivar ni reclamar después. Se rellena una vez por jornada.</div>
+  <div class="portada" id="portadaEleccion" hidden>
+    <div class="t"><b>¿Vienes solo por el parte de cámara?</b>
+      <span>El parte tiene su propia app: producción, rollos y tomas, y nada más.
+      Empieza pidiendo los datos de producción, con el mismo formato que aquí.</span></div>
+    <a class="abrirparte" href="parte/">Abrir la app del parte</a>
+    <button class="ghost" onclick="portadaFuera()">Uso la plataforma entera</button>
+  </div>
   <div class="card">
     <h2>Producción</h2>
     <div class="grid">
@@ -1087,6 +1119,7 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 <section id="v-parte">
   <div class="tira" id="tiraParte">
     <div class="tx"><b id="tp_proy">—</b><span id="tp_det"></span></div>
+    <button class="jsig" id="tp_jsig" onclick="jornadaSiguiente()" hidden>Jornada nueva</button>
     <button onclick="abreProdParte()">Datos</button>
   </div>
   <div class="note"><b>El parte del rollo.</b> Cada toma queda unida al número de serie de la
@@ -1177,6 +1210,7 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
       <button class="ghost" onclick="document.getElementById('partIn').click()">Abrir un parte guardado</button>
       <button class="ghost" onclick="ptArchiva(true)">Guardar en este dispositivo</button>
       <button class="ghost" onclick="ptSiguienteRollo()">Empezar el rollo siguiente</button>
+      <button class="ghost" onclick="jornadaSiguiente()">Empezar la jornada siguiente</button>
     </div>
     <input type="file" id="partIn" accept=".json,application/json" style="display:none">
     <div class="hint" id="pt_msg"></div>
@@ -1451,6 +1485,92 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
   </div>
 </section>
 
+<!-- ===================== 8 · GUÍA ===================== -->
+<section id="v-guia">
+  <div class="note"><b>Esta página es el manual.</b> Qué hace cada pestaña y qué tiene que cumplir un grid para que cualquier casa de VFX lo dé por bueno. Léela entera una vez; en rodaje se consulta en segundos.</div>
+
+  <div class="card">
+    <h2>El recorrido por la app</h2>
+    <p><b>Producción.</b> Proyecto, jornada, fecha y responsables. Se rellena una vez por jornada y viaja con todo lo que se capture: sin estos datos nada se puede archivar ni reclamar después.</p>
+    <p><b>Óptica.</b> La serie y cada lente con su número de serie. La distorsión es de este ejemplar, no del modelo: dos lentes «iguales» no dibujan igual. Sin número de serie, el grid no identifica a nadie.</p>
+    <p><b>Equipo.</b> El cuerpo, el modo de sensor y el formato de grabación con los que se capturan los grids. Tienen que ser los mismos que usará la producción.</p>
+    <p><b>Captura.</b> La lista de capturas: lente, focal, distancia y T, cada una con su testigo — la foto del set — si se quiere. De un vistazo se ve qué está hecho y qué falta.</p>
+    <p><b>Emitir.</b> La ficha en PDF y el paquete completo para la casa de renta o para VFX.</p>
+    <p><b>Casa.</b> Para casas de renta: inventario con estado de calibración, entregas y albaranes.</p>
+    <p><b>Parte.</b> El parte de cámara por rollo. Existe también como app propia en wallioapp.com/parte/ y comparte formato con la plataforma.</p>
+    <p><b>Buzón.</b> Lo que estorbe, falte o te haya salvado un día de rodaje: se lee todo.</p>
+  </div>
+
+  <div class="card">
+    <h2>La carta</h2>
+    <ul>
+      <li><b>Patrón.</b> Damero (checkerboard) o retícula de línea fina, de contraste alto y acabado mate. Los brillos se comen las esquinas del patrón.</li>
+      <li><b>Plana y rígida.</b> Cartón pluma grueso, dibond o aluminio. Una carta alabeada mete una curvatura que no es de la lente y arruina el cálculo.</li>
+      <li><b>Tamaño.</b> El necesario para llenar el encuadre entero a la distancia de trabajo. Con angulares: carta grande o carta cerca.</li>
+      <li><b>Medidas apuntadas.</b> Ancho, alto y paso del patrón, en Producción → Instrumental y condiciones. Sin el paso real no hay escala.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>La puesta: cámara y carta</h2>
+    <ul>
+      <li><b>Sensor paralelo a la carta.</b> Eje óptico perpendicular al centro. Nivel en cámara y en carta, y las cuatro esquinas a la misma distancia, con cinta o láser. Un grid en escorzo mide keystone, no distorsión.</li>
+      <li><b>Centro con centro.</b> El centro de la carta en el centro exacto del encuadre.</li>
+      <li><b>La distancia, desde el plano de sensor.</b> De la marca Φ del cuerpo al frente de la carta, y se apunta tal cual, sin redondear.</li>
+      <li><b>Luz pareja.</b> Dos fuentes a 45°, sin reflejos ni caída hacia los bordes. Y sin parpadeos: fuentes fiables a tu frecuencia de obturación.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>El encuadre</h2>
+    <ul>
+      <li><b>La carta cubre el encuadre entero, esquinas incluidas.</b> La distorsión vive en los bordes: una esquina sin patrón es un agujero justo donde el dato más falta hace.</li>
+      <li><b>Mejor sobrar que faltar.</b> Si la carta asoma por los cuatro lados, perfecto.</li>
+      <li><b>El mismo modo de sensor que la producción.</b> Cambiar de modo de sensor o de resolución cambia el mapa de distorsión: un grid en open gate no sirve para un rodaje en crop 4K. Anamórficas: mismo squeeze, y se graba sin desqueeze.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>El recorrido de capturas</h2>
+    <ul>
+      <li><b>Lentes fijas.</b> Cada lente a varias distancias de foco: mínima, corta, media y lejos o infinito. La geometría respira con el foco; una sola distancia no retrata la lente.</li>
+      <li><b>Zooms.</b> Cada focal marcada en el anillo y, en cada focal, al menos dos distancias.</li>
+      <li><b>Diafragma.</b> Una T media (4–5,6) donde las esquinas estén nítidas, apuntando la T usada. Si VFX pide una serie por T, se repite el recorrido.</li>
+      <li><b>Unos segundos quietos por posición.</b> Sin tocar foco ni zoom mientras rueda. Cantar lente, focal y distancia a cámara, o meter claqueta, le ahorra horas al que ingesta.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Exposición y foco</h2>
+    <ul>
+      <li><b>El foco, en la carta.</b> Afinado en el centro, a la distancia marcada. Si el anillo dice 1,2 m y el foco real cae en 1,26 m, se apunta el real: para eso está el campo.</li>
+      <li><b>Exposición media.</b> El blanco del damero sin recortar y el negro con detalle. Se graba en el log nativo de la cámara, sin LUT quemada.</li>
+      <li><b>Todo lo «inteligente», apagado.</b> Estabilización interna o de lente, reencuadre electrónico y corrección de distorsión en cámara falsean el grid. Apagado, y comprobado, antes de rodar.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Los metadatos</h2>
+    <p>Cada captura lleva lente y número de serie, focal, distancia de foco, T, modo de sensor y formato. La app los pide en el momento porque rellenarlos cuesta segundos; reconstruirlos a los tres meses es imposible. El testigo — la foto del set con la carta puesta — cierra cualquier discusión: qué carta, a qué distancia, con qué luz. Con la producción rellena, el registro queda archivado por proyecto y jornada, y desde Emitir se entrega o se reclama entero.</p>
+  </div>
+
+  <div class="card">
+    <h2>Lo que invalida un grid</h2>
+    <ul>
+      <li>La carta torcida, alabeada o fuera de centro.</li>
+      <li>Esquinas del encuadre sin patrón.</li>
+      <li>Otro modo de sensor, otra resolución u otro squeeze que los de la producción.</li>
+      <li>El foco movido durante la toma, o el foco fuera de la carta.</li>
+      <li>Estabilización o corrección de distorsión activadas en cámara.</li>
+      <li>LUT quemada, blancos recortados o luz parpadeando.</li>
+      <li>Capturas sin número de serie, sin distancia o sin focal apuntadas.</li>
+      <li>El grid de un ejemplar «hermano»: misma referencia, otro número de serie. No vale.</li>
+    </ul>
+  </div>
+
+  <div class="note"><b>La regla de oro.</b> Un grid vale cuando otro técnico, sin hablar contigo, puede repetirlo idéntico solo con lo que dejaste apuntado. Todo lo demás es una foto de una carta.</div>
+</section>
+
 </main>
 
 <nav>
@@ -1462,6 +1582,7 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
   <button data-v="casa">Casa</button>
   <button data-v="parte">Parte</button>
   <button data-v="buzon">Buzón</button>
+  <button data-v="guia">Guía</button>
 </nav>
 
 <div id="lupa" onclick="cierraLupa()"><img id="lupa_img" alt=""><div class="pie" id="lupa_pie"></div></div>
@@ -4248,6 +4369,24 @@ function cargaParte(file){
 }
 
 
+
+/* ============ LA ELECCIÓN DE LA PORTADA ============
+   Quien viene solo por el parte no tiene por qué pasear por ocho pestañas.
+   El aviso sale arriba al abrir; si eliges la plataforma entera, no se
+   vuelve a enseñar en este dispositivo.                                */
+const PORTADA_VISTA = "wallio.portada.v1";
+function pintaPortada(){
+  const p = $("portadaEleccion"); if (!p) return;
+  let vista = "";
+  try { vista = localStorage.getItem(PORTADA_VISTA) || ""; } catch(e){}
+  const hayTrabajo = (S.prod.proyecto || "").trim() || Object.keys(S.takes || {}).length;
+  p.hidden = !!vista || !!hayTrabajo || (typeof SOLO_PARTE !== "undefined" && SOLO_PARTE);
+}
+function portadaFuera(){
+  try { localStorage.setItem(PORTADA_VISTA, "plataforma"); } catch(e){}
+  const p = $("portadaEleccion"); if (p) p.hidden = true;
+}
+
 /* ============ EL PARTE COMO APP APARTE ============
    El mismo archivo, con un interruptor. Si el <html> lleva data-solo="parte"
    —o se abre con ?solo=parte— la app enseña el parte y nada más: ni ópticas,
@@ -4259,12 +4398,23 @@ const SOLO_PARTE = (document.documentElement.dataset.solo === "parte") ||
 function modoParteSolo(){
   if (!SOLO_PARTE) return;
   document.documentElement.classList.add("solo-parte");
-  document.title = "WALLIO · Parte de cámara";
+  document.title = traduce("WALLIO · Parte de cámara");
   const wl = document.querySelector("header .wl");
   if (wl) wl.textContent = traduce("Parte de cámara");
   show("parte");
   const dd = $("pp_bloque");
-  if (dd && !(S.prod.proyecto || "").trim()) dd.open = true;
+  if (dd && !(S.prod.proyecto || "").trim()){
+    dd.open = true;
+    // empezar es escribir: la fecha ya está puesta y el cursor en Proyecto
+    if (!(S.prod.fecha || "").trim()){
+      S.prod.fecha = hoyLocal();
+      const f1 = $("pp_fecha"), f2 = $("p_fecha");
+      if (f1) f1.value = S.prod.fecha;
+      if (f2) f2.value = S.prod.fecha;
+    }
+    const p = $("pp_proyecto");
+    if (p) setTimeout(function(){ p.focus(); }, 300);
+  }
   // aquí no hay «otras pestañas» a las que mandar a nadie
   const nota = document.querySelector("#v-parte > .note");
   if (nota) nota.innerHTML = "<b>" + traduce("El parte del rollo.") + "</b> " +
@@ -4272,6 +4422,14 @@ function modoParteSolo(){
   const res = document.querySelector("#pp_bloque > summary");
   if (res) res.innerHTML = "<b>" + traduce("Datos del proyecto") + "</b> — <span>" +
     traduce("proyecto, jornada, fecha y quién responde") + "</span>";
+}
+
+
+/* la fecha de HOY en hora local: toISOString va en UTC y a las 00:30 de
+   Madrid diría ayer; en un rodaje eso es un parte con la fecha mal */
+function hoyLocal(){
+  const d = new Date(), z = function(n){ return String(n).padStart(2, "0"); };
+  return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
 }
 
 /* ---- la tira: esto es de tal proyecto y tal rollo, siempre a la vista ---- */
@@ -4289,12 +4447,45 @@ function pintaTira(){
   t.classList.toggle("vacia", !proy);
   $("tp_proy").textContent = proy || traduce("Sin proyecto");
   $("tp_det").textContent = det;
+  /* el parte abierto es de una fecha anterior y ya tiene tomas: casi seguro
+     que hoy es otra jornada. Se ofrece el salto; no se salta solo, que los
+     rodajes terminan de madrugada y a las 00:30 la jornada sigue siendo la
+     de ayer. */
+  const js = $("tp_jsig");
+  if (js) js.hidden = !(proy && (P.fecha || "") && P.fecha < hoyLocal() && n > 0);
 }
 function abreProdParte(){
   const dd = $("pp_bloque"); if (!dd) return;
   dd.open = true;
   dd.scrollIntoView({block: "start"});
   const p = $("pp_proyecto"); if (p) setTimeout(function(){ p.focus(); }, 120);
+}
+
+
+/* ============ RODAJES DE VARIOS DÍAS ============
+   Al pasar de jornada, la producción se actualiza sola: la fecha pasa a
+   hoy, el número de jornada sube uno y el rollo sigue la numeración.
+   Solo se vacían las tomas. Proyecto, productora, unidad, localización,
+   casa, DIT y los ajustes de cámara viajan a la jornada nueva.        */
+function jornadaSiguiente(){
+  if (!confirm(traduce("Se guarda el parte de esta jornada y se empieza la siguiente: la fecha pasa a hoy, el número de jornada sube uno y el rollo sigue la numeración. Las tomas se vacían; todo lo demás se conserva.")))
+    return;
+  ptArchiva(false);                          // la jornada que acaba, al archivo
+  if ((S.prod.jornada || "").trim()) S.prod.jornada = siguienteRollo(S.prod.jornada);
+  S.prod.fecha = hoyLocal();
+  const R = Object.assign({}, S.parte.roll || {});
+  if ((R.roll || "").trim()) R.roll = siguienteRollo(R.roll);
+  S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
+             camposRollo: (S.parte.camposRollo || []).slice()};
+  if (typeof fillProd === "function") fillProd();
+  if (typeof fillProdParte === "function") fillProdParte();
+  fillParte(); renderTomas();
+  if (typeof renderCampos === "function") renderCampos();
+  if (typeof renderRollExtra === "function") renderRollExtra();
+  updateChip(); pintaTira(); autoguarda(); ptLista();
+  ptMsg(traduce("Jornada nueva: ") + (S.prod.jornada || "—") + " · " + S.prod.fecha +
+        " · " + traduce("rollo ") + ((S.parte.roll || {}).roll || "—"), "good");
+  window.scrollTo(0, 0);
 }
 
 /* ---- los partes que viven en este aparato ---- */
@@ -4766,9 +4957,6 @@ const EN = {
 "Captura":"Capture","Parte":"Report","Emitir":"Issue","cobertura":"coverage","completo":"complete",
 "falta":"missing","tomas":"takes","grids":"grids","fmt":"fmt",
 /* --- pestaña Producción --- */
-"Toda captura empieza aquí.":"Every capture starts here.",
-"Sin estos datos el registro no se puede archivar ni reclamar después. Se rellena una vez por jornada.":
- "Without this the record cannot be filed or claimed later. Fill it once per shooting day.",
 "Responsables":"People responsible","Proyecto":"Project","Producción / cliente":"Production / client",
 "Unidad":"Unit","Nº de jornada":"Shoot day","Localización":"Location",
 "Fecha de captura":"Capture date","Capturado por":"Captured by","Función":"Role",
@@ -5115,6 +5303,128 @@ const EN = {
  "the link for this delivery opens the records of these lenses and their grids. If a lens goes to the workshop during the shoot, its grid stops being valid from that day.",
 "Prod.":"Prod.","Parte de cámara":"Camera report",
 "Otro servidor":"Other server",
+"¿Vienes solo por el parte de cámara?":"Here just for the camera report?",
+"El parte tiene su propia app: producción, rollos y tomas, y nada más. Empieza pidiendo los datos de producción, con el mismo formato que aquí.":
+ "The report has its own app: production, rolls and takes, nothing else. It starts by asking for the production details, in the same format as here.",
+"Abrir la app del parte":"Open the report app",
+"Uso la plataforma entera":"I use the whole platform",
+"Empezar la jornada siguiente":"Start the next day",
+"Jornada nueva":"New day",
+"Se guarda el parte de esta jornada y se empieza la siguiente: la fecha pasa a hoy, el número de jornada sube uno y el rollo sigue la numeración. Las tomas se vacían; todo lo demás se conserva.":
+ "This day's report is saved and the next one starts: the date moves to today, the day number goes up by one and the roll keeps its numbering. Takes are cleared; everything else is kept.",
+"Jornada nueva: ":"New day: ","rollo ":"roll ",
+/* --- pestaña Guía --- */
+"Guía":"Guide",
+"WALLIO · Parte de cámara":"WALLIO · Camera Report",
+"Esta página es el manual.":"This page is the manual.",
+"Qué hace cada pestaña y qué tiene que cumplir un grid para que cualquier casa de VFX lo dé por bueno. Léela entera una vez; en rodaje se consulta en segundos.":
+ "What every tab does, and what a grid has to meet for any VFX house to accept it. Read it once in full; on set it takes seconds to check.",
+"El recorrido por la app":"A tour of the app",
+"Producción.":"Production.",
+"Proyecto, jornada, fecha y responsables. Se rellena una vez por jornada y viaja con todo lo que se capture: sin estos datos nada se puede archivar ni reclamar después.":
+ "Project, shooting day, date and the people responsible. Filled once per day, it travels with everything you capture: without it nothing can be filed or claimed later.",
+"Óptica.":"Lens.",
+"La serie y cada lente con su número de serie. La distorsión es de este ejemplar, no del modelo: dos lentes «iguales» no dibujan igual. Sin número de serie, el grid no identifica a nadie.":
+ "The lens set, each lens with its serial number. Distortion belongs to this unit, not to the model: two “identical” lenses do not draw alike. Without a serial number a grid identifies nobody.",
+"Equipo.":"Camera.",
+"El cuerpo, el modo de sensor y el formato de grabación con los que se capturan los grids. Tienen que ser los mismos que usará la producción.":
+ "The body, the sensor mode and the recording format the grids are captured with. They have to match what the production will shoot.",
+"Captura.":"Capture.",
+"La lista de capturas: lente, focal, distancia y T, cada una con su testigo — la foto del set — si se quiere. De un vistazo se ve qué está hecho y qué falta.":
+ "The capture list: lens, focal length, distance and T-stop, each with its witness — the photo of the set — if you want one. One glance shows what is done and what is missing.",
+"Emitir.":"Issue.",
+"La ficha en PDF y el paquete completo para la casa de renta o para VFX.":
+ "The PDF sheet and the complete package for the rental house or for VFX.",
+"Casa.":"House.",
+"Para casas de renta: inventario con estado de calibración, entregas y albaranes.":
+ "For rental houses: inventory with calibration status, handovers and delivery notes.",
+"Parte.":"Report.",
+"El parte de cámara por rollo. Existe también como app propia en wallioapp.com/parte/ y comparte formato con la plataforma.":
+ "The per-roll camera report. It also lives as its own app at wallioapp.com/parte/ and shares its format with the platform.",
+"Buzón.":"Inbox.",
+"Lo que estorbe, falte o te haya salvado un día de rodaje: se lee todo.":
+ "Whatever gets in the way, is missing, or saved your shooting day: all of it gets read.",
+"La carta":"The chart",
+"Patrón.":"Pattern.",
+"Damero (checkerboard) o retícula de línea fina, de contraste alto y acabado mate. Los brillos se comen las esquinas del patrón.":
+ "Checkerboard or fine-line grid, high contrast, matte finish. Glare eats the corners of the pattern.",
+"Plana y rígida.":"Flat and rigid.",
+"Cartón pluma grueso, dibond o aluminio. Una carta alabeada mete una curvatura que no es de la lente y arruina el cálculo.":
+ "Thick foam board, dibond or aluminium. A warped chart adds a curvature that does not belong to the lens and ruins the solve.",
+"Tamaño.":"Size.",
+"El necesario para llenar el encuadre entero a la distancia de trabajo. Con angulares: carta grande o carta cerca.":
+ "Enough to fill the whole frame at the working distance. With wide lenses: a big chart, or a close one.",
+"Medidas apuntadas.":"Measurements written down.",
+"Ancho, alto y paso del patrón, en Producción → Instrumental y condiciones. Sin el paso real no hay escala.":
+ "Width, height and pattern pitch, under Production → Instruments and conditions. Without the real pitch there is no scale.",
+"La puesta: cámara y carta":"The setup: camera and chart",
+"Sensor paralelo a la carta.":"Sensor parallel to the chart.",
+"Eje óptico perpendicular al centro. Nivel en cámara y en carta, y las cuatro esquinas a la misma distancia, con cinta o láser. Un grid en escorzo mide keystone, no distorsión.":
+ "Optical axis perpendicular to the centre. Level on camera and chart, and the four corners at the same distance, by tape or laser. A skewed grid measures keystone, not distortion.",
+"Centro con centro.":"Centre on centre.",
+"El centro de la carta en el centro exacto del encuadre.":
+ "The centre of the chart on the exact centre of frame.",
+"La distancia, desde el plano de sensor.":"Distance, from the sensor plane.",
+"De la marca Φ del cuerpo al frente de la carta, y se apunta tal cual, sin redondear.":
+ "From the Φ mark on the body to the face of the chart, written down as measured, no rounding.",
+"Luz pareja.":"Even light.",
+"Dos fuentes a 45°, sin reflejos ni caída hacia los bordes. Y sin parpadeos: fuentes fiables a tu frecuencia de obturación.":
+ "Two sources at 45°, no glare, no fall-off towards the edges. And no flicker: sources you trust at your shutter frequency.",
+"El encuadre":"Framing",
+"La carta cubre el encuadre entero, esquinas incluidas.":
+ "The chart covers the whole frame, corners included.",
+"La distorsión vive en los bordes: una esquina sin patrón es un agujero justo donde el dato más falta hace.":
+ "Distortion lives at the edges: a corner without pattern is a hole exactly where the data matters most.",
+"Mejor sobrar que faltar.":"Better too much than too little.",
+"Si la carta asoma por los cuatro lados, perfecto.":
+ "If the chart spills past all four sides, perfect.",
+"El mismo modo de sensor que la producción.":"The same sensor mode as the production.",
+"Cambiar de modo de sensor o de resolución cambia el mapa de distorsión: un grid en open gate no sirve para un rodaje en crop 4K. Anamórficas: mismo squeeze, y se graba sin desqueeze.":
+ "Changing sensor mode or resolution changes the distortion map: an open-gate grid is useless for a 4K-crop shoot. Anamorphics: same squeeze, recorded without desqueeze.",
+"El recorrido de capturas":"The capture run",
+"Lentes fijas.":"Primes.",
+"Cada lente a varias distancias de foco: mínima, corta, media y lejos o infinito. La geometría respira con el foco; una sola distancia no retrata la lente.":
+ "Each lens at several focus distances: minimum, close, mid and far or infinity. Geometry breathes with focus; a single distance does not portray the lens.",
+"Cada focal marcada en el anillo y, en cada focal, al menos dos distancias.":
+ "Every marked focal length on the ring and, at each one, at least two distances.",
+"Diafragma.":"Iris.",
+"Una T media (4–5,6) donde las esquinas estén nítidas, apuntando la T usada. Si VFX pide una serie por T, se repite el recorrido.":
+ "A mid T-stop (4–5.6) where the corners are sharp, writing down the T you used. If VFX asks for a series per T-stop, repeat the run.",
+"Unos segundos quietos por posición.":"A few still seconds per position.",
+"Sin tocar foco ni zoom mientras rueda. Cantar lente, focal y distancia a cámara, o meter claqueta, le ahorra horas al que ingesta.":
+ "Do not touch focus or zoom while rolling. Calling lens, focal length and distance to camera, or slating it, saves the ingest artist hours.",
+"Exposición y foco":"Exposure and focus",
+"El foco, en la carta.":"Focus on the chart.",
+"Afinado en el centro, a la distancia marcada. Si el anillo dice 1,2 m y el foco real cae en 1,26 m, se apunta el real: para eso está el campo.":
+ "Fine-tuned at the centre, at the marked distance. If the ring says 1.2 m and true focus lands at 1.26 m, write down the true one: that is what the field is for.",
+"Exposición media.":"Mid exposure.",
+"El blanco del damero sin recortar y el negro con detalle. Se graba en el log nativo de la cámara, sin LUT quemada.":
+ "Checkerboard whites unclipped, blacks holding detail. Record in the camera's native log, with no baked-in LUT.",
+"Todo lo «inteligente», apagado.":"Everything “smart”, off.",
+"Estabilización interna o de lente, reencuadre electrónico y corrección de distorsión en cámara falsean el grid. Apagado, y comprobado, antes de rodar.":
+ "In-body or in-lens stabilisation, electronic reframing and in-camera distortion correction all fake the grid. Off, and checked, before rolling.",
+"Los metadatos":"The metadata",
+"Cada captura lleva lente y número de serie, focal, distancia de foco, T, modo de sensor y formato. La app los pide en el momento porque rellenarlos cuesta segundos; reconstruirlos a los tres meses es imposible. El testigo — la foto del set con la carta puesta — cierra cualquier discusión: qué carta, a qué distancia, con qué luz. Con la producción rellena, el registro queda archivado por proyecto y jornada, y desde Emitir se entrega o se reclama entero.":
+ "Every capture carries lens and serial number, focal length, focus distance, T-stop, sensor mode and format. The app asks for them in the moment because filling them in takes seconds; rebuilding them three months later is impossible. The witness — the photo of the set with the chart in place — settles any argument: which chart, at what distance, under what light. With production filled in, the record is filed by project and shooting day, and from Issue it is delivered or claimed whole.",
+"Lo que invalida un grid":"What voids a grid",
+"La carta torcida, alabeada o fuera de centro.":"A tilted, warped or off-centre chart.",
+"Esquinas del encuadre sin patrón.":"Frame corners without pattern.",
+"Otro modo de sensor, otra resolución u otro squeeze que los de la producción.":
+ "A different sensor mode, resolution or squeeze from the production's.",
+"El foco movido durante la toma, o el foco fuera de la carta.":
+ "Focus moved during the take, or focus not on the chart.",
+"Estabilización o corrección de distorsión activadas en cámara.":
+ "Stabilisation or distortion correction active in camera.",
+"LUT quemada, blancos recortados o luz parpadeando.":
+ "A baked-in LUT, clipped whites or flickering light.",
+"Capturas sin número de serie, sin distancia o sin focal apuntadas.":
+ "Captures with no serial number, no distance or no focal length written down.",
+"El grid de un ejemplar «hermano»: misma referencia, otro número de serie. No vale.":
+ "A grid from a sibling unit: same model, different serial number. It does not count.",
+"La regla de oro.":"The golden rule.",
+"Un grid vale cuando otro técnico, sin hablar contigo, puede repetirlo idéntico solo con lo que dejaste apuntado. Todo lo demás es una foto de una carta.":
+ "A grid is valid when another technician, without talking to you, can repeat it identically from nothing but what you wrote down. Everything else is a photo of a chart.",
+
 "Pega la URL y la clave pública de tu proyecto y guarda. Si no guardas nada, al reabrir vuelve la nube de wallioapp.com.":
  "Paste your project URL and public key and save. If you save nothing, the wallioapp.com cloud comes back on reopen.",
 "El parte del rollo.":"The roll report.",
@@ -5361,7 +5671,14 @@ const EN_RX = [
  [/^Apertura máxima T([\d.]+) · squeeze ([\d.]+)× · montura (.+) · datos de lente en vivo: no ·$/i,
   "Max. aperture T$1 · squeeze $2× · $3 mount · live lens data: no ·"]
 ];
-let LANG = (location.hash.replace("#","").toLowerCase() === "en") ? "en" : "es";
+const IDIOMA_GUARDADO = "wallio.idioma";
+let LANG = (function(){
+  const h = location.hash.replace("#", "").toLowerCase();
+  if (h === "en" || h === "es") return h;              // el enlace manda
+  try { const g = localStorage.getItem(IDIOMA_GUARDADO);
+        if (g === "en" || g === "es") return g; } catch(e){}   // luego, lo elegido
+  return "en";                                         // y si no, inglés
+})();
 function traduce(s){
   if (LANG !== "en") return s;
   const k = s.trim().replace(/\s+/g, " ");
@@ -5393,12 +5710,15 @@ function aplicaIdioma(){
   RAICES().forEach(pinta);
   if (typeof pintaMsgMhl === "function") pintaMsgMhl();
   document.documentElement.lang = LANG;
+  if (typeof SOLO_PARTE !== "undefined" && SOLO_PARTE)
+    document.title = traduce("WALLIO · Parte de cámara");
   const b = $("btnLang"); if (b) b.textContent = (LANG === "en") ? "ES" : "EN";
   if (typeof pintaUndo === "function") pintaUndo();
 }
 function cambiaIdioma(){
   LANG = (LANG === "es") ? "en" : "es";
-  location.hash = (LANG === "en") ? "en" : "";
+  try { localStorage.setItem(IDIOMA_GUARDADO, LANG); } catch(e){}
+  location.hash = LANG;
   aplicaIdioma();
 }
 new MutationObserver(muts => {
@@ -5564,7 +5884,7 @@ document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
 /* ---------------- arranque ---------------- */
 fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas(); chartCheck();
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
-enlazaProdParte(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo();
+enlazaProdParte(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
 if (!(S.prod.proyecto || "").trim()){ const dd = $("pp_bloque"); if (dd) dd.open = true; }
