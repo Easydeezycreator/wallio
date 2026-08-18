@@ -205,8 +205,10 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 .doc .ctrl .cr span{font-family:"SF Mono",Menlo,monospace;font-size:8.4pt;text-align:right}
 .doc h4{font:600 8pt/1 "SF Mono",Menlo,monospace;letter-spacing:.19em;text-transform:uppercase;
  margin:11px 0 5px;padding:0 0 4px;border-bottom:1.1px solid #12151a}
-.doc h4 i{float:right;font-style:normal;letter-spacing:.04em;text-transform:none;color:#7b8393;
- font-weight:400;font-size:8.4pt}
+.doc h4{display:flex;align-items:baseline;gap:14px;justify-content:space-between}
+.doc h4 i{font-style:normal;letter-spacing:.04em;text-transform:none;color:#7b8393;
+ font-weight:400;font-size:8.4pt;text-align:right;flex:0 1 auto;min-width:0}
+.doc h4 em{flex:0 0 auto}
 .doc h4 em{font-style:normal;color:#7b8393;font-weight:400}
 .doc .fl{display:flex;flex-wrap:wrap}
 .doc .fl>div{flex:1 1 20%;min-width:122px;padding:7px 14px 7px 0}
@@ -243,7 +245,10 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
  page-break-inside:avoid}
 .doc .decl b.t{display:block;font:600 7.2pt/1 "SF Mono",Menlo,monospace;letter-spacing:.16em;
  text-transform:uppercase;margin-bottom:5px}
-.doc .sig{display:flex;gap:15px;margin-top:11px;padding-right:2px}
+/* las firmas no se quedan solas en una página: viajan con la declaración */
+.doc .sig{display:flex;gap:15px;margin-top:11px;padding-right:2px;
+ break-inside:avoid;break-before:avoid;page-break-inside:avoid;page-break-before:avoid}
+.doc .decl{break-after:avoid;page-break-after:avoid}
 .doc .sig>div{flex:1 1 0;min-width:0}
 .doc .sig .box{border:.5pt solid #cfd4dd;height:46px}
 .doc .sig .rl{font:600 7pt/1.4 "SF Mono",Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;
@@ -273,6 +278,9 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 .doc .rep{font-size:7.9pt;table-layout:fixed}
 .doc .rep td{word-break:normal;overflow-wrap:break-word}
 .doc .rep td.mo{white-space:nowrap}
+/* la distancia de foco puede ser larga («Mínimo 0.35 m → 4.00 m»): se parte
+   en dos líneas en vez de invadir la columna del timecode */
+.doc .rep td.fo{white-space:normal;overflow-wrap:anywhere}
 .doc .rep td.mo .sn{white-space:normal}
 #parte .rep td{padding:2.4px 4px}
 #parte .rep .sn{line-height:1.25}
@@ -2584,6 +2592,13 @@ function updateChip(){
 }
 
 /* ---------------- ficha ---------------- */
+/* añade la unidad solo si no la ha escrito ya el usuario o la carta:
+   antes salía «609.6 × 1066.8 mm mm» */
+function conUnidad(v, u){
+  const t = String(v == null ? "" : v).trim();
+  if (!t) return "";
+  return t.toLowerCase().indexOf(u.toLowerCase()) >= 0 ? t : t + " " + u;
+}
 function renderFicha(){
   const t = totales();
   $("s_cov").textContent = t.cov + "%"; $("s_done").textContent = t.done; $("s_new").textContent = t.nuevos;
@@ -2638,7 +2653,7 @@ function renderFicha(){
   const nTk = Object.keys(S.takes).length;
   const vol = (S.volcado || {});
   const anexoBloque = nTk ? `
-  <h4>6 · Anexo · archivos de cámara<i>los clips no se guardan aquí: se guarda dónde están y su huella</i></h4>
+  <h4>6 · Anexo · archivos de cámara<i>dónde está cada archivo y su huella</i></h4>
   <div class="decl" style="margin-bottom:5px"><b class="t">Volumen</b>
     ${esc(vol.vol || "sin declarar")}${vol.por ? " · volcado por " + esc(vol.por) : ""}.
     ${conHuella} de ${nTk} archivo(s) con huella verificable.
@@ -2722,12 +2737,12 @@ function renderFicha(){
 
   <h4>3 · Instrumental y condiciones<i>sin instrumental declarado, la medida no es auditable</i></h4>
   <div class="fl">${F("Carta · fabricante y ref.", I.carta)}${F("Patrón", I.patron)}
-    ${F("Separación", I.sep ? I.sep + " mm" : "")}${F("Medidas verificadas", I.medidas ? I.medidas + " mm" : "")}
+    ${F("Separación", conUnidad(I.sep, "mm"))}${F("Medidas verificadas", conUnidad(I.medidas, "mm"))}
     ${F("Diagonales", (I.d1 && I.d2) ? I.d1 + " / " + I.d2 + " mm" : "")}
-    ${F("Distancia a la carta", I.dist ? I.dist + " m" : "")}
+    ${F("Distancia a la carta", conUnidad(I.dist, "m"))}
     ${F("Referencia de distancia", I.ref)}${F("Medición de distancia", I.instrdist)}
     ${F("Nivelación", I.nivel)}${F("Monitor de control", I.monitor)}
-    ${F("Temperatura", I.temp ? I.temp + " °C" : "")}${F("Humedad relativa", I.hum ? I.hum + " %" : "")}</div>
+    ${F("Temperatura", conUnidad(I.temp, "°C"))}${F("Humedad relativa", conUnidad(I.hum, "%"))}</div>
 
   <h4>4 · Matriz de cobertura<i>qué falta por capturar · dónde está lo capturado</i></h4>
   <table class="mx"><tr><th>Formato de captura</th><th>Resolución · área activa</th>
@@ -3010,7 +3025,7 @@ function renderParte(){
         <span class="sn">${esc(x.serial || "sin nº de serie")}${ficha ? " · con ficha WLG-02" : ""}</span></td>
       <td class="mo">${esc(x.t ? "T" + String(x.t).replace(/^T/i,"") : "—")}</td>
       <td>${esc(x.filt || "—")}</td>
-      <td class="mo">${esc(x.foco || "—")}</td>
+      <td class="mo fo">${esc(x.foco || "—")}</td>
       <td class="mo">${esc(x.alt || "—")}${tr ? `<span class="sn">${esc(tr)}</span>` : ""}</td>
       <td class="mo">${esc(x.tc || "—")}</td>
       <td class="mo">${esc(x.dur ? x.dur + " s" : "—")}</td></tr>` +
@@ -3290,7 +3305,7 @@ const EN = {
 "Volcado olvidado. Los nombres de archivo que escribiste a mano se conservan.":
  "Offload forgotten. Any file names you typed in by hand are kept.",
 "Anexo · archivos de cámara":"Annex · camera files",
-"los clips no se guardan aquí: se guarda dónde están y su huella":
+"dónde está cada archivo y su huella":
  "the clips are not stored here: what is stored is where they are and their hash",
 "Volumen":"Volume","sin declarar":"not declared","· volcado por":"· offloaded by",
 "La huella permite comprobar, en cualquier momento y sobre cualquier copia, que el archivo entregado es exactamente el que se midió aquí.":
