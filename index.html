@@ -128,6 +128,10 @@ button.danger{color:var(--err);border-color:rgba(196,84,75,.4)}
 @media (min-width:700px){ .med .c{flex:1 1 130px} .med input,.med select{font-size:14.5px;min-height:33px} }
 .cellrow.mov{animation:mov 1.1s ease-out}
 @keyframes mov{0%{background:rgba(120,200,150,.30)}100%{background:transparent}}
+/* «hidden» tiene que ganar siempre: si no, una regla display:flex lo deja
+   visible. Pasaba con la barra de recuperar borrador, que salía vacía en
+   cuanto abrías la app aunque no hubiera nada que recuperar. */
+[hidden]{display:none !important}
 .rescate{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:9px;
  padding:8px 10px;border:1px solid var(--line);border-left:2px solid #d9a441;
  font:12px/1.4 var(--mono);color:var(--tx2)}
@@ -448,7 +452,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 .bz{display:grid;gap:9px}
 .bz .fila{display:flex;gap:9px;flex-wrap:wrap}
 .bz .fila>*{flex:1 1 150px;min-width:0}
-.bz textarea{min-height:96px;resize:vertical;font:inherit;width:100%}
+.bz textarea{min-height:104px;resize:vertical;width:100%;font:14px var(--mono)}
 .bz .ok{color:var(--ok)} .bz .mal{color:#e0736a}
 .visitas{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;
   padding:9px 11px;border-top:1px solid var(--line);font-size:12px;color:var(--tx2)}
@@ -513,33 +517,6 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
     </div>
   </div>
 
-  <div class="card">
-    <h2>Comentarios y sugerencias</h2>
-    <p style="margin:0 11px 11px;color:var(--tx2);font-size:13.5px">
-      Esto lo hace un foquista, no una empresa de software. Si algo te estorba, te falta
-      o te ha salvado un día de rodaje, dilo aquí. Se lee todo.</p>
-    <div class="bz" style="padding:0 11px 11px">
-      <div class="fila">
-        <select id="bz_tipo">
-          <option value="sugerencia">Sugerencia</option>
-          <option value="fallo">Algo que no funciona</option>
-          <option value="elogio">Me ha servido</option>
-          <option value="otro">Otra cosa</option>
-        </select>
-        <input id="bz_rol" placeholder="Tu función · 1er AC, DIT, casa de renta…">
-      </div>
-      <div class="fila">
-        <input id="bz_nombre" placeholder="Nombre (opcional)">
-        <input id="bz_correo" type="email" placeholder="Correo, si quieres respuesta (opcional)">
-      </div>
-      <textarea id="bz_texto" placeholder="Cuéntame"></textarea>
-      <div class="btnrow" style="margin:0">
-        <button class="primary" onclick="mandaComentario()">Enviar</button>
-      </div>
-      <div class="hint" id="bz_msg"></div>
-    </div>
-    <div class="visitas" id="visitasCaja"></div>
-  </div>
 </section>
 
 <!-- ===================== 1 · ÓPTICA ===================== -->
@@ -853,6 +830,36 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   </div>
 </section>
 
+<!-- ===================== 6 · BUZÓN ===================== -->
+<section id="v-buzon">
+  <div class="note"><b>Esto lo hace un foquista, no una empresa de software.</b> Lo que te estorbe,
+    lo que te falte o lo que te haya salvado un día de rodaje: dilo aquí. Se lee todo.</div>
+  <div class="card">
+    <h2>Comentarios y sugerencias</h2>
+    <div class="grid">
+      <div class="f"><label>De qué se trata</label>
+        <select id="bz_tipo">
+          <option value="sugerencia">Sugerencia</option>
+          <option value="fallo">Algo que no funciona</option>
+          <option value="elogio">Me ha servido</option>
+          <option value="otro">Otra cosa</option>
+        </select></div>
+      <div class="f"><label>Tu función</label><input id="bz_rol" placeholder="1er AC"></div>
+      <div class="f"><label>Nombre (opcional)</label><input id="bz_nombre"></div>
+      <div class="f"><label>Correo (opcional)</label><input id="bz_correo" type="email" inputmode="email"></div>
+    </div>
+    <div class="bz" style="padding:0 11px 11px">
+      <div class="f"><label>Cuéntame</label>
+        <textarea id="bz_texto" placeholder="Lo que sea, con detalle si puedes"></textarea></div>
+      <div class="btnrow" style="margin:0">
+        <button class="primary" onclick="mandaComentario()">Enviar</button>
+      </div>
+      <div class="hint" id="bz_msg"></div>
+    </div>
+    <div class="visitas" id="visitasCaja"></div>
+  </div>
+</section>
+
 </main>
 
 <nav>
@@ -862,6 +869,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   <button data-v="captura">Captura</button>
   <button data-v="ficha">Emitir</button>
   <button data-v="parte">Parte</button>
+  <button data-v="buzon">Buzón</button>
 </nav>
 
 <div id="lupa" onclick="cierraLupa()"><img id="lupa_img" alt=""><div class="pie" id="lupa_pie"></div></div>
@@ -2574,6 +2582,7 @@ function estadoPestanas(){
   };
   document.querySelectorAll("nav button").forEach(b => {
     const v = b.dataset.v, ok = est[v];
+    if (!(v in est)) return;              // el buzón no es una fase del trabajo
     let i = b.querySelector("i");
     if (!i){ i = document.createElement("i"); b.appendChild(i); }
     if (v === "captura"){ i.className = ok ? "ok" : "no"; i.textContent = t.done ? t.done + " grids" : "—"; }
@@ -3375,14 +3384,18 @@ const EN = {
 "Ese testigo todavía no está en la nube.":"That witness frame is not in the cloud yet.",
 "La plataforma no guarda los clips: un grid completo de una óptica en ARRIRAW 4.6K Open Gate pasa de 50 GB. Guarda un fotograma de cada celda, que es lo que hace que el archivo se pueda mirar años después, más el puntero y la huella del clip.":
  "The platform does not store the clips: a full grid of one lens in ARRIRAW 4.6K Open Gate is over 50 GB. It stores one frame per cell, which is what makes the archive something you can still look at years later, plus the pointer and the checksum of the clip.",
-"Comentarios y sugerencias":"Comments and suggestions",
+"Comentarios y sugerencias":"Comments and suggestions","Buzón":"Inbox",
+"Esto lo hace un foquista, no una empresa de software.":"This is built by a focus puller, not a software company.",
+"Lo que te estorbe, lo que te falte o lo que te haya salvado un día de rodaje: dilo aquí. Se lee todo.":
+ "Whatever gets in your way, is missing, or saved your shooting day: say it here. Everything gets read.",
 "Esto lo hace un foquista, no una empresa de software. Si algo te estorba, te falta o te ha salvado un día de rodaje, dilo aquí. Se lee todo.":
  "This is built by a focus puller, not a software company. If something gets in your way, is missing, or saved your shooting day, say so here. Everything gets read.",
 "Sugerencia":"Suggestion","Algo que no funciona":"Something is broken","Me ha servido":"It helped me",
 "Otra cosa":"Something else","Enviar":"Send","Cuéntame":"Tell me",
 "Tu función · 1er AC, DIT, casa de renta…":"Your role · 1st AC, DIT, rental house…",
-"Nombre (opcional)":"Name (optional)",
-"Correo, si quieres respuesta (opcional)":"Email, if you want a reply (optional)",
+"Nombre (opcional)":"Name (optional)","Correo (opcional)":"Email (optional)",
+"De qué se trata":"What is this about","Tu función":"Your role",
+"Lo que sea, con detalle si puedes":"Anything, with detail if you can",
 "Escribe un poco más y te leo.":"Write a little more and I will read it.",
 "Ese correo no parece válido.":"That email does not look valid.",
 "Enviando…":"Sending…","No se pudo enviar.":"It could not be sent.",
