@@ -408,6 +408,22 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   nav button{min-height:66px;font-size:12px}
 }
 @page{size:A4;margin:11mm 12mm}
+
+.tg{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-top:1px solid var(--line);flex-wrap:wrap}
+.tg img{width:104px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:#000;cursor:zoom-in}
+.tg .vac{width:104px;height:72px;border-radius:6px;border:1px dashed var(--line);display:flex;
+  align-items:center;justify-content:center;color:var(--tx3);font-size:10px;text-align:center;padding:4px}
+.tg .d{flex:1 1 150px;min-width:0;font-size:11.5px;color:var(--tx2);line-height:1.5}
+.tg .d b{color:var(--tx);font-weight:600}
+.tg .est{font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.tg .est.ok{color:var(--ok)} .tg .est.esp{color:#e0a33c} .tg .est.no{color:var(--tx3)}
+.tg button{min-height:34px;font-size:12px;padding:0 12px;flex:0 0 auto}
+#lupa{position:fixed;inset:0;background:rgba(6,8,11,.94);z-index:99;display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:16px}
+#lupa.on{display:flex}
+#lupa img{max-width:100%;max-height:82vh;object-fit:contain;border-radius:6px}
+#lupa .pie{color:var(--tx2);font-size:12.5px;text-align:center}
+@media print{.tg button,#lupa{display:none!important}}
 </style>
 </head>
 <body>
@@ -703,6 +719,18 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
       </div>
       <div class="hint" id="nb_msg"></div>
       <div id="nb_listado"></div>
+      <div style="border-top:1px solid var(--line);margin-top:11px;padding-top:11px">
+        <label>Tamaño del fotograma testigo</label>
+        <select id="tg_lado" onchange="tgPonAjuste(this.value)">
+          <option value="0">Tal cual sale de la cámara — unos 50 MB por óptica</option>
+          <option value="1920">Reducido a 1920 px — unos 10 MB por óptica</option>
+          <option value="1280">Reducido a 1280 px — unos 5 MB por óptica</option>
+        </select>
+        <div class="hint" id="tg_ajuste_msg"></div>
+        <div class="hint">La plataforma no guarda los clips: un grid completo de una óptica en
+          ARRIRAW 4.6K Open Gate pasa de 50 GB. Guarda un fotograma de cada celda, que es lo que
+          hace que el archivo se pueda mirar años después, más el puntero y la huella del clip.</div>
+      </div>
     </div>
   </div>
   <div class="card">
@@ -772,6 +800,8 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   <button data-v="parte">Parte</button>
 </nav>
 
+<div id="lupa" onclick="cierraLupa()"><img id="lupa_img" alt=""><div class="pie" id="lupa_pie"></div></div>
+<input type="file" id="tg_file" accept="image/*" hidden>
 <div id="ficha" class="doc"></div>
 <div id="parte" class="doc"></div>
 
@@ -1382,6 +1412,216 @@ function focosDelFabricante(){
     + fmtMetros(d.m) + " (" + d.ref + ")." + (previas.length ? " " + traduce("Deshacer devuelve las anteriores.") : "");
 }
 
+
+/* ================= FOTOGRAMA TESTIGO DEL GRID =================
+   Un grid entero de una óptica en ARRIRAW pasa de 50 GB: eso no se aloja.
+   Lo que sí se guarda es UN fotograma por celda. Es lo que convierte la
+   ficha en un stock que se puede mirar y comparar años después.          */
+
+const TG_CUBO = "testigos";
+/* lado máximo al subir. 0 = tal cual sale de la cámara (lo que pesa de verdad) */
+let TG_LADO = 0;
+function tgAjuste(){
+  try { const v = localStorage.getItem("wallio.testigo.lado");
+        if (v !== null) TG_LADO = parseInt(v, 10) || 0; } catch(e){}
+  return TG_LADO;
+}
+function tgPonAjuste(px){
+  TG_LADO = parseInt(px, 10) || 0;
+  try { localStorage.setItem("wallio.testigo.lado", String(TG_LADO)); } catch(e){}
+  const m = $("tg_ajuste_msg");
+  if (m) m.textContent = TG_LADO
+    ? traduce("Se subirán reducidos a ") + TG_LADO + traduce(" px de lado mayor.")
+    : traduce("Se suben tal cual salen de la cámara.");
+}
+
+/* nombre de archivo dentro del almacén: casa / óptica / formato__foco.jpg */
+function tgRuta(fmtKey, foco){
+  if (!NB.casa || !S.lens.serial) return null;
+  const opt = wlNorm(S.lens.marca) + "-" + wlNorm(S.lens.serial);
+  const f = S.formats.find(x => x.key === fmtKey) || {};
+  return NB.casa + "/" + opt + "/" + slug(f.fmt || fmtKey) + "__" + focoSlug(foco) + ".jpg";
+}
+
+/* --------- cola en IndexedDB: una imagen no cabe en localStorage --------- */
+let TG_BD = null;
+function tgAbre(){
+  return new Promise(function(ok, mal){
+    if (TG_BD) return ok(TG_BD);
+    if (!window.indexedDB) return mal(new Error("sin almacén local"));
+    const p = indexedDB.open("wallio_testigos", 1);
+    p.onupgradeneeded = function(){ p.result.createObjectStore("cola", {keyPath:"ruta"}); };
+    p.onsuccess = function(){ TG_BD = p.result; ok(TG_BD); };
+    p.onerror = function(){ mal(p.error); };
+  });
+}
+function tgTrans(modo){
+  return tgAbre().then(function(bd){ return bd.transaction("cola", modo).objectStore("cola"); });
+}
+function tgGuardaLocal(reg){
+  return tgTrans("readwrite").then(function(t){
+    return new Promise(function(ok, mal){
+      const r = t.put(reg); r.onsuccess = function(){ ok(); }; r.onerror = function(){ mal(r.error); };
+    });
+  });
+}
+function tgPendientes(){
+  return tgTrans("readonly").then(function(t){
+    return new Promise(function(ok){
+      const r = t.getAll(); r.onsuccess = function(){ ok(r.result || []); };
+      r.onerror = function(){ ok([]); };
+    });
+  }).catch(function(){ return []; });
+}
+function tgQuitaLocal(ruta){
+  return tgTrans("readwrite").then(function(t){
+    return new Promise(function(ok){ const r = t.delete(ruta); r.onsuccess = function(){ ok(); };
+                                     r.onerror = function(){ ok(); }; });
+  }).catch(function(){});
+}
+
+/* --------- reducir antes de subir, solo si se ha pedido --------- */
+function tgPrepara(file){
+  const lado = tgAjuste();
+  if (!lado) return Promise.resolve(file);
+  return new Promise(function(ok){
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = function(){
+      const m = Math.max(img.width, img.height);
+      if (m <= lado){ URL.revokeObjectURL(url); return ok(file); }
+      const e = lado / m, c = document.createElement("canvas");
+      c.width = Math.round(img.width * e); c.height = Math.round(img.height * e);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(function(b){ URL.revokeObjectURL(url); ok(b || file); }, "image/jpeg", 0.9);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); ok(file); };
+    img.src = url;
+  });
+}
+
+/* --------- subir y bajar del almacén --------- */
+function tgSubeBlob(ruta, blob){
+  return fetch(NB.url + "/storage/v1/object/" + TG_CUBO + "/" + ruta, {
+    method: "POST",
+    headers: {"apikey": NB.key, "Authorization": "Bearer " + NB.token,
+              "Content-Type": blob.type || "image/jpeg",
+              "x-upsert": "true"},
+    body: blob
+  }).then(function(r){
+    if (!r.ok) return r.text().then(function(t){ throw new Error(t.slice(0, 160) || r.status); });
+    return true;
+  });
+}
+function tgUrl(ruta){
+  return fetch(NB.url + "/storage/v1/object/" + TG_CUBO + "/" + ruta, {
+    headers: {"apikey": NB.key, "Authorization": "Bearer " + NB.token}
+  }).then(function(r){ if (!r.ok) throw new Error("no está"); return r.blob(); })
+    .then(function(b){ return URL.createObjectURL(b); });
+}
+
+/* --------- el botón de la celda --------- */
+let TG_DESTINO = null;
+function pideTestigo(fmtKey, foco){
+  if (!NB.casa){ alert(traduce("Para guardar el testigo hace falta entrar en la casa de renta (pestaña Emitir).")); return; }
+  if (!S.lens.serial){ alert(traduce("Falta el número de serie de la óptica.")); return; }
+  TG_DESTINO = {fmtKey: fmtKey, foco: foco};
+  const f = $("tg_file"); f.value = ""; f.click();
+}
+function tgElegido(file){
+  if (!file || !TG_DESTINO) return;
+  const d = TG_DESTINO; TG_DESTINO = null;
+  const k = tkey(d.fmtKey, d.foco), t = S.takes[k];
+  if (!t){ alert(traduce("Marca antes esa celda como capturada.")); return; }
+  const ruta = tgRuta(d.fmtKey, d.foco);
+  if (!ruta) return;
+  guarda();
+  tgPrepara(file).then(function(blob){
+    t.tg = {ruta: ruta, bytes: blob.size, tipo: blob.type || "image/jpeg",
+            fecha: new Date().toISOString().slice(0, 10), estado: "esperando"};
+    renderCaptura(); updateChip(); autoguarda();
+    return tgGuardaLocal({ruta: ruta, blob: blob, k: k})
+      .then(function(){ return tgDrena(); })
+      .catch(function(){ /* sin IndexedDB se intenta directo */ return tgSubeYa(ruta, blob, k); });
+  });
+}
+function tgSubeYa(ruta, blob, k){
+  return tgSubeBlob(ruta, blob).then(function(){
+    if (S.takes[k] && S.takes[k].tg) S.takes[k].tg.estado = "guardado";
+    renderCaptura(); autoguarda();
+  }).catch(function(e){
+    if (S.takes[k] && S.takes[k].tg) S.takes[k].tg.estado = "esperando";
+    renderCaptura();
+    throw e;
+  });
+}
+let tgDrenando = false;
+function tgDrena(){
+  if (tgDrenando || !NB.token || !navigator.onLine) return Promise.resolve(0);
+  tgDrenando = true;
+  return tgPendientes().then(function(lista){
+    let hechas = 0;
+    return lista.reduce(function(cad, reg){
+      return cad.then(function(){
+        return tgSubeBlob(reg.ruta, reg.blob).then(function(){
+          hechas++;
+          if (S.takes[reg.k] && S.takes[reg.k].tg) S.takes[reg.k].tg.estado = "guardado";
+          return tgQuitaLocal(reg.ruta);
+        }).catch(function(){ /* se queda para el siguiente intento */ });
+      });
+    }, Promise.resolve()).then(function(){
+      tgDrenando = false;
+      if (hechas){ renderCaptura(); autoguarda(); nbPinta(); }
+      return hechas;
+    });
+  }).catch(function(){ tgDrenando = false; return 0; });
+}
+
+/* --------- verlo --------- */
+function abreTestigo(fmtKey, foco){
+  const t = S.takes[tkey(fmtKey, foco)];
+  if (!t || !t.tg) return;
+  const pie = S.lens.marca + " " + S.lens.fam + " " + S.lens.focal + " mm · " +
+              S.lens.serial + " · " + foco + " · " + fmtKey;
+  $("lupa_pie").textContent = pie;
+  $("lupa_img").removeAttribute("src");
+  $("lupa").classList.add("on");
+  tgUrl(t.tg.ruta).then(function(u){ $("lupa_img").src = u; })
+    .catch(function(){ $("lupa_pie").textContent = traduce("Ese testigo todavía no está en la nube."); });
+}
+function cierraLupa(){
+  $("lupa").classList.remove("on");
+  const i = $("lupa_img");
+  if (i.src && i.src.indexOf("blob:") === 0) URL.revokeObjectURL(i.src);
+  i.removeAttribute("src");
+}
+/* --------- el bloque que se ve en cada celda --------- */
+function bloqueTestigo(k, id, fmtKey, foco){
+  const t = S.takes[k] || {};
+  const g = t.tg;
+  const est = !g ? "" : (g.estado === "guardado"
+      ? '<span class="est ok">' + traduce("guardado en la casa") + "</span>"
+      : '<span class="est esp">' + traduce("esperando red") + "</span>");
+  const izq = g
+    ? `<img loading="lazy" onclick="abreTestigo('${id}')" src="" data-tg="${esc(g.ruta)}" alt="testigo">`
+    : `<div class="vac">${traduce("sin testigo")}</div>`;
+  const det = g
+    ? `<b>${traduce("Fotograma testigo")}</b> · ${tam(g.bytes)} · ${esc(g.fecha)}<br>${est}`
+    : `<b>${traduce("Fotograma testigo")}</b><br><span class="est no">${
+        traduce("el clip vive en el disco de la producción; aquí se guarda la imagen")}</span>`;
+  return `<div class="tg">${izq}<div class="d">${det}</div>
+    <button class="ghost" onclick="pideTestigo('${id}')">${g ? traduce("cambiar") : traduce("añadir testigo")}</button>
+  </div>`;
+}
+/* las miniaturas se piden después de pintar, para no frenar la lista */
+function pintaMiniaturas(){
+  if (!NB.token) return;
+  document.querySelectorAll(".tg img[data-tg]").forEach(function(img){
+    const r = img.getAttribute("data-tg");
+    if (!r || img.getAttribute("src")) return;
+    tgUrl(r).then(function(u){ img.src = u; }).catch(function(){ img.style.opacity = ".25"; });
+  });
+}
+
 /* ---------------- captura ---------------- */
 function sinAcentos(s){ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
 function slug(s){
@@ -1427,11 +1667,12 @@ function renderCaptura(){
           onclick="verMedia('${id}')" ${t ? "" : "hidden"}>archivo</button>
         <button class="ghost" style="min-height:40px;flex:0 0 auto;min-width:96px"
           onclick="${t ? `quitarGrid('${id}')` : `marcar('${id}')`}">${t ? "quitar" : "marcar"}</button>
-      </div>${t ? bloqueMedia(k, id) : ""}`;
+      </div>${t ? bloqueMedia(k, id) + bloqueTestigo(k, id, f.key, foco) : ""}`;
     }).join("");
     return `<div class="card"><h2>${esc(f.body)} · ${esc(f.fmt)}</h2>
       <div class="hint" style="margin:-4px 0 8px">${esc(f.res)} · ${esc(f.area)} mm</div>${filas}</div>`;
   }).join("");
+  if (typeof pintaMiniaturas === "function") setTimeout(pintaMiniaturas, 30);
 }
 function marcar(fmtKey, foco){
   guarda();
@@ -1619,6 +1860,11 @@ function renombra(fmtKey, foco, valor){
 }
 
 /* ---------------- fusión de fichas ---------------- */
+$("tg_file").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f) tgElegido(f);
+  e.target.value = "";
+});
 $("fIn").addEventListener("change", e => {
   const file = e.target.files[0]; if (!file) return;
   const r = new FileReader();
@@ -1963,6 +2209,7 @@ async function nubeTrae(clave){
           traduce("Lo que marques ahora se suma a lo que ya había."), "good");
   } catch(e){ nbMsg(e.message, "bad"); }
 }
+window.addEventListener("online", function(){ setTimeout(tgDrena, 400); });
 window.addEventListener("online", function(){ nbPinta(); nbVaciaCola(); });
 window.addEventListener("offline", nbPinta);
 
@@ -2790,6 +3037,23 @@ const EN = {
 "Este fabricante no publica el paso entre marcas: mídelo tú.":
  "This manufacturer does not publish the spacing between marks: measure it yourself.",
 "Cruces / retícula":"Crosses / reticle",
+"Fotograma testigo":"Witness frame","añadir testigo":"add witness frame","cambiar":"replace",
+"sin testigo":"no witness frame","guardado en la casa":"stored in the rental house",
+"esperando red":"waiting for signal",
+"el clip vive en el disco de la producción; aquí se guarda la imagen":
+ "the clip lives on the production's own storage; what is kept here is the still",
+"Tamaño del fotograma testigo":"Witness frame size",
+"Tal cual sale de la cámara — unos 50 MB por óptica":"Straight out of camera — about 50 MB per lens",
+"Reducido a 1920 px — unos 10 MB por óptica":"Scaled to 1920 px — about 10 MB per lens",
+"Reducido a 1280 px — unos 5 MB por óptica":"Scaled to 1280 px — about 5 MB per lens",
+"Se suben tal cual salen de la cámara.":"They are uploaded straight out of camera.",
+"Se subirán reducidos a ":"They will be scaled down to "," px de lado mayor.":" px on the long side.",
+"Para guardar el testigo hace falta entrar en la casa de renta (pestaña Emitir).":
+ "To store a witness frame you must sign in to the rental house (Issue tab).",
+"Marca antes esa celda como capturada.":"Tick that cell as captured first.",
+"Ese testigo todavía no está en la nube.":"That witness frame is not in the cloud yet.",
+"La plataforma no guarda los clips: un grid completo de una óptica en ARRIRAW 4.6K Open Gate pasa de 50 GB. Guarda un fotograma de cada celda, que es lo que hace que el archivo se pueda mirar años después, más el puntero y la huella del clip.":
+ "The platform does not store the clips: a full grid of one lens in ARRIRAW 4.6K Open Gate is over 50 GB. It stores one frame per cell, which is what makes the archive something you can still look at years later, plus the pointer and the checksum of the clip.",
 "Ancho activo (mm)":"Active width (mm)","Alto activo (mm)":"Active height (mm)",
 "Resolución (o «película»)":"Resolution (or «film»)","Añadir formato":"Add format",
 "Formatos a cubrir":"Formats to cover","3 · Distancias de foco":"3 · Focus distances",
@@ -3087,6 +3351,7 @@ document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
 /* ---------------- arranque ---------------- */
 fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas(); chartCheck();
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
+tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
 /* nube: se rellena lo guardado en este dispositivo y se intenta vaciar la cola */
 $("nb_url").value = NB.url; $("nb_key").value = NB.key;
