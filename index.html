@@ -981,9 +981,6 @@ html.solo-parte .portada{display:none}
 
 <!-- ===================== 1 · ÓPTICA ===================== -->
 <section id="v-optica">
-  <div class="note"><b>Casi todo se elige de una lista.</b> El número de serie se escribe siempre,
-    porque es lo que identifica esta unidad concreta. Y si tu óptica no está en la lista, elige
-    <b>«Otra — añadir a mano»</b> al final de cualquier desplegable y la escribes tú.</div>
   <div class="card">
     <h2>1 · Qué óptica es</h2>
     <div class="grid">
@@ -1052,8 +1049,6 @@ html.solo-parte .portada{display:none}
 
 <!-- ===================== 2 · EQUIPO ===================== -->
 <section id="v-equipo">
-  <div class="note"><b>Marca los formatos que vas a capturar hoy.</b> Cada formato usa un área
-    distinta del sensor o de la ventanilla, así que cada uno necesita su propio grid.</div>
   <div class="card">
     <h2>2 · Con qué cámara</h2>
     <label>Cuerpo</label><select id="e_body"></select>
@@ -1090,10 +1085,6 @@ html.solo-parte .portada{display:none}
 
 <!-- ===================== 3 · CAPTURA ===================== -->
 <section id="v-captura">
-  <div class="note"><b>Marca lo que vayas capturando.</b> El nombre del archivo se propone solo
-    siguiendo la nomenclatura de la norma; puedes cambiarlo.</div>
-  <div class="note"><b>Te has equivocado en algo, lo corriges y ya está.</b> Cualquier dato se puede
-    reescribir. «Deshacer», arriba, devuelve el último paso, y se puede pulsar varias veces.</div>
   <div class="card">
     <h2>Volcado · archivos de cámara</h2>
     <p style="margin:0 11px 11px;color:var(--tx2);font-size:13.5px">
@@ -1122,10 +1113,6 @@ html.solo-parte .portada{display:none}
     <button class="jsig" id="tp_jsig" onclick="jornadaSiguiente()" hidden>Jornada nueva</button>
     <button onclick="abreProdParte()">Datos</button>
   </div>
-  <div class="note"><b>El parte del rollo.</b> Cada toma queda unida al número de serie de la
-    óptica, así que desde el parte se puede saltar a la ficha de calibración de esa misma óptica.
-    Un parte por rollo o magazine. <b>Si solo quieres el parte, esta página se basta sola:</b>
-    abre el bloque de producción de aquí abajo y no hace falta que toques ninguna otra pestaña.</div>
 
   <details class="solo" id="pp_bloque">
     <summary><b>Producción</b> — <span>ábrelo si trabajas solo con el parte</span></summary>
@@ -1140,9 +1127,6 @@ html.solo-parte .portada{display:none}
         <div class="f"><label>Casa de renta / propietario</label><input id="pp_casa"></div>
         <div class="f"><label>Técnico de cámara / DIT</label><input id="pp_dit"></div>
       </div>
-      <div class="hint" id="pp_aviso"></div>
-      <div class="hint">Es el mismo dato que en la pestaña Producción: se escriba donde se
-        escriba, va al mismo sitio. Aquí está para no obligarte a ir y volver.</div>
     </div>
   </details>
 
@@ -1379,9 +1363,6 @@ html.solo-parte .portada{display:none}
 
 <!-- ===================== 6 · CASA DE RENTA ===================== -->
 <section id="v-casa">
-  <div class="note"><b>Para casas de renta.</b> El juego de ópticas que alquilas ya está aquí, ficha
-    a ficha, por número de serie. Esta pantalla lo convierte en un servicio que puedes ofrecer con
-    el equipo: entregas la óptica <b>y su grid medido</b>, y post se lo descarga con un enlace.</div>
 
   <div class="card">
     <h2>Tu casa</h2>
@@ -1457,8 +1438,6 @@ html.solo-parte .portada{display:none}
 
 <!-- ===================== 7 · BUZÓN ===================== -->
 <section id="v-buzon">
-  <div class="note"><b>Lo que te estorbe, lo que te falte o lo que te haya salvado un día de
-    rodaje: dilo aquí.</b> Se lee todo.</div>
   <div class="card">
     <h2>Comentarios y sugerencias</h2>
     <div class="grid">
@@ -1487,17 +1466,18 @@ html.solo-parte .portada{display:none}
 
 <!-- ===================== 8 · GUÍA ===================== -->
 <section id="v-guia">
+  <div class="note"><b>Para qué existe WALLIO.</b> La plataforma está pensada para que las casas de renta de equipo tengan su propio stock de grids y ofrezcan ese servicio adicional a la producción cuando alquilan una óptica determinada: la óptica sale con su grid medido, y post lo descarga con un enlace.</div>
   <div class="note"><b>Esta página es el manual.</b> Qué hace cada pestaña y qué tiene que cumplir un grid para que cualquier casa de VFX lo dé por bueno. Léela entera una vez; en rodaje se consulta en segundos.</div>
 
   <div class="card">
     <h2>El recorrido por la app</h2>
     <p><b>Producción.</b> Proyecto, jornada, fecha y responsables. Se rellena una vez por jornada y viaja con todo lo que se capture: sin estos datos nada se puede archivar ni reclamar después.</p>
-    <p><b>Óptica.</b> La serie y cada lente con su número de serie. La distorsión es de este ejemplar, no del modelo: dos lentes «iguales» no dibujan igual. Sin número de serie, el grid no identifica a nadie.</p>
-    <p><b>Equipo.</b> El cuerpo, el modo de sensor y el formato de grabación con los que se capturan los grids. Tienen que ser los mismos que usará la producción.</p>
-    <p><b>Captura.</b> La lista de capturas: lente, focal, distancia y T, cada una con su testigo — la foto del set — si se quiere. De un vistazo se ve qué está hecho y qué falta.</p>
-    <p><b>Emitir.</b> La ficha en PDF y el paquete completo para la casa de renta o para VFX.</p>
-    <p><b>Casa.</b> Para casas de renta: inventario con estado de calibración, entregas y albaranes.</p>
-    <p><b>Parte.</b> El parte de cámara por rollo. Existe también como app propia en wallioapp.com/parte/ y comparte formato con la plataforma.</p>
+    <p><b>Casa.</b> Para casas de renta: inventario con estado de calibración, entregas y albaranes. La entrega genera un enlace solo con esas ópticas y sus grids medidos; post lo descarga sin cuenta.</p>
+    <p><b>Equipo.</b> El cuerpo, el modo de sensor y el formato de grabación con los que se capturan los grids. Tienen que ser los mismos que usará la producción, y cada formato marcado necesita su propio grid: cada uno usa un área distinta del sensor.</p>
+    <p><b>Óptica.</b> La serie y cada lente con su número de serie. La distorsión es de este ejemplar, no del modelo: dos lentes «iguales» no dibujan igual. Casi todo se elige de lista y, si algo no está, «Otra — añadir a mano».</p>
+    <p><b>Captura.</b> La lista de capturas: lente, focal, distancia y T, cada una con su testigo — la foto del set — si se quiere. El nombre de archivo se propone solo según la norma, todo se puede corregir y «Deshacer» devuelve los últimos pasos.</p>
+    <p><b>Emitir.</b> Lo que se entrega sale de aquí: la ficha de calibración en PDF y el paquete para post con los enlaces de descarga de los clips de cada grid.</p>
+    <p><b>Parte.</b> El parte de cámara, uno por rollo o magazine; cada toma queda unida al número de serie de la óptica. Sus datos de producción son el mismo dato que los de la primera pestaña, se escriban donde se escriban. Existe también como app propia en wallioapp.com/parte/.</p>
     <p><b>Buzón.</b> Lo que estorbe, falte o te haya salvado un día de rodaje: se lee todo.</p>
   </div>
 
@@ -1575,11 +1555,11 @@ html.solo-parte .portada{display:none}
 
 <nav>
   <button data-v="prod" class="on">Prod.</button>
-  <button data-v="optica">Óptica</button>
+  <button data-v="casa">Casa</button>
   <button data-v="equipo">Equipo</button>
+  <button data-v="optica">Óptica</button>
   <button data-v="captura">Captura</button>
   <button data-v="ficha">Emitir</button>
-  <button data-v="casa">Casa</button>
   <button data-v="parte">Parte</button>
   <button data-v="buzon">Buzón</button>
   <button data-v="guia">Guía</button>
@@ -4332,16 +4312,8 @@ function fillProdParte(){
   });
   avisoParte();
 }
-/* dice si el parte ya se sostiene solo, mientras se escribe */
+/* lo que avisaba aquí ahora lo dice la tira; la letra vive en la Guía */
 function avisoParte(){
-  const av = $("pp_aviso");
-  if (av){
-    const faltan = ["proyecto", "fecha"].filter(function(k){ return !(S.prod[k] || "").trim(); });
-    av.className = faltan.length ? "hint bad" : "hint good";
-    av.textContent = faltan.length
-      ? traduce("Sin proyecto y fecha el parte no se puede archivar ni reclamar después.")
-      : traduce("Con esto el parte ya se sostiene solo: no hace falta pasar por ninguna otra pestaña.");
-  }
   if (typeof pintaTira === "function") pintaTira();
 }
 /* volver a abrir un parte guardado, sin depender del resto de la app */
@@ -4415,10 +4387,6 @@ function modoParteSolo(){
     const p = $("pp_proyecto");
     if (p) setTimeout(function(){ p.focus(); }, 300);
   }
-  // aquí no hay «otras pestañas» a las que mandar a nadie
-  const nota = document.querySelector("#v-parte > .note");
-  if (nota) nota.innerHTML = "<b>" + traduce("El parte del rollo.") + "</b> " +
-    traduce("Un parte por rollo o magazine. Cada toma queda unida al número de serie de la óptica: el día que esa óptica tenga ficha de calibración, post la encuentra por ese mismo número.");
   const res = document.querySelector("#pp_bloque > summary");
   if (res) res.innerHTML = "<b>" + traduce("Datos del proyecto") + "</b> — <span>" +
     traduce("proyecto, jornada, fecha y quién responde") + "</span>";
@@ -4954,10 +4922,10 @@ const EN = {
 "sin LUT":"no LUT","Mínimo":"Minimum","INF":"INF",
 /* --- navegación y cabecera --- */
 "Lens Grid Platform":"Lens Grid Platform","Producción":"Production","Óptica":"Lens","Equipo":"Camera",
-"Captura":"Capture","Parte":"Report","Emitir":"Issue","cobertura":"coverage","completo":"complete",
+"Captura":"Capture","Parte":"Report","Emitir":"Export","cobertura":"coverage","completo":"complete",
 "falta":"missing","tomas":"takes","grids":"grids","fmt":"fmt",
 /* --- pestaña Producción --- */
-"Responsables":"People responsible","Proyecto":"Project","Producción / cliente":"Production / client",
+"Responsables":"People responsible","Proyecto":"Project","Producción / cliente":"Production / client","Productora / cliente":"Production / client",
 "Unidad":"Unit","Nº de jornada":"Shoot day","Localización":"Location",
 "Fecha de captura":"Capture date","Capturado por":"Captured by","Función":"Role",
 "Casa de renta / propietario":"Rental house / owner","Casa de renta":"Rental house",
@@ -5112,7 +5080,7 @@ const EN = {
 "Todavía no hay nada subido de esta óptica.":"Nothing has been uploaded for this lens yet.",
 "Historial completo:":"Full history:","subidas, ninguna se ha perdido.":"uploads, none of them lost.",
 "Para guardar los clips hace falta entrar en la casa de renta (pestaña Emitir).":
- "To store the clips you must sign in to the rental house (Issue tab).",
+ "To store the clips you must sign in to the rental house (Export tab).",
 "Entra antes en la casa de renta.":"Sign in to the rental house first.",
 "Pidiendo los enlaces…":"Requesting the links…",
 "Esta óptica todavía no tiene ningún clip subido.":"This lens has no clips uploaded yet.",
@@ -5129,7 +5097,7 @@ const EN = {
 "Se suben tal cual salen de la cámara.":"They are uploaded straight out of camera.",
 "Se subirán reducidos a":"They will be scaled down to","px de lado mayor.":"px on the long side.",
 "Para guardar el testigo hace falta entrar en la casa de renta (pestaña Emitir).":
- "To store a witness frame you must sign in to the rental house (Issue tab).",
+ "To store a witness frame you must sign in to the rental house (Export tab).",
 "Marca antes esa celda como capturada.":"Tick that cell as captured first.",
 "Ese testigo todavía no está en la nube.":"That witness frame is not in the cloud yet.",
 "La plataforma no guarda los clips: un grid completo de una óptica en ARRIRAW 4.6K Open Gate pasa de 50 GB. Guarda un fotograma de cada celda, que es lo que hace que el archivo se pueda mirar años después, más el puntero y la huella del clip.":
@@ -5264,7 +5232,7 @@ const EN = {
 "Trayendo el inventario…":"Fetching the inventory…",
 "Todavía no hay ninguna óptica en esta casa.":"There are no lenses in this house yet.",
 "Entra en la casa de renta (pestaña Emitir) para ver su inventario.":
- "Sign in to the rental house (Issue tab) to see its inventory.",
+ "Sign in to the rental house (Export tab) to see its inventory.",
 "Guardado en este dispositivo. Entra en la casa para compartirlo con los tuyos.":
  "Saved on this device. Sign in to the house to share it with your people.",
 "Guardado. Ya sale en los documentos que emita cualquiera de la casa.":
@@ -5316,6 +5284,9 @@ const EN = {
 /* --- pestaña Guía --- */
 "Guía":"Guide",
 "WALLIO · Parte de cámara":"WALLIO · Camera Report",
+"Para qué existe WALLIO.":"What WALLIO is for.",
+"La plataforma está pensada para que las casas de renta de equipo tengan su propio stock de grids y ofrezcan ese servicio adicional a la producción cuando alquilan una óptica determinada: la óptica sale con su grid medido, y post lo descarga con un enlace.":
+ "The platform is built so equipment rental houses keep their own stock of grids and offer that extra service to the production when a given lens goes out on rental: the lens leaves with its measured grid, and post downloads it with a link.",
 "Esta página es el manual.":"This page is the manual.",
 "Qué hace cada pestaña y qué tiene que cumplir un grid para que cualquier casa de VFX lo dé por bueno. Léela entera una vez; en rodaje se consulta en segundos.":
  "What every tab does, and what a grid has to meet for any VFX house to accept it. Read it once in full; on set it takes seconds to check.",
@@ -5324,26 +5295,26 @@ const EN = {
 "Proyecto, jornada, fecha y responsables. Se rellena una vez por jornada y viaja con todo lo que se capture: sin estos datos nada se puede archivar ni reclamar después.":
  "Project, shooting day, date and the people responsible. Filled once per day, it travels with everything you capture: without it nothing can be filed or claimed later.",
 "Óptica.":"Lens.",
-"La serie y cada lente con su número de serie. La distorsión es de este ejemplar, no del modelo: dos lentes «iguales» no dibujan igual. Sin número de serie, el grid no identifica a nadie.":
- "The lens set, each lens with its serial number. Distortion belongs to this unit, not to the model: two “identical” lenses do not draw alike. Without a serial number a grid identifies nobody.",
 "Equipo.":"Camera.",
-"El cuerpo, el modo de sensor y el formato de grabación con los que se capturan los grids. Tienen que ser los mismos que usará la producción.":
- "The body, the sensor mode and the recording format the grids are captured with. They have to match what the production will shoot.",
 "Captura.":"Capture.",
-"La lista de capturas: lente, focal, distancia y T, cada una con su testigo — la foto del set — si se quiere. De un vistazo se ve qué está hecho y qué falta.":
- "The capture list: lens, focal length, distance and T-stop, each with its witness — the photo of the set — if you want one. One glance shows what is done and what is missing.",
-"Emitir.":"Issue.",
-"La ficha en PDF y el paquete completo para la casa de renta o para VFX.":
- "The PDF sheet and the complete package for the rental house or for VFX.",
+"Emitir.":"Export.",
 "Casa.":"House.",
-"Para casas de renta: inventario con estado de calibración, entregas y albaranes.":
- "For rental houses: inventory with calibration status, handovers and delivery notes.",
 "Parte.":"Report.",
-"El parte de cámara por rollo. Existe también como app propia en wallioapp.com/parte/ y comparte formato con la plataforma.":
- "The per-roll camera report. It also lives as its own app at wallioapp.com/parte/ and shares its format with the platform.",
 "Buzón.":"Inbox.",
 "Lo que estorbe, falte o te haya salvado un día de rodaje: se lee todo.":
  "Whatever gets in the way, is missing, or saved your shooting day: all of it gets read.",
+"Para casas de renta: inventario con estado de calibración, entregas y albaranes. La entrega genera un enlace solo con esas ópticas y sus grids medidos; post lo descarga sin cuenta.":
+ "For rental houses: inventory with calibration status, handovers and delivery notes. A handover makes one link with just those lenses and their measured grids; post downloads it without an account.",
+"El cuerpo, el modo de sensor y el formato de grabación con los que se capturan los grids. Tienen que ser los mismos que usará la producción, y cada formato marcado necesita su propio grid: cada uno usa un área distinta del sensor.":
+ "The body, the sensor mode and the recording format the grids are captured with. They have to match what the production will shoot, and every format you tick needs its own grid: each one uses a different area of the sensor.",
+"La serie y cada lente con su número de serie. La distorsión es de este ejemplar, no del modelo: dos lentes «iguales» no dibujan igual. Casi todo se elige de lista y, si algo no está, «Otra — añadir a mano».":
+ "The lens set, each lens with its serial number. Distortion belongs to this unit, not to the model: two “identical” lenses do not draw alike. Almost everything is picked from a list and, if something is missing, «Other — add by hand».",
+"La lista de capturas: lente, focal, distancia y T, cada una con su testigo — la foto del set — si se quiere. El nombre de archivo se propone solo según la norma, todo se puede corregir y «Deshacer» devuelve los últimos pasos.":
+ "The capture list: lens, focal length, distance and T-stop, each with its witness — the photo of the set — if you want one. File names are proposed automatically following the standard, everything can be corrected, and Undo brings back the last steps.",
+"Lo que se entrega sale de aquí: la ficha de calibración en PDF y el paquete para post con los enlaces de descarga de los clips de cada grid.":
+ "What you hand over comes out of here: the calibration record as a PDF and the package for post with the download links for every grid clip.",
+"El parte de cámara, uno por rollo o magazine; cada toma queda unida al número de serie de la óptica. Sus datos de producción son el mismo dato que los de la primera pestaña, se escriban donde se escriban. Existe también como app propia en wallioapp.com/parte/.":
+ "The camera report, one per roll or magazine; every take is tied to the serial number of the lens. Its production details are the same data as the first tab's, wherever you type them. It also lives as its own app at wallioapp.com/parte/.",
 "La carta":"The chart",
 "Patrón.":"Pattern.",
 "Damero (checkerboard) o retícula de línea fina, de contraste alto y acabado mate. Los brillos se comen las esquinas del patrón.":
@@ -5405,7 +5376,7 @@ const EN = {
  "In-body or in-lens stabilisation, electronic reframing and in-camera distortion correction all fake the grid. Off, and checked, before rolling.",
 "Los metadatos":"The metadata",
 "Cada captura lleva lente y número de serie, focal, distancia de foco, T, modo de sensor y formato. La app los pide en el momento porque rellenarlos cuesta segundos; reconstruirlos a los tres meses es imposible. El testigo — la foto del set con la carta puesta — cierra cualquier discusión: qué carta, a qué distancia, con qué luz. Con la producción rellena, el registro queda archivado por proyecto y jornada, y desde Emitir se entrega o se reclama entero.":
- "Every capture carries lens and serial number, focal length, focus distance, T-stop, sensor mode and format. The app asks for them in the moment because filling them in takes seconds; rebuilding them three months later is impossible. The witness — the photo of the set with the chart in place — settles any argument: which chart, at what distance, under what light. With production filled in, the record is filed by project and shooting day, and from Issue it is delivered or claimed whole.",
+ "Every capture carries lens and serial number, focal length, focus distance, T-stop, sensor mode and format. The app asks for them in the moment because filling them in takes seconds; rebuilding them three months later is impossible. The witness — the photo of the set with the chart in place — settles any argument: which chart, at what distance, under what light. With production filled in, the record is filed by project and shooting day, and from Export it is delivered or claimed whole.",
 "Lo que invalida un grid":"What voids a grid",
 "La carta torcida, alabeada o fuera de centro.":"A tilted, warped or off-centre chart.",
 "Esquinas del encuadre sin patrón.":"Frame corners without pattern.",
