@@ -1,8 +1,8 @@
 {
-  "name": "WALLIO · Parte de cámara",
-  "short_name": "Parte",
-  "description": "Parte de cámara por rollo, con la producción dentro. Funciona sin cobertura.",
-  "lang": "es",
+  "name": "WALLIO · Camera Report",
+  "short_name": "Report",
+  "description": "Per-roll camera report with the production details built in. Works offline.",
+  "lang": "en",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
