@@ -424,6 +424,18 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 #lupa img{max-width:100%;max-height:82vh;object-fit:contain;border-radius:6px}
 #lupa .pie{color:var(--tx2);font-size:12.5px;text-align:center}
 @media print{.tg button,#lupa{display:none!important}}
+
+.mv{display:flex;gap:9px;align-items:center;padding:8px 11px;border-top:1px solid var(--line);flex-wrap:wrap}
+.mv .et{flex:0 0 62px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--tx3)}
+.mv .d{flex:1 1 160px;min-width:0;font-size:11.5px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis}
+.mv .d b{color:var(--tx);font-weight:600}
+.mv .d .hh{font-family:var(--mono);font-size:10px;color:var(--tx3);word-break:break-all}
+.mv button{min-height:32px;font-size:12px;padding:0 11px;flex:0 0 auto}
+.mv .bar{flex:1 1 100%;height:4px;border-radius:3px;background:var(--line);overflow:hidden;display:none}
+.mv .bar.on{display:block}
+.mv .bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .18s}
+.mv.hay .et{color:var(--ok)}
+@media print{.mv button{display:none!important}}
 </style>
 </head>
 <body>
@@ -719,6 +731,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
       </div>
       <div class="hint" id="nb_msg"></div>
       <div id="nb_listado"></div>
+      <div class="hint" id="mv_post_msg"></div>
       <div style="border-top:1px solid var(--line);margin-top:11px;padding-top:11px">
         <label>Tamaño del fotograma testigo</label>
         <select id="tg_lado" onchange="tgPonAjuste(this.value)">
@@ -773,6 +786,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
       cargará el día que amplíe esta óptica con otra resolución.</p>
     <div class="btnrow">
       <button class="primary" onclick="hacerPDF()">Generar PDF de la ficha</button>
+      <button onclick="paquetePost()">Paquete para post</button>
       <button onclick="guardarFicha()">Guardar archivo de ficha</button>
       <button class="danger" onclick="empezarDeCero()">Empezar de cero</button>
     </div>
@@ -802,6 +816,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 
 <div id="lupa" onclick="cierraLupa()"><img id="lupa_img" alt=""><div class="pie" id="lupa_pie"></div></div>
 <input type="file" id="tg_file" accept="image/*" hidden>
+<input type="file" id="mv_archivo" hidden>
 <div id="ficha" class="doc"></div>
 <div id="parte" class="doc"></div>
 
@@ -1622,6 +1637,207 @@ function pintaMiniaturas(){
   });
 }
 
+
+/* ================= LOS CLIPS DEL GRID =================
+   Un grid entero de una óptica en ARRIRAW son unos 35 GB. Eso no cabe en
+   la base de datos ni en el almacén de la app: va a Cloudflare R2, que
+   está hecho para media y no cobra por descargar. Aquí solo se guarda el
+   índice —qué hay, dónde, cuánto pesa y su huella— y desde ese índice se
+   arma el paquete de descarga que se le manda a postproducción.        */
+
+const MV_CLASES = {raw: "RAW de cámara", mez: "ProRes / mezzanine"};
+const MV_TROZO = 16 * 1024 * 1024;      // 16 MiB por parte: R2 admite 10.000
+const MV_HASH_MAX = 2 * 1024 * 1024 * 1024;   // por encima de 2 GB no se calcula aquí
+
+/* nbPide lanza excepción si el servidor dice que no; aquí conviene que
+   devuelva {error} para poder enseñárselo al usuario sin romper nada */
+function mvFuncion(cuerpo){
+  return nbPide("/functions/v1/media", cuerpo)
+    .catch(function(e){ return {error: String((e && e.message) || e)}; });
+}
+/* ruta dentro del almacén: casa / óptica / celda / archivo */
+function mvRuta(fmtKey, foco, clase, nombre){
+  if (!NB.casa || !S.lens.serial) return null;
+  const opt = wlNorm(S.lens.marca) + "-" + wlNorm(S.lens.serial);
+  const f = S.formats.find(x => x.key === fmtKey) || {};
+  return NB.casa + "/" + opt + "/" + slug(f.fmt || fmtKey) + "__" + focoSlug(foco)
+         + "/" + clase + "-" + String(nombre || "clip").replace(/[^\w.\-]+/g, "_");
+}
+/* SHA-256 solo si el archivo es manejable; si viene del MHL ya trae su huella */
+function mvHuella(file, t){
+  if (t && t.hash) return Promise.resolve({alg: t.alg || "mhl", hash: t.hash, deMhl: true});
+  if (file.size > MV_HASH_MAX || !crypto.subtle) return Promise.resolve(null);
+  return file.arrayBuffer()
+    .then(function(b){ return crypto.subtle.digest("SHA-256", b); })
+    .then(function(d){
+      return {alg: "sha256",
+              hash: [].slice.call(new Uint8Array(d))
+                      .map(function(x){ return x.toString(16).padStart(2, "0"); }).join("")};
+    }).catch(function(){ return null; });
+}
+
+let MV_CANCELA = {};
+function mvProgreso(id, pct, texto){
+  const b = document.getElementById("bar_" + id);
+  if (b){ b.parentNode.classList.add("on"); b.style.width = Math.round(pct) + "%"; }
+  const d = document.getElementById("msg_" + id);
+  if (d && texto) d.textContent = texto;
+}
+
+/* sube un archivo grande troceado, pidiendo permiso parte a parte */
+async function mvSube(file, ruta, id){
+  const partes = [];
+  const n = Math.max(1, Math.ceil(file.size / MV_TROZO));
+  if (n === 1){
+    const r = await mvFuncion({accion:"subir", casa: NB.casa, ruta: ruta});
+    if (r.error) throw new Error(r.error);
+    const x = await fetch(r.url, {method:"PUT", body:file});
+    if (!x.ok) throw new Error("el almacén no aceptó el archivo (" + x.status + ")");
+    mvProgreso(id, 100, "");
+    return;
+  }
+  const ini = await mvFuncion({accion:"crear", casa: NB.casa, ruta: ruta});
+  if (ini.error || !ini.subida) throw new Error(ini.error || "no se pudo empezar la subida");
+  try {
+    for (let i = 0; i < n; i++){
+      if (MV_CANCELA[id]) throw new Error("cancelado");
+      const trozo = file.slice(i * MV_TROZO, Math.min((i + 1) * MV_TROZO, file.size));
+      let etag = null, intento = 0;
+      while (!etag){
+        intento++;
+        const p = await mvFuncion({accion:"parte", casa: NB.casa, ruta: ruta,
+                                   subida: ini.subida, parte: i + 1});
+        if (p.error) throw new Error(p.error);
+        const x = await fetch(p.url, {method:"PUT", body: trozo});
+        if (x.ok) etag = x.headers.get("ETag") || x.headers.get("etag");
+        else if (intento >= 3) throw new Error("la parte " + (i+1) + " no subió (" + x.status + ")");
+      }
+      partes.push({n: i + 1, etag: etag});
+      mvProgreso(id, (i + 1) * 100 / n,
+                 traduce("subiendo ") + (i + 1) + "/" + n + " · " + tam(file.size));
+    }
+    const fin = await mvFuncion({accion:"terminar", casa: NB.casa, ruta: ruta,
+                                 subida: ini.subida, partes: partes});
+    if (fin.error) throw new Error(fin.error);
+  } catch(e){
+    try { await mvFuncion({accion:"abortar", casa: NB.casa, ruta: ruta, subida: ini.subida}); }
+    catch(_){}
+    throw e;
+  }
+}
+
+let MV_DESTINO = null;
+function pideClip(fmtKey, foco, clase){
+  if (!NB.casa){ alert(traduce("Para guardar los clips hace falta entrar en la casa de renta (pestaña Emitir).")); return; }
+  if (!S.lens.serial){ alert(traduce("Falta el número de serie de la óptica.")); return; }
+  MV_DESTINO = {fmtKey: fmtKey, foco: foco, clase: clase};
+  const f = $("mv_archivo"); f.value = ""; f.click();
+}
+async function mvElegido(file){
+  if (!file || !MV_DESTINO) return;
+  const d = MV_DESTINO; MV_DESTINO = null;
+  const k = tkey(d.fmtKey, d.foco), t = S.takes[k];
+  if (!t){ alert(traduce("Marca antes esa celda como capturada.")); return; }
+  const ruta = mvRuta(d.fmtKey, d.foco, d.clase, file.name);
+  if (!ruta) return;
+  const id = d.clase + "_" + Math.abs(hashTexto(k));
+  guarda();
+  t[d.clase] = {archivo: file.name, bytes: file.size, ruta: ruta, estado: "subiendo"};
+  renderCaptura();
+  MV_CANCELA[id] = false;
+  try {
+    const hue = await mvHuella(file, d.clase === "raw" ? t : null);
+    await mvSube(file, ruta, id);
+    await nbPide("/rest/v1/rpc/apunta_medio", {
+      p_casa: NB.casa, p_clave: claveFicha(S.lens.marca, S.lens.serial),
+      p_celda: k, p_clase: d.clase, p_ruta: ruta, p_archivo: file.name,
+      p_bytes: file.size, p_alg: hue ? hue.alg : null, p_hash: hue ? hue.hash : null});
+    t[d.clase] = {archivo: file.name, bytes: file.size, ruta: ruta, estado: "guardado",
+                  alg: hue ? hue.alg : "", hash: hue ? hue.hash : "",
+                  fecha: new Date().toISOString().slice(0, 10)};
+  } catch(e){
+    t[d.clase] = {archivo: file.name, bytes: file.size, ruta: ruta, estado: "falló",
+                  fallo: String(e.message || e)};
+  }
+  renderCaptura(); updateChip(); autoguarda();
+}
+function hashTexto(s){
+  let h = 0; s = String(s);
+  for (let i = 0; i < s.length; i++){ h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+  return h;
+}
+function cancelaClip(id){ MV_CANCELA[id] = true; }
+
+/* enlace de descarga con caducidad, para mandárselo a post */
+function bajaClip(fmtKey, foco, clase){
+  const t = S.takes[tkey(fmtKey, foco)] || {};
+  const m = t[clase];
+  if (!m || !m.ruta) return;
+  mvFuncion({accion:"bajar", casa: NB.casa, ruta: m.ruta, dias: 7}).then(function(r){
+    if (r.error) { alert(r.error); return; }
+    window.open(r.url, "_blank");
+  });
+}
+
+/* --------- el bloque de cada celda --------- */
+function bloqueClip(k, id, fmtKey, foco, clase){
+  const t = S.takes[k] || {};
+  const m = t[clase];
+  const uid = clase + "_" + Math.abs(hashTexto(k));
+  const et = MV_CLASES[clase];
+  let det, bot;
+  if (m && m.estado === "guardado"){
+    det = `<b>${esc(m.archivo)}</b> · ${tam(m.bytes)}` +
+          (m.hash ? `<div class="hh">${esc((m.alg||"").toUpperCase())} ${esc(m.hash)}</div>`
+                  : `<div class="hh">${traduce("sin huella: impórtala del ASC MHL")}</div>`);
+    bot = `<button class="ghost" onclick="bajaClip('${id}','${clase}')">${traduce("enlace")}</button>
+           <button class="ghost" onclick="pideClip('${id}','${clase}')">${traduce("cambiar")}</button>`;
+  } else if (m && m.estado === "subiendo"){
+    det = `<b>${esc(m.archivo)}</b> · ${tam(m.bytes)}<div class="hh" id="msg_${uid}">${traduce("subiendo…")}</div>`;
+    bot = `<button class="ghost" onclick="cancelaClip('${uid}')">${traduce("cancelar")}</button>`;
+  } else if (m && m.estado === "falló"){
+    det = `<b>${esc(m.archivo)}</b> · <span style="color:#e0736a">${esc(m.fallo || "")}</span>`;
+    bot = `<button class="ghost" onclick="pideClip('${id}','${clase}')">${traduce("reintentar")}</button>`;
+  } else {
+    det = `<span style="color:var(--tx3)">${traduce("sin subir")}</span>`;
+    bot = `<button class="ghost" onclick="pideClip('${id}','${clase}')">${traduce("subir")}</button>`;
+  }
+  return `<div class="mv${m && m.estado === "guardado" ? " hay" : ""}">
+    <div class="et">${et}</div><div class="d">${det}</div>${bot}
+    <div class="bar"><i id="bar_${uid}"></i></div></div>`;
+}
+
+/* --------- el paquete para postproducción --------- */
+async function paquetePost(){
+  if (!NB.casa){ alert(traduce("Entra antes en la casa de renta.")); return; }
+  if (!S.lens.serial){ alert(traduce("Falta el número de serie de la óptica.")); return; }
+  const msg = $("mv_post_msg");
+  if (msg) msg.textContent = traduce("Pidiendo los enlaces…");
+  const clave = claveFicha(S.lens.marca, S.lens.serial);
+  const lista = await nbPide("/rest/v1/rpc/medios_de", {p_casa: NB.casa, p_clave: clave})
+                  .catch(function(){ return []; });
+  if (!lista || !lista.length){
+    if (msg) msg.textContent = traduce("Esta óptica todavía no tiene ningún clip subido.");
+    return;
+  }
+  const filas = [];
+  for (const m of lista){
+    const r = await mvFuncion({accion:"bajar", casa: NB.casa, ruta: m.ruta, dias: 7});
+    filas.push(Object.assign({}, m, {url: r.url || "", caduca: r.caduca || ""}));
+  }
+  const L = S.lens, P = S.prod;
+  const cab = ["proyecto","optica_fabricante","optica_familia","optica_focal_mm","optica_serie",
+               "celda","clase","archivo","bytes","algoritmo","checksum","enlace","caduca"];
+  const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+  const csv = "\ufeff" + [cab.join(",")].concat(filas.map(function(f){
+    return [P.proyecto, L.marca, L.fam, L.focal, L.serial, f.celda,
+            MV_CLASES[f.clase] || f.clase, f.archivo, f.bytes, f.alg, f.hash,
+            f.url, f.caduca].map(q).join(",");
+  })).join("\r\n");
+  descargar(csv, "WALLIO_post_" + norm(L.serial) + ".csv", "text/csv");
+  if (msg) msg.textContent = traduce("Listo: ") + filas.length + traduce(" archivos. Los enlaces caducan en 7 días.");
+}
+
 /* ---------------- captura ---------------- */
 function sinAcentos(s){ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
 function slug(s){
@@ -1667,7 +1883,9 @@ function renderCaptura(){
           onclick="verMedia('${id}')" ${t ? "" : "hidden"}>archivo</button>
         <button class="ghost" style="min-height:40px;flex:0 0 auto;min-width:96px"
           onclick="${t ? `quitarGrid('${id}')` : `marcar('${id}')`}">${t ? "quitar" : "marcar"}</button>
-      </div>${t ? bloqueMedia(k, id) + bloqueTestigo(k, id, f.key, foco) : ""}`;
+      </div>${t ? bloqueMedia(k, id) + bloqueTestigo(k, id, f.key, foco)
+                 + bloqueClip(k, id, f.key, foco, "raw")
+                 + bloqueClip(k, id, f.key, foco, "mez") : ""}`;
     }).join("");
     return `<div class="card"><h2>${esc(f.body)} · ${esc(f.fmt)}</h2>
       <div class="hint" style="margin:-4px 0 8px">${esc(f.res)} · ${esc(f.area)} mm</div>${filas}</div>`;
@@ -1860,6 +2078,11 @@ function renombra(fmtKey, foco, valor){
 }
 
 /* ---------------- fusión de fichas ---------------- */
+$("mv_archivo").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f) mvElegido(f);
+  e.target.value = "";
+});
 $("tg_file").addEventListener("change", e => {
   const f = e.target.files[0];
   if (f) tgElegido(f);
@@ -3037,6 +3260,17 @@ const EN = {
 "Este fabricante no publica el paso entre marcas: mídelo tú.":
  "This manufacturer does not publish the spacing between marks: measure it yourself.",
 "Cruces / retícula":"Crosses / reticle",
+"RAW de cámara":"Camera RAW","ProRes / mezzanine":"ProRes / mezzanine",
+"sin subir":"not uploaded","subir":"upload","reintentar":"try again","cancelar":"cancel",
+"enlace":"link","subiendo…":"uploading…","subiendo ":"uploading ",
+"sin huella: impórtala del ASC MHL":"no checksum: import it from the ASC MHL",
+"Paquete para post":"Package for post",
+"Para guardar los clips hace falta entrar en la casa de renta (pestaña Emitir).":
+ "To store the clips you must sign in to the rental house (Issue tab).",
+"Entra antes en la casa de renta.":"Sign in to the rental house first.",
+"Pidiendo los enlaces…":"Requesting the links…",
+"Esta óptica todavía no tiene ningún clip subido.":"This lens has no clips uploaded yet.",
+"Listo: ":"Done: "," archivos. Los enlaces caducan en 7 días.":" files. The links expire in 7 days.",
 "Fotograma testigo":"Witness frame","añadir testigo":"add witness frame","cambiar":"replace",
 "sin testigo":"no witness frame","guardado en la casa":"stored in the rental house",
 "esperando red":"waiting for signal",
