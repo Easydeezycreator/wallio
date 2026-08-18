@@ -719,8 +719,9 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
       Un certificado sin instrumental declarado no lo acepta post. Esto es lo que hace auditable
       la medida.</p>
     <div class="grid">
+      <div class="f w"><label>Carta de test — elígela y se rellena sola</label><select id="i_cartaSel" onchange="eligeCarta()"></select></div>
       <div class="f"><label>Carta · fabricante y referencia</label><input id="i_carta" placeholder="DSC Labs · CamAlign 1400"></div>
-      <div class="f"><label>Patrón</label><select id="i_patron"><option>Retícula de puntos</option><option>Casillas (damero)</option><option>Otro</option></select></div>
+      <div class="f"><label>Patrón</label><select id="i_patron"><option>Retícula de puntos</option><option>Casillas (damero)</option><option>Cruces / retícula</option><option>Otro</option></select></div>
       <div class="f"><label>Separación (mm)</label><input id="i_sep" inputmode="decimal"></div>
       <div class="f"><label>Medidas de la carta (mm)</label><input id="i_medidas" placeholder="1400 × 990"></div>
       <div class="f"><label>Diagonal 1 (mm)</label><input id="i_d1" inputmode="decimal"></div>
@@ -734,6 +735,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
       <div class="f"><label>Humedad relativa (%)</label><input id="i_hum" inputmode="decimal"></div>
       <div class="f"><label>Última calibración de la óptica</label><input id="i_calib" type="date"></div>
     </div>
+    <div class="hint" id="i_cartaInfo"></div>
     <div class="hint" id="i_chart"></div>
   </div>
   <div class="card">
@@ -766,8 +768,8 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   <button data-v="optica">Óptica</button>
   <button data-v="equipo">Equipo</button>
   <button data-v="captura">Captura</button>
-  <button data-v="parte">Parte</button>
   <button data-v="ficha">Emitir</button>
+  <button data-v="parte">Parte</button>
 </nav>
 
 <div id="ficha" class="doc"></div>
@@ -819,6 +821,44 @@ const TMAX = {
   "Cooke|Anamorphic/i S35": {65:2.6, 180:2.8, 300:3.5},
   "Angénieux|Optimo Prime": {18:2.0, 200:2.2}
 };
+
+/* --------- cartas de test: medidas publicadas por el fabricante ---------
+   Sirven para rellenar solos los datos del instrumental. Lo que un fabricante
+   no publica (el paso de rejilla de DSC, por ejemplo) se queda vacío: no se
+   estima. Las diagonales NO se rellenan: hay que medirlas con el metro, que
+   es justo lo que comprueba si la carta está plana.                        */
+const CARTAS = [
+  {m:"Duclos Lenses",n:"Distortion Checker Chart 16:9",v:"Standard 24 × 42″",w:609.6,h:1066.8,pat:"Casillas (damero)",sep:25.4,sup:"Papel mate, se envía enrollado",u:"ducloslenses.com"},
+  {m:"Duclos Lenses",n:"Distortion Checker Chart 16:9",v:"Large 44 × 76″",w:1117.6,h:1930.4,pat:"Casillas (damero)",sep:25.4,sup:"Papel mate, se envía enrollado",u:"ducloslenses.com"},
+  {m:"Duclos Lenses",n:"Distortion Checker Chart 2.40:1",v:"Standard 24 × 57.6″",w:609.6,h:1463.0,pat:"Casillas (damero)",sep:50.8,sup:"Papel mate · casillas de campo 2″, caja central 1″",u:"ducloslenses.com"},
+  {m:"Duclos Lenses",n:"Distortion Checker Chart 2.40:1",v:"Large 44 × 105.6″",w:1117.6,h:2682.2,pat:"Casillas (damero)",sep:50.8,sup:"Papel mate · casillas de campo 2″, caja central 1″",u:"ducloslenses.com"},
+  {m:"Duclos Lenses",n:"Camera Registration Chart",v:"24 × 18″",w:609.6,h:457.2,pat:"Casillas (damero)",sep:25.4,sup:"Marcas de registro + guías 2.40 / 1.78 / 1.66 / 1.33",u:"ducloslenses.com"},
+  {m:"FilmForce",n:"VFX Lens Distortion Grid",v:"36 × 24″",w:914.0,h:610.0,pat:"Casillas (damero)",sep:12.7,sup:"Papel mate 189 g/m² · montar sobre superficie rígida, nunca sobre cartón pluma",u:"filmforce.org"},
+  {m:"Imatest",n:"Dot Pattern DOTM15",v:"24 × 36″",w:610.0,h:914.4,pat:"Retícula de puntos",sep:39.5,sup:"Punto Ø 12.6 mm · 15 puntos en vertical",u:"imatest.com"},
+  {m:"Imatest",n:"Dot Pattern DOTM25",v:"24 × 36″",w:610.0,h:914.4,pat:"Retícula de puntos",sep:23.7,sup:"Punto Ø 7.6 mm · 25 puntos en vertical",u:"imatest.com"},
+  {m:"Imatest",n:"Dot Pattern DOTL15",v:"44 × 66″",w:1118.0,h:1676.0,pat:"Retícula de puntos",sep:73.0,sup:"Punto Ø 23.4 mm",u:"imatest.com"},
+  {m:"Imatest",n:"Dot Pattern DOTL25",v:"44 × 66″",w:1118.0,h:1676.0,pat:"Retícula de puntos",sep:44.0,sup:"Punto Ø 14.1 mm",u:"imatest.com"},
+  {m:"Imatest",n:"Checkerboard",v:"X-Small 8.5 × 12.75″",w:215.9,h:323.9,aw:200.7,ah:301.0,pat:"Casillas (damero)",sup:"Inyección mate · 12 casillas en vertical",u:"imatest.com"},
+  {m:"Imatest",n:"Checkerboard",v:"Small 16 × 24″",w:406.4,h:609.6,aw:391.2,ah:586.7,pat:"Casillas (damero)",sup:"Inyección mate · 12 casillas en vertical",u:"imatest.com"},
+  {m:"Imatest",n:"Checkerboard",v:"Medium 24 × 36″",w:609.6,h:914.4,aw:594.4,ah:891.5,pat:"Casillas (damero)",sup:"Inyección mate · 12 casillas en vertical",u:"imatest.com"},
+  {m:"Imatest",n:"Checkerboard",v:"Large 43.6 × 66″",w:1107.4,h:1676.4,aw:1102.4,ah:1653.5,pat:"Casillas (damero)",sup:"Inyección mate · 12 casillas en vertical",u:"imatest.com"},
+  {m:"Imatest",n:"SFRplus 5×9",v:"Medium 24 × 40″",w:609.6,h:1016.0,aw:550.3,ah:990.6,pat:"Casillas (damero)",sup:"Mate o semibrillo · contraste 4:1 (ISO 12233)",u:"imatest.com"},
+  {m:"Imatest",n:"SFRplus 5×9",v:"Large 43.6 × 60″",w:1107.4,h:1524.0,aw:832.6,ah:1498.6,pat:"Casillas (damero)",sup:"Mate o semibrillo · contraste 4:1 (ISO 12233)",u:"imatest.com"},
+  {m:"Image Engineering",n:"TE251 rejilla de distorsión",v:"A1066",w:1245.0,h:835.0,aw:800.0,ah:600.0,pat:"Cruces / retícula",sup:"Panel composite de aluminio 3.2 mm · método TV distortion (ISO 17850)",u:"image-engineering.de"},
+  {m:"Image Engineering",n:"TE42 V2",v:"A1066 4:3",w:1245.0,h:835.0,aw:900.0,ah:675.0,pat:"Cruces / retícula",sup:"Dibond · rejilla de distorsión con 10 marcas de registro · fondo mate",u:"image-engineering.de"},
+  {m:"Image Engineering",n:"TE42 V2",v:"A460",w:600.0,h:500.0,aw:460.0,ah:345.0,pat:"Cruces / retícula",sup:"Aluminio 3.2 mm · rejilla de distorsión con 10 marcas de registro",u:"image-engineering.de"},
+  {m:"Applied Image",n:"ACCUplace Dot Distortion AP-DD",v:"6 × 6″",w:152.4,h:152.4,aw:100.0,ah:100.0,pat:"Retícula de puntos",sep:4.0,sup:"Cromo sobre vidrio / ópalo / reflectiva · zona 1: punto Ø 2 mm",u:"appliedimage.com"},
+  {m:"DSC Labs",n:"FrameAlign",v:"Junior JW 17 × 10″",w:431.8,h:254.0,pat:"Otro",sup:"Guías 4:3 / 16:9 / 1.85 / 2.39 + círculo central + pizarra",u:"dsclabs.com"},
+  {m:"DSC Labs",n:"FrameAlign",v:"Standard SW 21.3 × 13″",w:541.0,h:330.2,pat:"Otro",sup:"Guías 4:3 / 16:9 / 1.85 / 2.39 + círculo central + pizarra",u:"dsclabs.com"},
+  {m:"DSC Labs",n:"FrameAlign",v:"Senior SRW 24 × 14.7″",w:609.6,h:373.4,pat:"Otro",sup:"Guías 4:3 / 16:9 / 1.85 / 2.39 + círculo central + pizarra",u:"dsclabs.com"},
+  {m:"DSC Labs",n:"FrameAlign",v:"Maxi XW 40 × 24″",w:1016.0,h:609.6,pat:"Otro",sup:"Guías 4:3 / 16:9 / 1.85 / 2.39 + círculo central + pizarra",u:"dsclabs.com"},
+  {m:"DSC Labs",n:"FrameAlign",v:"Super Maxi SXW 51.5 × 30.5″",w:1308.1,h:774.7,pat:"Otro",sup:"Guías 4:3 / 16:9 / 1.85 / 2.39 + círculo central + pizarra",u:"dsclabs.com"},
+  {m:"DSC Labs",n:"ChromaDuMonde 12+4R",v:"Standard SW 21.3 × 13″",w:541.0,h:330.2,pat:"Otro",sup:"12 colores + 4 tonos piel + cuñas hasta 800 TV LPPH",u:"dsclabs.com"},
+  {m:"DSC Labs",n:"ChromaDuMonde 12+4R",v:"Senior SRW 24 × 14.7″",w:609.6,h:373.4,pat:"Otro",sup:"12 colores + 4 tonos piel + cuñas hasta 800 TV LPPH",u:"dsclabs.com"},
+  {m:"DSC Labs",n:"ChromaDuMonde 12+4R",v:"Maxi XW 40 × 24″",w:1016.0,h:609.6,pat:"Otro",sup:"12 colores + 4 tonos piel + cuñas hasta 800 TV LPPH",u:"dsclabs.com"},
+  {m:"DSC Labs",n:"Mega Trumpet 12",v:"Maxi XW 40 × 24″",w:1016.0,h:609.6,pat:"Otro",sup:"16 trompetas 500–2000 TV LPH + cuñas de back focus",u:"dsclabs.com"}
+];
+const CARTA_OTRA = "Otra — escribir a mano";
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const norm = s => String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -854,6 +894,60 @@ PROD.forEach(k => { const el = $("p_" + k); if (!el) return;
 INSTR.forEach(k => { const el = $("i_" + k); if (!el) return;
   const set = () => { S.instr[k] = el.value; chartCheck(); updateChip(); };
   el.addEventListener("input", set); el.addEventListener("change", set); });
+
+
+/* ---------------- cartas de test ---------------- */
+function cartaEtiqueta(c){ return c.m + " · " + c.n + " · " + c.v; }
+function fmtMm(n){ return (Math.round(n * 10) / 10).toString().replace(/\.0$/, ""); }
+function diagonalCarta(c){
+  const w = c.aw || c.w, h = c.ah || c.h;
+  return Math.sqrt(w * w + h * h);
+}
+function llenaCartas(){
+  const sel = $("i_cartaSel"); if (!sel) return;
+  let html = '<option value="">' + traduce("Elige la carta y se rellena sola") + "</option>";
+  let fab = null;
+  CARTAS.forEach(function(c, i){
+    if (c.m !== fab){ if (fab !== null) html += "</optgroup>"; fab = c.m;
+                      html += '<optgroup label="' + esc(fab) + '">'; }
+    html += '<option value="' + i + '">' + esc(c.n + " · " + c.v) + "</option>";
+  });
+  html += "</optgroup>";
+  html += '<option value="otra">' + esc(CARTA_OTRA) + "</option>";
+  sel.innerHTML = html;
+}
+/* rellena lo que el fabricante publica y NO toca lo que hay que medir */
+function eligeCarta(){
+  const v = $("i_cartaSel").value;
+  const info = $("i_cartaInfo");
+  if (v === "" || v === "otra"){
+    if (info) info.textContent = v === "otra"
+      ? traduce("Escribe abajo el fabricante, la referencia y las medidas de tu carta.") : "";
+    return;
+  }
+  const c = CARTAS[+v]; if (!c) return;
+  guarda();
+  const pon = function(id, val){
+    const el = $(id); if (!el) return;
+    el.value = val;
+    el.dispatchEvent(new Event("input", {bubbles:true}));
+    el.dispatchEvent(new Event("change", {bubbles:true}));
+  };
+  pon("i_carta", cartaEtiqueta(c));
+  pon("i_patron", c.pat);
+  pon("i_medidas", fmtMm(c.w) + " × " + fmtMm(c.h) + " mm"
+       + (c.aw ? " (" + traduce("área impresa") + " " + fmtMm(c.aw) + " × " + fmtMm(c.ah) + ")" : ""));
+  // si el fabricante no publica el paso, se BORRA: nunca se hereda el de la carta anterior
+  pon("i_sep", c.sep ? fmtMm(c.sep) : "");
+  const d = diagonalCarta(c);
+  if (info){
+    info.innerHTML = "<b>" + esc(traduce("Diagonal teórica")) + ": " + fmtMm(d) + " mm.</b> "
+      + esc(traduce("Mide tú las dos diagonales de tu carta y escríbelas abajo: si no coinciden entre sí, la carta no está plana o está torcida, y el grid no vale."))
+      + (c.sep ? "" : " " + esc(traduce("Este fabricante no publica el paso entre marcas: mídelo tú.")))
+      + " <span style=\"opacity:.65\">" + esc(c.sup + " · " + c.u) + "</span>";
+  }
+  chartCheck(); updateChip();
+}
 
 function chartCheck(){
   const el = $("i_chart"); if (!el) return;
@@ -2684,6 +2778,18 @@ const EN = {
  "Fill in manufacturer, family and focal length before the grids can be generated.",
 "añadida a mano":"added by hand","esférica":"spherical","anamórfica":"anamorphic","Otra":"Other",
 "75   ·   o   25-250":"75   ·   or   25-250",
+"Carta de test — elígela y se rellena sola":"Test chart — pick it and it fills itself",
+"Elige la carta y se rellena sola":"Pick the chart and it fills itself",
+"Otra — escribir a mano":"Other — type it by hand",
+"Escribe abajo el fabricante, la referencia y las medidas de tu carta.":
+ "Type your chart's manufacturer, reference and dimensions below.",
+"Diagonal teórica":"Nominal diagonal",
+"área impresa":"printed area",
+"Mide tú las dos diagonales de tu carta y escríbelas abajo: si no coinciden entre sí, la carta no está plana o está torcida, y el grid no vale.":
+ "Measure both diagonals of your own chart and type them below: if they disagree, the chart is not flat or is skewed, and the grid is worthless.",
+"Este fabricante no publica el paso entre marcas: mídelo tú.":
+ "This manufacturer does not publish the spacing between marks: measure it yourself.",
+"Cruces / retícula":"Crosses / reticle",
 "Ancho activo (mm)":"Active width (mm)","Alto activo (mm)":"Active height (mm)",
 "Resolución (o «película»)":"Resolution (or «film»)","Añadir formato":"Add format",
 "Formatos a cubrir":"Formats to cover","3 · Distancias de foco":"3 · Focus distances",
@@ -2979,7 +3085,7 @@ document.addEventListener("input", autoguarda, true);
 document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
 
 /* ---------------- arranque ---------------- */
-fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); chartCheck();
+fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas(); chartCheck();
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
 updateChip(); show("prod");
 /* nube: se rellena lo guardado en este dispositivo y se intenta vaciar la cola */
