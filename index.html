@@ -184,6 +184,11 @@ nav button{flex:1;min-width:0;border:none;border-right:1px solid var(--line);
  color:var(--tx3);font:600 9.5px/1 var(--mono);letter-spacing:.11em;text-transform:uppercase;
  min-height:52px;padding:0 2px}
 nav button:last-child{border-right:none}
+/* Ocho pestañas en un iPhone SE: antes que partir «ÓPTICA» por la mitad,
+   se aprieta la letra. Ninguna etiqueta pasa de siete caracteres. */
+@media (max-width:430px){ nav button{font-size:8.4px;letter-spacing:.03em;padding:0 1px;
+  overflow-wrap:normal;word-break:keep-all} nav button i{font-size:7.4px;letter-spacing:0} }
+@media (max-width:359px){ nav button{font-size:7.8px;letter-spacing:.01em} }
 nav button.on{color:var(--bg);background:var(--tx)}
 nav button i{display:block;font-style:normal;font-size:8px;margin-top:3px;letter-spacing:.06em}
 nav button i.ok{color:var(--ok)} nav button.on i.ok{color:#1d6b47}
@@ -205,6 +210,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   header,nav,main{display:none !important}
     body.pr-ficha #ficha{display:block !important}
   body.pr-parte #parte{display:block !important}
+  body.pr-albaran #albaran{display:block !important}
 }
 .doc{font:10.6pt/1.45 "Helvetica Neue",Helvetica,Arial,sans-serif;color:#12151a;background:#fff}
 .doc .m{font-family:"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
@@ -500,15 +506,397 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   .med input,.med select{font-size:16px;min-height:38px}
   nav button{min-height:58px}
 }
+
+.sem{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--line2)}
+.sem .luz{flex:0 0 10px;height:10px;border-radius:50%;margin-top:5px}
+.sem .luz.ok{background:var(--ok)} .sem .luz.med{background:#d9a441} .sem .luz.no{background:#d96a6a}
+.sem .c{flex:1;min-width:0}
+.sem .n{font:13px var(--mono);color:var(--tx)}
+.sem .n b{font-weight:700}
+.sem .r{font-size:11.5px;color:var(--tx2);line-height:1.5;margin-top:2px}
+.sem .r i{font-style:normal;display:block}
+.sem .r i.mal{color:#e0736a} .sem .r i.avi{color:#e0a33c} .sem .r i.bien{color:var(--ok)}
+.sem .acc{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.sem .acc button{min-height:32px;font-size:11.5px;padding:0 11px;flex:0 0 auto}
+.interv{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line2);
+  font:12px var(--mono);color:var(--tx2);flex-wrap:wrap}
+.interv b{color:var(--tx);font-weight:600;flex:0 0 auto}
+.interv .t{flex:0 0 auto;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--tx3)}
+.interv .nt{flex:1 1 140px;min-width:0}
+.fserial{display:flex;gap:11px;align-items:flex-start;padding:9px 11px;flex-wrap:wrap}
+.fserial img{width:116px;height:78px;object-fit:cover;border-radius:6px;border:1px solid var(--line);
+  background:#000;cursor:zoom-in}
+.fserial .vac{width:116px;height:78px;border-radius:6px;border:1px dashed var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--tx3);font-size:10px;
+  text-align:center;padding:5px}
+.fserial .d{flex:1 1 160px;min-width:0;font-size:11.5px;color:var(--tx2);line-height:1.5}
+
+details.solo{border:1px solid var(--line);margin:0 11px 9px;border-radius:2px}
+details.solo>summary{list-style:none;cursor:pointer;padding:10px 12px;
+  font:600 9px/1 var(--mono);letter-spacing:.19em;text-transform:uppercase;color:var(--tx2);
+  display:flex;align-items:center;gap:9px}
+details.solo>summary::-webkit-details-marker{display:none}
+details.solo>summary::before{content:"+";font-size:14px;color:var(--tx3);line-height:1}
+details.solo[open]>summary::before{content:"–"}
+details.solo>summary b{color:var(--tx)}
+details.solo .cuerpo{padding:0 12px 11px}
+@media (min-width:700px){ details.solo>summary{font-size:11px;padding:13px 16px} }
+
+.ent{border:1px solid var(--line);border-radius:2px;margin:9px 11px;padding:10px 12px}
+.ent .t1{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.ent .t1 b{font-size:15px}
+.ent .t1 .est{font:600 9px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+  color:var(--tx3);border:1px solid var(--line);padding:4px 7px;border-radius:2px;background:none}
+.ent .t1 .est.fuera{color:#0b6b3a;border-color:#8fd0ae}
+.ent .t1 .est.vuelto{color:var(--tx3)}
+.ent .d{color:var(--tx2);font-size:13px;margin-top:5px;line-height:1.5}
+.ent .url{font:11px/1.5 var(--mono);color:var(--tx2);word-break:break-all;
+  background:var(--bg2);border:1px solid var(--line);padding:7px 8px;border-radius:2px;margin-top:8px}
+/* la casilla hay que dibujarla: en esta app los input van con appearance:none,
+   así que una casilla del sistema saldría en blanco y no se vería nada */
+.inv .l input[type=checkbox]{-webkit-appearance:none;appearance:none;width:22px;height:22px;
+  flex:0 0 22px;min-height:0;margin:0 3px 0 0;padding:0;border:1.5px solid var(--tx3);
+  border-radius:3px;background:transparent;position:relative;cursor:pointer}
+.inv .l input[type=checkbox]:checked{background:var(--tx);border-color:var(--tx)}
+.inv .l input[type=checkbox]:checked::after{content:"";position:absolute;left:7px;top:3px;
+  width:5px;height:10px;border:solid var(--bg);border-width:0 2.2px 2.2px 0;transform:rotate(43deg)}
+.inv .l .avs{display:block;color:#a3521a;font-size:11.5px}
+.filtro{padding:0 11px 4px}
+.doc .note2{font-size:9.2pt;line-height:1.5;color:#2a2f3a;padding:1px 0 5px;max-width:none}
+@media (pointer:coarse){ .inv .l input[type=checkbox]{width:28px;height:28px;flex:0 0 28px}
+  .inv .l input[type=checkbox]:checked::after{left:9px;top:4px;width:7px;height:13px} }
+
+/* ---- modo «solo parte»: la misma app, enseñando una sola cosa ---- */
+html.solo-parte nav{display:none}
+html.solo-parte body{padding-bottom:14px}
+html.solo-parte main > section:not(#v-parte){display:none !important}
+html.solo-parte #v-parte{display:block !important}
+html.solo-parte header .st, html.solo-parte #chipVis{display:none}
+
+/* ---- la tira: de qué proyecto y qué rollo es esto ---- */
+.tira{position:sticky;top:54px;z-index:15;background:var(--bg);
+  border-bottom:1px solid var(--line);padding:9px 11px;display:flex;gap:10px;
+  align-items:center}
+.tira .tx{flex:1 1 auto;min-width:0}
+.tira b{display:block;font:700 14px/1.25 var(--mono);letter-spacing:-.01em}
+.tira span{display:block;color:var(--tx2);font:11.5px/1.4 var(--mono);margin-top:3px}
+.tira.vacia{border-bottom-color:#8a4b2a}
+.tira.vacia b{color:#d98a5a}
+.tira button{flex:0 0 auto;font:600 9px/1 var(--mono);letter-spacing:.14em;
+  text-transform:uppercase;padding:7px 10px;background:none;color:var(--tx2);
+  border:1px solid var(--line);border-radius:2px}
+@media (pointer:coarse){ .tira button{padding:10px 12px;font-size:10px} }
+@media (min-width:700px){ .tira{top:58px;padding:11px 16px} .tira b{font-size:16px} }
+
+/* ---- los partes guardados en este aparato ---- */
+.pt{border:1px solid var(--line);border-radius:2px;margin:8px 11px;padding:9px 11px;
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pt .n{flex:1 1 190px;min-width:0}
+.pt .n b{display:block;font-size:14.5px}
+.pt .n span{display:block;color:var(--tx2);font:11.5px/1.5 var(--mono)}
+.pt .n em{font-style:normal;color:var(--ok)}
+.pt button{font:600 9px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;
+  padding:8px 10px;background:none;color:var(--tx2);border:1px solid var(--line);border-radius:2px}
+@media (pointer:coarse){ .pt button{padding:11px 12px;font-size:10px} }
+
+/* ═══════════════════ CAPA DE DISEÑO ═══════════════════
+   Va al final a propósito: manda sobre lo de arriba sin tocarlo, así se
+   puede quitar entera si algún día no convence.                        */
+
+:root{
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text",
+       "Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  --disp:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display",
+       "Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,"JetBrains Mono","Roboto Mono",monospace;
+  --foco:#7fa8ff;
+}
+
+html,body{font-family:var(--ui);font-size:15.5px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+::selection{background:var(--tx);color:var(--bg)}
+
+/* las cifras, siempre en columna: todos los dígitos del mismo ancho */
+input,select,textarea,.big,.inv .kpi b,.inv .pc,.stat > div > div:first-child,
+header .st b,.tira span{font-variant-numeric:tabular-nums}
+
+/* ---------------- la marca ---------------- */
+header .wm{font:700 17px/1 var(--disp);letter-spacing:-.025em}
+header .wl{font:600 8.5px/1.4 var(--ui);letter-spacing:.19em;margin-top:3px}
+/* La cifra de cobertura, en horizontal y pegada a la derecha: cuando la
+   cabecera se parte en dos renglones —pasa al aparecer «Deshacer»— así
+   queda alineada con los botones y no colgando a la izquierda. */
+header .st{display:flex;align-items:baseline;gap:6px;margin-left:auto;
+  font:600 9px/1.4 var(--ui);letter-spacing:.11em}
+header .st b{display:inline;font:700 14px/1.1 var(--mono);letter-spacing:-.01em}
+/* La cabecera tiene que caber en una sola línea: si «Deshacer» empuja,
+   el rótulo de la marca se va a un segundo renglón y se come pantalla. */
+header .lang{font:600 10px/1 var(--ui);letter-spacing:.05em;border-radius:3px;padding:0 9px}
+header .undo{margin-right:6px}
+header .sv{font:11px/1 var(--ui);letter-spacing:.02em}
+
+/* ---------------- rótulos y texto que se lee ---------------- */
+label{font:650 10px/1.35 var(--ui);letter-spacing:.075em;margin-bottom:3px}
+.hint{font:12.5px/1.55 var(--ui);padding-top:7px}
+.note{font:13px/1.55 var(--ui);padding:2px 0 2px 12px;margin:12px 11px 0}
+.empty{font:13px/1.5 var(--ui)}
+.rescate{font:12.5px/1.45 var(--ui)}
+.nub .est{font:12.5px/1.5 var(--ui)}
+.pill{font:650 9.5px/1 var(--ui);letter-spacing:.09em;border-radius:3px;padding:5px 7px}
+.stat .l{font:650 8.5px/1.4 var(--ui);letter-spacing:.11em}
+.inv .kpi span{font:650 9px/1.3 var(--ui);letter-spacing:.11em}
+.pt .n span,.ent .d{font:12px/1.5 var(--ui)}
+.tira b{font:650 15px/1.25 var(--disp);letter-spacing:-.015em}
+
+/* ---------------- bandas de sección: menos grito, más orden ---------------- */
+.card h2{font:650 9.5px/1 var(--ui);letter-spacing:.17em;padding:8px 14px;margin:0 0 10px}
+.card{padding:0 0 12px}
+
+/* ---------------- botones ---------------- */
+button{font:600 11px/1.15 var(--ui);letter-spacing:.06em;border-radius:3px}
+.btnrow{border-radius:3px;overflow:hidden;margin-top:12px}
+/* Un botón dentro de una fila flexible NO puede negarse a encoger: por
+   defecto un elemento flex no baja del ancho de su palabra más larga, y
+   con tres botones eso se salía cuatro píxeles de un iPhone SE — y el
+   navegador encogía la página entera. Con min-width:0 el rótulo pasa a
+   dos líneas y no se sale nada. */
+.btnrow button{border-radius:0;min-width:0;white-space:normal;padding:0 10px}
+button:focus-visible{outline:2px solid var(--foco);outline-offset:2px}
+/* La palabra de estado NUNCA puede salirse a la pestaña de al lado; el
+   rótulo, en cambio, no se recorta jamás: se aprieta la letra hasta que
+   cabe entero. Un rótulo cortado a la mitad no dice nada. */
+nav button{font-family:var(--ui);letter-spacing:.06em;font-weight:650}
+nav button i{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-weight:600}
+@media (max-width:430px){ nav button{letter-spacing:.02em} }
+/* A 320 px, ocho pestañas en una fila dan 40 px cada una: ahí no cabe
+   «Captura» sin dejarla en letra de prospecto. Antes que encoger hasta lo
+   ilegible, la barra pasa a dos filas de cuatro. Se ven las ocho, con
+   letra de verdad, y no se corta ninguna palabra. */
+/* En 320 px, la fila de una celda de captura no cabe en una sola línea:
+   el botón de quitar se salía por la derecha y el navegador encogía la
+   página. Que baje debajo, que para eso hay sitio de sobra. */
+@media (max-width:359px){
+  .cellrow{flex-wrap:wrap}
+  .cellrow button{min-width:0;padding:0 10px}
+  .cellrow input{max-width:none}
+}
+@media (max-width:359px){
+  nav{flex-wrap:wrap}
+  nav button{flex:0 0 25%;min-height:44px;font-size:9.5px;letter-spacing:.03em;
+    padding:0 2px;border-bottom:1px solid var(--line)}
+  nav button:nth-child(4n){border-right:none}
+  nav button:nth-child(n+5){border-bottom:none}
+  nav button i{display:none}
+  body{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+}
+nav button:focus-visible{outline:2px solid var(--foco);outline-offset:-3px}
+
+/* ---------------- campos: más aire y el foco a la vista ---------------- */
+.f{padding:5px 0}
+input,select,textarea{padding:8px 0}
+input:focus,select:focus,textarea:focus{border-bottom-color:var(--tx);
+  box-shadow:0 1px 0 0 var(--tx)}
+
+/* ---------------- dato o texto: cada cosa con su letra ----------------
+   El nombre de un proyecto, el de una localización o el de una persona son
+   TEXTO: en monoespaciada se leen peor y ocupan el doble. Un número de
+   serie, una focal, una medida o un timecode son DATO: ahí la mono es la
+   que hace que las columnas cuadren y que un 0 no parezca una O.        */
+input,select,textarea{font-family:var(--ui)}
+input[inputmode],input[type=date],input[type=time],input[type=number],
+input[spellcheck=false],textarea[spellcheck=false],
+.toma .row input,.cellrow input,.med input,.med select,
+#l_serial,#l_focal,#l_set,#r_roll,#r_cam,#r_body,#r_fmt,#r_media,#r_codec,
+#i_medidas,#i_d1,#i_d2,#i_sep,#i_dist,#bs_seriales,#nb_url,#nb_key,#nb_codigo,
+#cs_meses,#cs_dias,#cs_web{font-family:var(--mono)}
+
+.cellrow .lbl,.fila .t,.inv .n,.med .hh,.pick .t span,.selfmt .t{font-family:var(--mono)}
+.inv .kpi b,.inv .pc,.big{font-family:var(--mono)}
+
+/* Los ajustes por tipo de puntero van al final del todo: en un iPad o un
+   iPhone la letra de los campos NO puede bajar de 16 px, porque iOS hace
+   zoom al tocar y descoloca la pantalla entera. */
+@media (pointer:coarse){
+  input,select,textarea{font-size:16px;min-height:40px;padding:9px 0}
+  header .lang{min-height:34px;padding:0 10px;font-size:10.5px}
+  label{font-size:10.5px}
+  .hint{font-size:13px}
+  .note{font-size:13.5px}
+  button{font-size:11.5px}
+}
+@media (pointer:coarse) and (min-width:700px){
+  input,select,textarea{font-size:17px;min-height:44px}
+  header .lang{min-height:38px}
+}
+@media (min-width:700px){
+  header .wm{font-size:19px}
+  .card h2{font-size:10px;padding:9px 16px}
+  .note{font-size:14px}
+}
+
+/* ═════════════ CAPA DE DISEÑO · II · color y profundidad ═════════════
+   Dentro de @media screen a propósito: lo que se imprime no lleva ni un
+   degradado. Un documento controlado es negro sobre blanco.            */
+@media screen{
+
+:root{
+  --acc:#6fd3a6;              /* verde instrumento: lo que está bien */
+  --acc2:#4a8cff;             /* azul frío: la luz de arriba */
+  --amb:#e0a94a;              /* ámbar: falta algo */
+  --rojo:#e0736b;             /* rojo: no vale */
+  --v1:rgba(255,255,255,.035);
+  --v2:rgba(255,255,255,.012);
+  --borde:rgba(232,235,240,.10);
+}
+
+/* ---------------- el fondo ----------------
+   Fijo y por detrás de todo, para que no se mueva al bajar y no cueste
+   batería. Dos luces muy tenues arriba y un degradado casi negro: la
+   pantalla deja de ser una pared plana sin quitarle ni un punto de
+   contraste al texto.                                                  */
+html{background:#080a0d}
+body{background:transparent;position:relative}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(130% 62% at 50% -12%, rgba(74,140,255,.13), rgba(74,140,255,0) 62%),
+    radial-gradient(80% 44% at 102% -4%, rgba(111,211,166,.09), rgba(111,211,166,0) 58%),
+    linear-gradient(180deg,#0d1117 0%,#0a0d11 52%,#080a0d 100%)}
+
+/* ---------------- cabecera y barra: cristal ---------------- */
+header{background:linear-gradient(180deg,rgba(16,21,28,.92),rgba(10,13,17,.80));
+  -webkit-backdrop-filter:saturate(150%) blur(14px);
+  backdrop-filter:saturate(150%) blur(14px);
+  border-bottom:1px solid rgba(232,235,240,.16);
+  box-shadow:0 10px 26px -22px #000}
+header svg{filter:drop-shadow(0 0 10px rgba(111,211,166,.28))}
+header .wm{background:linear-gradient(180deg,#ffffff,#c9d2de);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+header .st b{color:var(--acc)}
+/* Los botones se quedan arriba con la marca; el «guardado» y la cobertura
+   caen juntos al segundo renglón cuando no caben. Antes se colaba el
+   «guardado» delante y empujaba los botones abajo, que es lo que se toca. */
+header .sv{order:8} header .st{order:9}
+
+nav{background:linear-gradient(180deg,rgba(13,17,23,.90),rgba(8,10,13,.97));
+  -webkit-backdrop-filter:saturate(150%) blur(14px);
+  backdrop-filter:saturate(150%) blur(14px);
+  border-top:1px solid rgba(232,235,240,.16);
+  box-shadow:0 -12px 28px -24px #000}
+nav button{position:relative;border-right-color:rgba(232,235,240,.07)}
+nav button.on{background:linear-gradient(180deg,#f3f6fa,#dde3ec);color:#0a0d11}
+nav button.on::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  background:linear-gradient(90deg,var(--acc),var(--acc2))}
+nav button i.ok{color:var(--acc)} nav button.on i.ok{color:#1c6a49}
+
+/* ---------------- bandas de sección ----------------
+   Antes era una raya negra de lado a lado. Ahora el color se apaga hacia
+   la derecha y queda una marca a la izquierda: se ve dónde empieza cada
+   bloque sin que la pantalla parezca un código de barras.               */
+.card h2{color:var(--tx);
+  background:linear-gradient(90deg,rgba(111,211,166,.15) 0%,rgba(20,26,34,.92) 24%,
+    rgba(11,14,18,.35) 72%,rgba(11,14,18,0) 100%);
+  border-left:2px solid var(--acc);
+  border-top:1px solid rgba(232,235,240,.07);
+  border-bottom:1px solid rgba(232,235,240,.05)}
+.card{border-bottom-color:rgba(232,235,240,.07)}
+
+/* ---------------- avisos ---------------- */
+.note{border-left:2px solid transparent;
+  border-image:linear-gradient(180deg,var(--acc),rgba(111,211,166,.15)) 1;
+  background:linear-gradient(90deg,rgba(111,211,166,.055),rgba(111,211,166,0) 62%);
+  padding:9px 10px 9px 12px;border-radius:0 4px 4px 0}
+.note b{color:#fff}
+.hint.good{color:var(--acc)} .hint.bad{color:var(--rojo)}
+
+/* ---------------- superficies con relieve ---------------- */
+.inv .kpi,.stat > div,.ent,.pt,.rescate{
+  background:linear-gradient(180deg,var(--v1),var(--v2));
+  border-color:var(--borde)}
+.inv .kpi,.ent,.pt{border-radius:6px}
+.stat{border-color:var(--borde);border-radius:6px;overflow:hidden}
+.rescate{border-radius:6px;border-left:2px solid var(--amb)}
+.inv .kpi.ok b{color:var(--acc)} .inv .kpi.med b{color:var(--amb)} .inv .kpi.mal b{color:var(--rojo)}
+.inv .kpi b{background:linear-gradient(180deg,#ffffff,#cfd6e0);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.inv .kpi.ok b,.inv .kpi.med b,.inv .kpi.mal b{background:none;-webkit-background-clip:border-box;
+  background-clip:border-box}
+
+/* ---------------- semáforos con halo ----------------
+   En un plató a oscuras esto se mira de reojo. Que el color cante. */
+/* El punto del semáforo tiene que ser un punto redondo. La clase .sem la
+   usa también la lista de búsqueda, que es una fila con relleno propio, y
+   ese relleno lo estiraba hasta dejarlo con forma de aceituna. */
+.inv .sem{display:block;padding:0;width:10px;height:10px;flex:0 0 10px;
+  border-radius:50%;align-self:center}
+.inv .sem,.nub .pt{box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+.inv .sem.ok,.nub .pt.on{background:var(--acc);
+  box-shadow:0 0 0 3px rgba(111,211,166,.15),0 0 12px rgba(111,211,166,.55)}
+.inv .sem.med,.nub .pt.esp{background:var(--amb);
+  box-shadow:0 0 0 3px rgba(224,169,74,.15),0 0 12px rgba(224,169,74,.5)}
+.inv .sem.mal,.nub .pt.mal{background:var(--rojo);
+  box-shadow:0 0 0 3px rgba(224,115,107,.15),0 0 12px rgba(224,115,107,.5)}
+
+/* ---------------- botones ---------------- */
+button{border-color:var(--borde);
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012))}
+button:active{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04))}
+button.primary{color:#0a0d11;border-color:rgba(255,255,255,.85);
+  background:linear-gradient(180deg,#f6f9fc,#dde3ec);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 10px 22px -16px rgba(111,211,166,.55)}
+button.ghost{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.008))}
+button.danger{border-color:rgba(224,115,107,.35);color:var(--rojo);
+  background:linear-gradient(180deg,rgba(224,115,107,.08),rgba(224,115,107,.02))}
+.btnrow{border-color:var(--borde)}
+.btnrow button{border-right-color:var(--borde)}
+
+/* ---------------- campos: el foco, en color ---------------- */
+input:focus,select:focus,textarea:focus{border-bottom-color:var(--acc);
+  box-shadow:0 1px 0 0 var(--acc),0 6px 14px -12px rgba(111,211,166,.8)}
+input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
+
+/* ---------------- la tira del parte ---------------- */
+.tira{background:linear-gradient(180deg,rgba(15,20,27,.94),rgba(10,13,17,.86));
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(232,235,240,.12)}
+.tira b{background:linear-gradient(180deg,#ffffff,#cdd5e0);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.tira.vacia{border-bottom-color:rgba(224,169,74,.5);
+  background:linear-gradient(180deg,rgba(45,32,16,.55),rgba(10,13,17,.86))}
+.tira.vacia b{background:none;-webkit-background-clip:border-box;background-clip:border-box;
+  color:var(--amb)}
+
+/* ---------------- píldoras y estados ---------------- */
+.pill.ok{color:var(--acc);border-color:rgba(111,211,166,.45);
+  background:linear-gradient(180deg,rgba(111,211,166,.10),rgba(111,211,166,.03))}
+.pill.warn{color:var(--amb);border-color:rgba(224,169,74,.45);
+  background:linear-gradient(180deg,rgba(224,169,74,.10),rgba(224,169,74,.03))}
+.pill.err{color:var(--rojo);border-color:rgba(224,115,107,.45);
+  background:linear-gradient(180deg,rgba(224,115,107,.10),rgba(224,115,107,.03))}
+.pill.new{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.01))}
+.ent .t1 .est.fuera{color:var(--acc);border-color:rgba(111,211,166,.45);
+  background:linear-gradient(180deg,rgba(111,211,166,.10),rgba(111,211,166,.03))}
+
+/* ---------------- las casillas y las filas ---------------- */
+.pick.on .box{background:linear-gradient(180deg,#f6f9fc,#dde3ec);border-color:#e8ebf0}
+.inv .l input[type=checkbox]:checked{background:linear-gradient(180deg,#f6f9fc,#dde3ec);
+  border-color:#e8ebf0}
+.cellrow,.fila,.inv .l,.selfmt,.pick{border-bottom-color:rgba(232,235,240,.06)}
+.cellrow.mov{animation:mov2 1.2s ease-out}
+@keyframes mov2{0%{background:rgba(111,211,166,.22)}100%{background:transparent}}
+
+/* quien prefiera la pantalla quieta, la tiene quieta */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;transition-duration:.001ms !important}
+}
+
+}  /* fin de @media screen */
 </style>
 </head>
 <body>
 
 <header>
-  <svg viewBox="0 0 48 48"><g fill="none" stroke="#e8ebf0" stroke-width="2.4"><circle cx="24" cy="24" r="21"/></g>
-  <g fill="#e8ebf0"><path d="M24 5.2 L38.6 13.6 L31.3 17.8 L24 13.6 Z"/><path d="M41.9 16.4 L41.9 33.2 L34.6 29 L34.6 20.6 Z"/>
-  <path d="M38.6 36 L24 44.4 L24 36 L31.3 31.8 Z"/><path d="M20.4 44.4 L5.8 36 L13.1 31.8 L20.4 36 Z"/>
-  <path d="M2.5 33.2 L2.5 16.4 L9.8 20.6 L9.8 29 Z"/><path d="M5.8 13.6 L20.4 5.2 L20.4 13.6 L13.1 17.8 Z"/></g></svg>
+  <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="#e8ebf0" stroke-linecap="butt" stroke-linejoin="round"><circle cx="24" cy="24" r="20.6" stroke-width="2.91"/><g stroke-width="2.24"><path d="M13.4 13.4 Q24 10.6 34.6 13.4 Q37.4 24 34.6 34.6 Q24 37.4 13.4 34.6 Q10.6 24 13.4 13.4 Z"/><path d="M24 11.3 L24 36.7"/><path d="M11.3 24 L36.7 24"/></g></g></svg>
   <div><div class="wm">WALLIO</div><div class="wl">Lens Grid Platform</div></div>
   <div class="sp"></div>
   <span id="estadoGuardado" class="sv"></span>
@@ -590,6 +978,34 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
     <div class="hint" id="l_resumen"></div>
   </div>
   <div class="card">
+    <h2>Foto del número de serie</h2>
+    <div class="fserial" id="fs_caja"></div>
+  </div>
+  <div class="card">
+    <h2>Intervenciones de esta óptica</h2>
+    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
+      Un grid vale para la óptica tal como estaba cuando se midió. Si pasa por taller,
+      se lleva un golpe o se recalibra, hay que volver a medirla — y aquí queda apuntado
+      para que nadie use un grid caducado sin saberlo.</p>
+    <div id="iv_lista"></div>
+    <div class="grid">
+      <div class="f"><label>Fecha</label><input id="iv_fecha" type="date"></div>
+      <div class="f"><label>Qué pasó</label><select id="iv_tipo">
+        <option value="calibracion">Calibración</option>
+        <option value="taller">Paso por taller</option>
+        <option value="golpe">Golpe o caída</option>
+        <option value="recalibrado">Recalibrado</option>
+        <option value="revision">Revisión</option>
+        <option value="otro">Otra cosa</option>
+      </select></div>
+    </div>
+    <input id="iv_nota" placeholder="Nota: qué se tocó, quién, número de parte…">
+    <div class="btnrow">
+      <button onclick="apuntaIntervencion()">Apuntar intervención</button>
+      <button class="ghost" onclick="pintaIntervenciones()">Actualizar</button>
+    </div>
+  </div>
+  <div class="card">
     <h2>Ficha existente</h2>
     <p style="margin:0 11px 11px;color:var(--tx2);font-size:14px">
       Si esta óptica ya tiene grid hecho por otra persona, carga su ficha y lo nuevo se
@@ -669,9 +1085,33 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 
 <!-- ===================== 5 · PARTE DE CÁMARA ===================== -->
 <section id="v-parte">
+  <div class="tira" id="tiraParte">
+    <div class="tx"><b id="tp_proy">—</b><span id="tp_det"></span></div>
+    <button onclick="abreProdParte()">Datos</button>
+  </div>
   <div class="note"><b>El parte del rollo.</b> Cada toma queda unida al número de serie de la
     óptica, así que desde el parte se puede saltar a la ficha de calibración de esa misma óptica.
-    Un parte por rollo o magazine.</div>
+    Un parte por rollo o magazine. <b>Si solo quieres el parte, esta página se basta sola:</b>
+    abre el bloque de producción de aquí abajo y no hace falta que toques ninguna otra pestaña.</div>
+
+  <details class="solo" id="pp_bloque">
+    <summary><b>Producción</b> — <span>ábrelo si trabajas solo con el parte</span></summary>
+    <div class="cuerpo">
+      <div class="grid">
+        <div class="f"><label>Proyecto</label><input id="pp_proyecto"></div>
+        <div class="f"><label>Productora / cliente</label><input id="pp_productora"></div>
+        <div class="f"><label>Unidad</label><input id="pp_unidad"></div>
+        <div class="f"><label>Nº de jornada</label><input id="pp_jornada"></div>
+        <div class="f"><label>Localización</label><input id="pp_localizacion"></div>
+        <div class="f"><label>Fecha</label><input id="pp_fecha" type="date"></div>
+        <div class="f"><label>Casa de renta / propietario</label><input id="pp_casa"></div>
+        <div class="f"><label>Técnico de cámara / DIT</label><input id="pp_dit"></div>
+      </div>
+      <div class="hint" id="pp_aviso"></div>
+      <div class="hint">Es el mismo dato que en la pestaña Producción: se escriba donde se
+        escriba, va al mismo sitio. Aquí está para no obligarte a ir y volver.</div>
+    </div>
+  </details>
 
   <div class="card">
     <h2>Cámara y rollo</h2>
@@ -734,7 +1174,20 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
       <button class="primary" onclick="hacerParte()">Parte en PDF</button>
       <button onclick="parteCSV()">CSV</button>
       <button onclick="guardarParte()">Guardar parte</button>
+      <button class="ghost" onclick="document.getElementById('partIn').click()">Abrir un parte guardado</button>
+      <button class="ghost" onclick="ptArchiva(true)">Guardar en este dispositivo</button>
+      <button class="ghost" onclick="ptSiguienteRollo()">Empezar el rollo siguiente</button>
     </div>
+    <input type="file" id="partIn" accept=".json,application/json" style="display:none">
+    <div class="hint" id="pt_msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Partes de este dispositivo</h2>
+    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
+      Cada vez que guardas o imprimes un parte queda aquí, en el propio teléfono, aunque no haya
+      cobertura. Sirve para volver al rollo de ayer sin buscar archivos.</p>
+    <div id="pt_lista"></div>
     <div class="hint">El CSV lleva una columna por dato, con el número de serie de la óptica en
       cada toma, para que entre en una hoja de cálculo o en el software de laboratorio.</div>
   </div>
@@ -772,6 +1225,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
       <div class="btnrow" style="margin-top:10px">
         <button class="primary" onclick="nubeEntrar()">Entrar</button>
         <button class="ghost" onclick="nubeAlta()">Crear cuenta</button>
+        <button class="ghost" onclick="nbOtroServidor()">Otro servidor</button>
       </div>
       <div class="hint">La contraseña no se guarda en ningún sitio: viaja a Supabase y ya está.</div>
     </div>
@@ -798,6 +1252,24 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
       <div class="hint" id="nb_msg"></div>
       <div id="nb_listado"></div>
       <div class="hint" id="mv_post_msg"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Buscar grids ya guardados</h2>
+    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
+      Se busca por <b style="color:var(--tx)">número de serie</b>, nunca por modelo: dos unidades
+      del mismo objetivo tienen distorsión distinta, y un grid de la unidad equivocada es peor que
+      no tener grid. Pega la lista, o suelta el CSV del parte de cámara y los saca él solo.</p>
+    <div style="padding:0 11px">
+      <textarea id="bs_seriales" style="min-height:78px;width:100%"
+        placeholder="S7FF50-11938&#10;S7FF75-11944&#10;…"></textarea>
+    </div>
+    <div class="btnrow">
+      <button class="primary" onclick="buscaGrids()">Buscar</button>
+      <button class="ghost" onclick="document.getElementById('bs_csv').click()">Desde el CSV del parte</button>
+    </div>
+    <input type="file" id="bs_csv" accept=".csv,text/csv" hidden>
+    <div id="bs_res"></div>
       <div style="border-top:1px solid var(--line);margin-top:11px;padding-top:11px">
         <label>Tamaño del fotograma testigo</label>
         <select id="tg_lado" onchange="tgPonAjuste(this.value)">
@@ -870,10 +1342,89 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   </div>
 </section>
 
-<!-- ===================== 6 · BUZÓN ===================== -->
+
+<!-- ===================== 6 · CASA DE RENTA ===================== -->
+<section id="v-casa">
+  <div class="note"><b>Para casas de renta.</b> El juego de ópticas que alquilas ya está aquí, ficha
+    a ficha, por número de serie. Esta pantalla lo convierte en un servicio que puedes ofrecer con
+    el equipo: entregas la óptica <b>y su grid medido</b>, y post se lo descarga con un enlace.</div>
+
+  <div class="card">
+    <h2>Tu casa</h2>
+    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
+      Esto es lo que sale impreso en los registros y en los albaranes que emitas. El trabajo lleva
+      tu nombre.</p>
+    <div class="grid">
+      <div class="f"><label>Nombre comercial</label><input id="cs_comercial" placeholder="EFD Studios"></div>
+      <div class="f"><label>Ciudad</label><input id="cs_ciudad" placeholder="Madrid"></div>
+      <div class="f"><label>Contacto público</label><input id="cs_contacto" placeholder="grids@efd.es"></div>
+      <div class="f"><label>Web</label><input id="cs_web" placeholder="efdstudios.com" spellcheck="false"></div>
+      <div class="f"><label>Calibración vencida a los (meses)</label>
+        <input id="cs_meses" inputmode="numeric" placeholder="12"></div>
+    </div>
+    <div style="padding:0 11px">
+      <div class="f"><label>Qué ofreces con el equipo</label>
+        <textarea id="cs_servicio" style="min-height:64px"
+          placeholder="Grids medidos de cada unidad, clip del grid y ficha de calibración"></textarea></div>
+    </div>
+    <div class="btnrow">
+      <button class="primary" onclick="csGuardaPerfil()">Guardar</button>
+      <button class="ghost" onclick="csTraePerfil()">Traer lo guardado</button>
+      <button class="ghost" onclick="hojaServicio()">Hoja de servicio (PDF)</button>
+    </div>
+    <div class="hint" id="cs_msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Inventario</h2>
+    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
+      Una línea por óptica, por número de serie. El semáforo dice si esa unidad está lista para
+      salir: <b style="color:var(--tx)">verde</b> es grid completo, clip guardado y calibración en
+      plazo. Marca las que van a una producción y crea la entrega ahí abajo.</p>
+    <div class="btnrow">
+      <button class="primary" onclick="csInventario()">Traer el inventario</button>
+      <button class="ghost" onclick="csMarcaListas()">Marcar las que están listas</button>
+      <button class="ghost" onclick="csDesmarca()">Quitar marcas</button>
+    </div>
+    <div class="filtro"><input id="cs_filtro" placeholder="filtrar por serie o familia"
+      oninput="csPinta()" spellcheck="false"></div>
+    <div id="cs_inv"></div>
+  </div>
+
+  <div class="card">
+    <h2>Entrega a una producción</h2>
+    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
+      Sale un enlace con las ópticas marcadas y nada más. Quien lo tenga ve esas fichas y se baja
+      esos grids, sin cuenta y sin entrar en tu almacén. Queda apuntado qué salió, cuándo y a quién.</p>
+    <div class="grid">
+      <div class="f"><label>Producción</label><input id="cs_prod" placeholder="EL PRIMER DÍA"></div>
+      <div class="f"><label>Cliente / contacto</label><input id="cs_cliente" placeholder="Nombre · correo"></div>
+      <div class="f"><label>El enlace vale (días)</label><input id="cs_dias" inputmode="numeric" placeholder="180"></div>
+      <div class="f"><label>Nota interna</label><input id="cs_nota" placeholder="pedido 2451"></div>
+    </div>
+    <div class="btnrow">
+      <button class="primary" onclick="csCreaEntrega()">Crear la entrega con las marcadas</button>
+      <button class="ghost" onclick="csEntregas()">Ver las entregas</button>
+    </div>
+    <div class="hint" id="cs_emsg"></div>
+    <div id="cs_ents"></div>
+  </div>
+
+  <div class="card">
+    <h2>Cómo se cobra esto</h2>
+    <p style="margin:0;color:var(--tx2);font-size:13.5px">
+      La casa no paga por óptica ni por proyecto: paga por lo que guarda. Los grids y sus clips
+      quedan en el almacén de la casa indefinidamente, y desde ahí se entregan tantas veces como
+      haga falta, a tantas producciones como haga falta. Un grid medido una vez se cobra en cada
+      alquiler de esa óptica, durante toda su vida útil. Cuando la óptica pasa por taller se apunta
+      la intervención y el grid queda marcado como vencido: es entonces cuando toca volver a medir.</p>
+  </div>
+</section>
+
+<!-- ===================== 7 · BUZÓN ===================== -->
 <section id="v-buzon">
-  <div class="note"><b>Esto lo hace un foquista, no una empresa de software.</b> Lo que te estorbe,
-    lo que te falte o lo que te haya salvado un día de rodaje: dilo aquí. Se lee todo.</div>
+  <div class="note"><b>Lo que te estorbe, lo que te falte o lo que te haya salvado un día de
+    rodaje: dilo aquí.</b> Se lee todo.</div>
   <div class="card">
     <h2>Comentarios y sugerencias</h2>
     <div class="grid">
@@ -903,11 +1454,12 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 </main>
 
 <nav>
-  <button data-v="prod" class="on">Producción</button>
+  <button data-v="prod" class="on">Prod.</button>
   <button data-v="optica">Óptica</button>
   <button data-v="equipo">Equipo</button>
   <button data-v="captura">Captura</button>
   <button data-v="ficha">Emitir</button>
+  <button data-v="casa">Casa</button>
   <button data-v="parte">Parte</button>
   <button data-v="buzon">Buzón</button>
 </nav>
@@ -915,8 +1467,10 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 <div id="lupa" onclick="cierraLupa()"><img id="lupa_img" alt=""><div class="pie" id="lupa_pie"></div></div>
 <input type="file" id="tg_file" accept="image/*" hidden>
 <input type="file" id="mv_archivo" hidden>
+<input type="file" id="fs_file" accept="image/*" hidden>
 <div id="ficha" class="doc"></div>
 <div id="parte" class="doc"></div>
+<div id="albaran" class="doc"></div>
 
 <script>
 "use strict";
@@ -1209,6 +1763,7 @@ function syncLens(){
         return mm ? ` · foco mínimo del fabricante <b>${fmtMetros(mm.m)}</b> <span style="opacity:.7">(${mm.ref})</span>` : "";
       })();
   updateChip();
+  if (typeof pintaFotoSerial === "function") pintaFotoSerial();
 }
 /* coloca una óptica en la interfaz venga del catálogo o no */
 function setLens(L){
@@ -1964,6 +2519,695 @@ async function paquetePost(){
   if (msg) msg.textContent = traduce("Listo: ") + filas.length + traduce(" archivos. Los enlaces caducan en 7 días.");
 }
 
+
+/* ============ ENCONTRAR UN GRID GUARDADO Y DARLO POR BUENO ============
+   El criterio de búsqueda NO es el modelo: dos unidades del mismo
+   objetivo tienen distorsión distinta, así que un grid del modelo
+   correcto pero de otra unidad es peor que no tener grid — parece bueno
+   y nadie lo cuestiona. Se busca por fabricante + número de serie.     */
+
+/* «27.99 × 19.22» -> {w:27.99, h:19.22} */
+function leeArea(t){
+  const m = String(t || "").match(/([\d.,]+)\s*[×x]\s*([\d.,]+)/);
+  if (!m) return null;
+  return {w: parseFloat(m[1].replace(",", ".")), h: parseFloat(m[2].replace(",", "."))};
+}
+/* dos áreas son la misma si no se diferencian ni medio pelo: da igual cómo
+   se llame el formato o de qué cámara sea, la óptica ve lo mismo */
+function mismaArea(a, b){
+  return !!(a && b && Math.abs(a.w - b.w) <= 0.06 && Math.abs(a.h - b.h) <= 0.06);
+}
+function areasPedidas(){
+  return (S.formats || []).map(function(f){
+    const a = leeArea(f.area);
+    return a ? {a: a, nombre: f.fmt || f.key, key: f.key} : null;
+  }).filter(Boolean);
+}
+const CALIB_AVISO_MESES = 12;
+function mesesDesde(fecha){
+  const d = new Date(fecha);
+  if (isNaN(d)) return null;
+  return (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+}
+
+/* el semáforo: rojo = no sirve · ámbar = úsalo sabiendo qué falta · verde = vale
+   Devuelve también el porqué, que es lo que de verdad necesita post.   */
+function veredicto(f, pedidas){
+  const motivos = [];
+  let luz = "ok";
+  const peor = function(x){ if (x === "no" || (x === "med" && luz === "ok")) luz = x; };
+
+  if (!f){ return {luz: "no", motivos: [{n: "mal", t: "No hay ninguna ficha de esa óptica."}]}; }
+
+  // 1 · ¿ha pasado por taller después del grid?
+  if (f.intervencion_fecha && f.grid_fecha){
+    if (f.intervencion_fecha > f.grid_fecha){
+      peor("no");
+      motivos.push({n: "mal", t: traduce("La óptica pasó por ") + f.intervencion_tipo +
+        traduce(" el ") + f.intervencion_fecha + traduce(", después del grid (") + f.grid_fecha +
+        traduce("). Hay que volver a medirla.")});
+    } else {
+      motivos.push({n: "bien", t: traduce("Sin intervenciones desde el grid.")});
+    }
+  } else if (f.intervencion_fecha && !f.grid_fecha){
+    peor("med");
+    motivos.push({n: "avi", t: traduce("Hay una intervención el ") + f.intervencion_fecha +
+      traduce(" y el grid no tiene fecha: compruébalo a mano.")});
+  }
+
+  // 2 · ¿cubre el área activa que se va a usar? (el nombre del formato da igual)
+  const suyas = (f.formatos || []).map(function(x){
+    const a = leeArea(x.area); return a ? {a: a, nombre: x.fmt || x.key, key: x.key} : null;
+  }).filter(Boolean);
+  if (pedidas && pedidas.length){
+    const faltan = pedidas.filter(function(p){
+      return !suyas.some(function(s){ return mismaArea(s.a, p.a); });
+    });
+    if (faltan.length){
+      peor("med");
+      motivos.push({n: "avi", t: traduce("No hay grid para ") +
+        faltan.map(function(x){ return x.nombre + " (" + x.a.w + " × " + x.a.h + " mm)"; }).join(", ") +
+        traduce(". Un grid solo vale para el área con la que se capturó.")});
+    } else {
+      motivos.push({n: "bien", t: traduce("Cubre el área activa que vas a usar.")});
+    }
+  }
+
+  // 3 · ¿está el grid completo?
+  if (typeof f.cobertura === "number" && f.cobertura < 100){
+    peor("med");
+    motivos.push({n: "avi", t: traduce("Grid a medias: ") + f.cobertura + "%. " +
+      traduce("Las combinaciones sin medir no se pueden extrapolar.")});
+  }
+
+  // 4 · ¿hay comprobante físico del número de serie?
+  if (!f.foto_serial){
+    peor("med");
+    motivos.push({n: "avi", t: traduce("Sin foto del número de serie grabado: no hay prueba física de que el grid sea de esta unidad.")});
+  } else {
+    motivos.push({n: "bien", t: traduce("Con foto del número de serie grabado.")});
+  }
+
+  // 5 · ¿la calibración es reciente?
+  const m = f.calibracion ? mesesDesde(f.calibracion) : null;
+  if (m === null){
+    peor("med");
+    motivos.push({n: "avi", t: traduce("Sin fecha de calibración declarada.")});
+  } else if (m > CALIB_AVISO_MESES){
+    peor("med");
+    motivos.push({n: "avi", t: traduce("Calibración de hace ") + Math.round(m) +
+      traduce(" meses (") + f.calibracion + ")."});
+  }
+  return {luz: luz, motivos: motivos};
+}
+
+/* --------- de dónde salen los números de serie que busca post --------- */
+function serialesDelTexto(t){
+  return String(t || "").split(/[\n,;\t]+/).map(function(x){ return x.trim(); })
+    .filter(function(x){ return x.length >= 3; });
+}
+/* el CSV del parte de cámara trae una columna optica_serie: se saca de ahí */
+function serialesDelCSV(texto){
+  const lineas = String(texto || "").replace(/^\ufeff/, "").split(/\r?\n/).filter(Boolean);
+  if (!lineas.length) return [];
+  const parte = function(l){
+    const out = []; let act = "", dentro = false;
+    for (let i = 0; i < l.length; i++){
+      const c = l[i];
+      if (c === '"'){ if (dentro && l[i+1] === '"'){ act += '"'; i++; } else dentro = !dentro; }
+      else if (c === "," && !dentro){ out.push(act); act = ""; }
+      else act += c;
+    }
+    out.push(act); return out;
+  };
+  const cab = parte(lineas[0]).map(function(x){ return x.trim().toLowerCase(); });
+  let col = cab.indexOf("optica_serie");
+  if (col < 0) col = cab.findIndex(function(x){ return /serie|serial/.test(x); });
+  if (col < 0) return [];
+  const vistos = {}, out = [];
+  lineas.slice(1).forEach(function(l){
+    const v = (parte(l)[col] || "").trim();
+    if (v && !vistos[v]){ vistos[v] = 1; out.push(v); }
+  });
+  return out;
+}
+
+let BUSCA_RES = [];
+async function buscaGrids(lista){
+  const caja = $("bs_res");
+  if (!NB.casa){ caja.innerHTML = '<div class="empty">' +
+    traduce("Entra antes en la casa de renta.") + "</div>"; return; }
+  const pedidos = lista || serialesDelTexto($("bs_seriales").value);
+  if (!pedidos.length){ caja.innerHTML = '<div class="empty">' +
+    traduce("Pega los números de serie, o suelta el CSV del parte de cámara.") + "</div>"; return; }
+  caja.innerHTML = '<div class="empty">' + traduce("Buscando…") + "</div>";
+  const claves = pedidos.map(function(x){ return x; });
+  const d = await nbPide("/rest/v1/rpc/buscar_fichas",
+              {p_casa: NB.casa, p_claves: claves}).catch(function(){ return []; });
+  BUSCA_RES = d || [];
+  const pedidas = areasPedidas();
+  const filas = pedidos.map(function(p){
+    const f = BUSCA_RES.find(function(x){
+      return wlNorm(x.serial) === wlNorm(p) || x.clave === p ||
+             wlNorm(x.clave.split("|")[1] || "") === wlNorm(p);
+    });
+    const v = veredicto(f, pedidas);
+    const nombre = f ? (f.fabricante + " " + f.familia + " " + f.focal + " mm · " + f.serial)
+                     : p;
+    const acc = f ? `<div class="acc">
+        <button class="ghost" onclick="traeFicha('${esc(f.clave)}')">${traduce("usar en este proyecto")}</button>
+        <button class="ghost" onclick="enlacePost('${esc(f.clave)}')">${traduce("enlace para post")}</button>
+      </div>` : "";
+    return `<div class="sem"><div class="luz ${v.luz}"></div><div class="c">
+      <div class="n"><b>${esc(p)}</b>${f ? " — " + esc(nombre) : ""}</div>
+      <div class="r">${v.motivos.map(function(m){
+          return '<i class="' + m.n + '">' + esc(m.t) + "</i>"; }).join("")}</div>
+      ${acc}</div></div>`;
+  }).join("");
+  const cuenta = pedidos.length;
+  caja.innerHTML = '<div class="hint">' + cuenta + traduce(" ópticas buscadas") +
+    (pedidas.length ? traduce(" · contra el área activa de ") + pedidas.length +
+       traduce(" formato(s) que tienes puestos en Equipo") :
+       traduce(" · sin formato puesto: no se comprueba el área activa")) + "</div>" + filas;
+}
+function buscaDesdeCSV(file){
+  const r = new FileReader();
+  r.onload = function(){
+    const l = serialesDelCSV(r.result);
+    if (!l.length){ $("bs_res").innerHTML = '<div class="empty">' +
+      traduce("Ese archivo no trae ninguna columna de número de serie.") + "</div>"; return; }
+    $("bs_seriales").value = l.join("\n");
+    buscaGrids(l);
+  };
+  r.readAsText(file);
+}
+
+/* trae una ficha guardada a este proyecto, dejando constancia de que se reutiliza */
+async function traeFicha(clave){
+  const d = await nbPide("/rest/v1/rpc/traer_ficha", {p_casa: NB.casa, p_clave: clave})
+              .catch(function(){ return []; });
+  const f = d && d[0];
+  if (!f){ alert(traduce("No se pudo traer esa ficha.")); return; }
+  guarda();
+  const prod = Object.assign({}, S.prod);         // la producción de AHORA no se toca
+  fundeFicha(f.datos, false);
+  S.prod = prod;
+  S.historial = (S.historial || []).concat([{fecha: new Date().toISOString().slice(0, 10),
+    por: NB.nombre || NB.correo || "—", n: 0, reutilizada: true,
+    de: (f.datos && f.datos.prod && f.datos.prod.proyecto) || ""}]);
+  S.nubeRev = f.rev || 0;
+  refrescaTodo(); autoguarda();
+  alert(traduce("Ficha traída a este proyecto. La producción sigue siendo la tuya; el grid queda marcado como reutilizado."));
+  show("optica");
+}
+
+/* enlace de solo lectura de UNA ficha, para post — aunque sea de otra casa */
+async function enlacePost(clave){
+  const d = await nbPide("/rest/v1/rpc/crea_enlace",
+              {p_casa: NB.casa, p_clave: clave, p_dias: 30}).catch(function(){ return null; });
+  const e = d && (d[0] || d);
+  if (!e || !e.token){ alert(traduce("No se pudo crear el enlace.")); return; }
+  const url = location.origin + location.pathname + "?ficha=" + e.token;
+  try { await navigator.clipboard.writeText(url); } catch(x){}
+  $("bs_res").insertAdjacentHTML("afterbegin",
+    '<div class="hint good" style="word-break:break-all">' +
+    traduce("Enlace copiado, caduca el ") + String(e.caduca).slice(0, 10) + ":<br>" + esc(url) + "</div>");
+}
+
+/* si se abre la app con ?ficha=… se enseña esa ficha y nada más */
+async function abreEnlace(){
+  const t = new URLSearchParams(location.search).get("ficha");
+  if (!t) return false;
+  if (!NB.url || !NB.key) return false;
+  const d = await nbPide("/rest/v1/rpc/ficha_por_enlace", {p_token: t}, false)
+              .catch(function(){ return []; });
+  const f = d && d[0];
+  if (!f) return false;
+  fundeFicha(f.datos, false);
+  S.nubeRev = 0;
+  refrescaTodo();
+  show("ficha");
+  const m = $("nb_msg");
+  if (m){ m.className = "hint good";
+    m.textContent = traduce("Ficha compartida de solo lectura · caduca el ") +
+                    String(f.caduca).slice(0, 10); }
+  return true;
+}
+
+
+/* ================= LA CASA DE RENTA, COMO SERVICIO =================
+   Una casa alquila ópticas; lo que no podía dar hasta ahora es lo que va
+   con ellas. Aquí gobierna su inventario de grids y lo entrega: marca las
+   ópticas que salen a una producción y sale un enlace con esas y sólo esas.
+   Nada de esto inventa datos nuevos: es el mismo almacén, mirado desde el
+   lado de quien lo alquila.                                            */
+const CS_CONF = "wallio_casa_perfil";
+let CS = {perfil: {}, inv: [], sel: {}, ents: []};
+
+function csLeeLocal(){
+  try { CS.perfil = JSON.parse(localStorage.getItem(CS_CONF) || "{}") || {}; }
+  catch(e){ CS.perfil = {}; }
+  return CS.perfil;
+}
+function csGuardaLocal(){
+  try { localStorage.setItem(CS_CONF, JSON.stringify(CS.perfil)); } catch(e){}
+}
+function csMsg(t, clase, donde){
+  const m = $(donde || "cs_msg"); if (!m) return;
+  m.className = "hint" + (clase ? " " + clase : ""); m.textContent = t;
+}
+function csPinta_perfil(){
+  const p = CS.perfil || {};
+  [["cs_comercial","comercial"],["cs_ciudad","ciudad"],["cs_contacto","contacto"],
+   ["cs_web","web"],["cs_servicio","servicio"]].forEach(function(par){
+    const el = $(par[0]); if (el && p[par[1]] !== undefined) el.value = p[par[1]] || "";
+  });
+  const m = $("cs_meses"); if (m) m.value = p.meses_calib || p.meses || 12;
+}
+function csDePantalla(){
+  const n = parseInt(($("cs_meses").value || "12"), 10);
+  return {comercial: $("cs_comercial").value.trim(), ciudad: $("cs_ciudad").value.trim(),
+          contacto: $("cs_contacto").value.trim(), web: $("cs_web").value.trim(),
+          servicio: $("cs_servicio").value.trim(),
+          meses_calib: (isFinite(n) && n > 0) ? Math.min(n, 120) : 12};
+}
+async function csGuardaPerfil(){
+  CS.perfil = csDePantalla();
+  csGuardaLocal();
+  if (!NB.casa){ csMsg(traduce("Guardado en este dispositivo. Entra en la casa para compartirlo con los tuyos."), ""); return; }
+  try {
+    await nbPide("/rest/v1/rpc/guarda_perfil_casa", {
+      p_casa: NB.casa, p_comercial: CS.perfil.comercial, p_ciudad: CS.perfil.ciudad,
+      p_contacto: CS.perfil.contacto, p_web: CS.perfil.web,
+      p_meses: CS.perfil.meses_calib, p_servicio: CS.perfil.servicio});
+    csMsg(traduce("Guardado. Ya sale en los documentos que emita cualquiera de la casa."), "good");
+  } catch(e){ csMsg(String(e.message || e), "bad"); }
+}
+async function csTraePerfil(){
+  if (!NB.casa){ csLeeLocal(); csPinta_perfil();
+    csMsg(traduce("Sin sesión sólo se ve lo de este dispositivo."), ""); return; }
+  try {
+    const d = await nbPide("/rest/v1/rpc/perfil_casa", {p_casa: NB.casa});
+    const p = d && d[0];
+    if (p){ CS.perfil = p; csGuardaLocal(); csPinta_perfil();
+      csMsg(traduce("Perfil de ") + (p.comercial || p.nombre || "—"), "good"); }
+    else csMsg(traduce("Todavía no hay perfil guardado."), "");
+  } catch(e){ csMsg(String(e.message || e), "bad"); }
+}
+/* la línea que va al pie de los documentos: sólo si la casa se ha presentado */
+function pieCasa(){
+  const p = CS.perfil || {};
+  if (!p.comercial) return "";
+  return [p.comercial, p.ciudad, p.contacto].filter(Boolean).join(" · ");
+}
+
+/* -------- semáforo del almacén: ¿esta óptica puede salir hoy? -------- */
+function csMeses(){ const n = parseInt((CS.perfil || {}).meses_calib, 10);
+                    return (isFinite(n) && n > 0) ? n : 12; }
+function mesesDesde(f){
+  if (!f) return null;
+  const d = new Date(f); if (isNaN(d.getTime())) return null;
+  return (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+}
+function csEstado(f){
+  const avisos = [], meses = csMeses();
+  const cob = Number(f.cobertura) || 0;
+  const clips = Number(f.clips) || 0;
+  let clase = "ok";
+  if (cob <= 0){ clase = "mal"; avisos.push(traduce("sin grid")); }
+  else if (cob < 100){ clase = "med"; avisos.push(traduce("grid a medias")); }
+  if (cob > 0 && !clips){ if (clase === "ok") clase = "med";
+    avisos.push(traduce("el grid no tiene clip guardado: post no puede recibirlo")); }
+  const mc = mesesDesde(f.calibracion);
+  if (mc === null){ if (clase === "ok") clase = "med"; avisos.push(traduce("sin fecha de calibración")); }
+  else if (mc > meses){ if (clase === "ok") clase = "med";
+    avisos.push(traduce("calibración de hace ") + Math.round(mc) + " " + traduce("meses")); }
+  if (f.intervencion_fecha && f.grid_fecha &&
+      String(f.intervencion_fecha) > String(f.grid_fecha)){
+    clase = "mal";
+    avisos.push(traduce("intervención posterior al grid (") + traduce(f.intervencion_tipo || "") +
+                traduce("): hay que volver a medir"));
+  }
+  return {clase: clase, avisos: avisos, lista: clase === "ok"};
+}
+function csNombre(f){
+  return [f.fabricante, f.familia].filter(Boolean).join(" ") +
+         (f.focal ? " " + f.focal + " mm" : "") + " · " + f.serial;
+}
+async function csInventario(){
+  const c = $("cs_inv");
+  if (!NB.casa){ c.innerHTML = '<div class="empty">' +
+    traduce("Entra en la casa de renta (pestaña Emitir) para ver su inventario.") + "</div>"; return; }
+  c.innerHTML = '<div class="empty">' + traduce("Trayendo el inventario…") + "</div>";
+  try {
+    CS.inv = await nbPide("/rest/v1/rpc/inventario_casa", {p_casa: NB.casa}) || [];
+  } catch(e){ c.innerHTML = '<div class="hint bad">' + esc(String(e.message || e)) + "</div>"; return; }
+  csPinta();
+}
+function csPinta(){
+  const c = $("cs_inv"); if (!c) return;
+  const inv = CS.inv || [];
+  if (!inv.length){ c.innerHTML = '<div class="empty">' +
+    traduce("Todavía no hay ninguna óptica en esta casa.") + "</div>"; return; }
+  const q = (($("cs_filtro") || {}).value || "").trim().toLowerCase();
+  const vis = q ? inv.filter(function(f){
+      return (csNombre(f) + " " + (f.familia || "")).toLowerCase().indexOf(q) >= 0; }) : inv;
+  const est = inv.map(csEstado);
+  const listas = est.filter(function(e){ return e.lista; }).length;
+  const conClip = inv.filter(function(f){ return Number(f.clips) > 0; }).length;
+  const vencidas = inv.filter(function(f, i){
+      return est[i].avisos.some(function(a){ return a.indexOf(traduce("calibración de hace ")) === 0; }); }).length;
+  const bytes = inv.reduce(function(a, f){ return a + (Number(f.bytes) || 0); }, 0);
+  const marcadas = Object.keys(CS.sel).filter(function(k){ return CS.sel[k]; }).length;
+
+  const filas = vis.map(function(f){
+    const e = csEstado(f);
+    const marc = CS.sel[f.clave] ? " checked" : "";
+    return '<div class="l"><input type="checkbox"' + marc +
+      ' onchange="csMarca(\'' + esc(f.clave) + '\', this.checked)">' +
+      '<span class="sem ' + e.clase + '"></span>' +
+      '<div class="n">' + esc(csNombre(f)) +
+        '<span>' + (f.calibracion ? traduce("calibrada ") + esc(f.calibracion) : traduce("sin calibración")) +
+          " · " + (Number(f.clips) || 0) + " " + traduce("clip(s)") +
+          (Number(f.bytes) ? " · " + tam(f.bytes) : "") +
+          (Number(f.versiones) ? " · " + f.versiones + " " + traduce("subida(s)") : "") + "</span>" +
+        (e.avisos.length ? '<span class="avs">' + e.avisos.map(esc).join(" · ") + "</span>" : "") +
+      "</div>" +
+      '<div class="pc">' + (Number(f.cobertura) || 0) + "%</div>" +
+      '<button class="ghost" onclick="nubeTrae(\'' + esc(f.clave) + '\')">cargar</button></div>';
+  }).join("");
+
+  c.innerHTML = '<div class="inv"><div class="cab">' +
+    '<div class="kpi"><b>' + inv.length + "</b><span>" + traduce("ópticas") + "</span></div>" +
+    '<div class="kpi ok"><b>' + listas + "</b><span>" + traduce("listas para salir") + "</span></div>" +
+    '<div class="kpi"><b>' + conClip + "</b><span>" + traduce("con clip guardado") + "</span></div>" +
+    '<div class="kpi med"><b>' + vencidas + "</b><span>" + traduce("calibración vencida") + "</span></div>" +
+    '<div class="kpi"><b>' + tam(bytes) + "</b><span>" + traduce("en el almacén") + "</span></div>" +
+    '<div class="kpi"><b>' + marcadas + "</b><span>" + traduce("marcadas") + "</span></div>" +
+    "</div>" + filas + "</div>";
+  if (typeof aplicaIdioma === "function") aplicaIdioma();
+}
+function csMarca(clave, si){ CS.sel[clave] = !!si; csPinta(); }
+function csMarcaListas(){
+  (CS.inv || []).forEach(function(f){ if (csEstado(f).lista) CS.sel[f.clave] = true; });
+  csPinta();
+}
+function csDesmarca(){ CS.sel = {}; csPinta(); }
+function csMarcadas(){
+  return (CS.inv || []).filter(function(f){ return CS.sel[f.clave]; });
+}
+
+/* ---------------------- la entrega ---------------------- */
+async function csCreaEntrega(){
+  if (!NB.casa){ csMsg(traduce("Entra antes en la casa de renta."), "bad", "cs_emsg"); return; }
+  const marcadas = csMarcadas();
+  if (!marcadas.length){ csMsg(traduce("Marca antes las ópticas que salen."), "bad", "cs_emsg"); return; }
+  const prod = $("cs_prod").value.trim();
+  if (!prod){ csMsg(traduce("Pon el nombre de la producción: es lo que verá post al abrir el enlace."), "bad", "cs_emsg"); return; }
+  const flojas = marcadas.filter(function(f){ return !csEstado(f).lista; });
+  if (flojas.length && !confirm(
+        traduce("De las marcadas, estas no están listas:") + "\n\n" +
+        flojas.map(function(f){ return "· " + csNombre(f) + " — " + csEstado(f).avisos.join("; "); }).join("\n") +
+        "\n\n" + traduce("¿Entregarlas igualmente?"))) return;
+  const n = parseInt($("cs_dias").value || "180", 10);
+  try {
+    const d = await nbPide("/rest/v1/rpc/crea_entrega", {
+      p_casa: NB.casa, p_produccion: prod, p_cliente: $("cs_cliente").value.trim(),
+      p_claves: marcadas.map(function(f){ return f.clave; }),
+      p_dias: (isFinite(n) && n > 0) ? n : 180, p_nota: $("cs_nota").value.trim()});
+    const e = d && (d[0] || d);
+    if (!e || !e.token) throw new Error(traduce("No se pudo crear la entrega."));
+    try { await navigator.clipboard.writeText(csUrl(e.token)); } catch(x){}
+    csMsg(traduce("Entrega creada y enlace copiado. ") + marcadas.length + " " +
+          traduce("ópticas."), "good", "cs_emsg");
+    CS.sel = {}; csPinta(); csEntregas();
+  } catch(e){ csMsg(String(e.message || e), "bad", "cs_emsg"); }
+}
+function csUrl(token){ return location.origin + location.pathname + "?entrega=" + token; }
+async function csEntregas(){
+  const c = $("cs_ents");
+  if (!NB.casa){ c.innerHTML = '<div class="empty">' + traduce("Entra antes en la casa de renta.") + "</div>"; return; }
+  try { CS.ents = await nbPide("/rest/v1/rpc/entregas_de", {p_casa: NB.casa}) || []; }
+  catch(e){ c.innerHTML = '<div class="hint bad">' + esc(String(e.message || e)) + "</div>"; return; }
+  if (!CS.ents.length){ c.innerHTML = '<div class="empty">' +
+    traduce("Todavía no has hecho ninguna entrega.") + "</div>"; return; }
+  c.innerHTML = CS.ents.map(function(e){
+    const fuera = !e.vuelta;
+    return '<div class="ent"><div class="t1"><b>' + esc(e.produccion || "—") + "</b>" +
+      '<span class="est ' + (fuera ? "fuera" : "vuelto") + '">' +
+        (fuera ? traduce("fuera") : traduce("devuelto ") + esc(String(e.vuelta))) + "</span></div>" +
+      '<div class="d">' + (e.n_opticas || 0) + " " + traduce("ópticas") +
+        " · " + traduce("salida ") + esc(String(e.salida)) +
+        " · " + traduce("el enlace caduca el ") + esc(String(e.caduca).slice(0, 10)) +
+        (e.cliente ? " · " + esc(e.cliente) : "") +
+        (e.nota ? " · " + esc(e.nota) : "") + "</div>" +
+      '<div class="url">' + esc(csUrl(e.token)) + "</div>" +
+      '<div class="btnrow" style="margin:8px 0 0">' +
+        '<button class="ghost" onclick="csCopia(\'' + esc(e.token) + '\')">Copiar enlace</button>' +
+        '<button class="ghost" onclick="csAlbaran(\'' + esc(e.token) + '\')">Albarán (PDF)</button>' +
+        (fuera ? '<button class="ghost" onclick="csCierra(\'' + esc(e.token) + '\')">Marcar devuelto</button>' : "") +
+      "</div></div>";
+  }).join("");
+  if (typeof aplicaIdioma === "function") aplicaIdioma();
+}
+async function csCopia(token){
+  try { await navigator.clipboard.writeText(csUrl(token));
+        csMsg(traduce("Enlace copiado."), "good", "cs_emsg"); }
+  catch(e){ csMsg(traduce("Copia el enlace a mano desde el recuadro."), "", "cs_emsg"); }
+}
+async function csCierra(token){
+  if (!confirm(traduce("¿Marcar esta entrega como devuelta? El enlace sigue valiendo hasta que caduque."))) return;
+  try {
+    await nbPide("/rest/v1/rpc/cierra_entrega", {p_casa: NB.casa, p_token: token, p_vuelta: null});
+    csMsg(traduce("Entrega cerrada. Si alguna óptica vuelve tocada, apunta la intervención en su ficha."), "good", "cs_emsg");
+    csEntregas();
+  } catch(e){ csMsg(String(e.message || e), "bad", "cs_emsg"); }
+}
+
+/* ------------- el albarán: papel de lo que sale por la puerta ------------- */
+function csAlbaran(token){
+  const e = (CS.ents || []).find(function(x){ return x.token === token; });
+  if (!e){ csMsg(traduce("Trae antes las entregas."), "bad", "cs_emsg"); return; }
+  const p = CS.perfil || {};
+  const porClave = {};
+  (CS.inv || []).forEach(function(f){ porClave[f.clave] = f; });
+  const hoy = new Date().toISOString().slice(0, 10);
+  const filas = (e.claves || []).map(function(k, i){
+    const f = porClave[k] || {clave: k, serial: k.split("|")[1] || k};
+    const st = porClave[k] ? csEstado(f) : {clase: "", avisos: []};
+    return '<tr><td>' + String(i + 1).padStart(2, "0") + "</td>" +
+      "<td>" + esc([f.fabricante, f.familia].filter(Boolean).join(" ") || "—") + "</td>" +
+      "<td>" + esc(f.focal ? f.focal + " mm" : "—") + "</td>" +
+      '<td class="m">' + esc(f.serial || "—") + "</td>" +
+      "<td>" + ((Number(f.cobertura) || 0) + "%") + "</td>" +
+      "<td>" + esc(f.calibracion || "—") + "</td>" +
+      "<td>" + (Number(f.clips) ? traduce("sí") : traduce("no")) + "</td>" +
+      "<td>" + esc(st.avisos.join(" · ") || "—") + "</td></tr>";
+  }).join("");
+  $("albaran").innerHTML =
+  '<div class="head"><div class="brand">' + MARCA +
+    '<div><div class="wm">WALLIO</div><div class="wl">Lens Grid<br>Platform</div>' +
+    '<div class="dt">' + traduce("Albarán de grids") + "</div>" +
+    '<div class="std">' + traduce("Las ópticas que salen y el grid que va con cada una") + "</div></div></div>" +
+  '<div class="ctrl"><div class="ch">' + traduce("Control de documento") + "</div>" +
+    '<div class="cr"><b>' + traduce("Casa") + "</b><span>" + esc(p.comercial || "—") + "</span></div>" +
+    '<div class="cr"><b>' + traduce("Producción") + "</b><span>" + esc(e.produccion || "—") + "</span></div>" +
+    '<div class="cr"><b>' + traduce("Salida") + "</b><span>" + esc(String(e.salida)) + "</span></div>" +
+    '<div class="cr"><b>' + traduce("Emitido") + "</b><span>" + hoy + "</span></div>" +
+    '<div class="cr"><b>' + traduce("Ópticas") + "</b><span>" + (e.n_opticas || 0) + "</span></div>" +
+    '<div class="cr"><b>' + traduce("Enlace válido hasta") + "</b><span>" + esc(String(e.caduca).slice(0, 10)) + "</span></div>" +
+  "</div></div>" +
+  "<h4>1 · " + traduce("Entrega") + "<i>" + traduce("a quién va y con qué condiciones") + "</i></h4>" +
+  '<div class="fl">' +
+    '<div><div class="k">' + traduce("Producción") + '</div><div class="v">' + esc(e.produccion || "—") + "</div></div>" +
+    '<div><div class="k">' + traduce("Cliente") + '</div><div class="v">' + esc(e.cliente || "—") + "</div></div>" +
+    '<div><div class="k">' + traduce("Casa de renta") + '</div><div class="v">' + esc(p.comercial || "—") + "</div></div>" +
+    '<div><div class="k">' + traduce("Contacto") + '</div><div class="v">' + esc(p.contacto || "—") + "</div></div>" +
+  "</div>" +
+  "<h4>2 · " + traduce("Ópticas y grids") + "<i>" +
+    traduce("cada grid vale para esa unidad y para el formato con el que se midió") + "</i></h4>" +
+  '<table class="lg"><thead><tr><th>#</th><th>' + traduce("Óptica") + "</th><th>" + traduce("Focal") +
+    "</th><th>" + traduce("Nº de serie") + "</th><th>" + traduce("Cobertura") + "</th><th>" +
+    traduce("Calibrada") + "</th><th>" + traduce("Clip") + "</th><th>" + traduce("Avisos") +
+    "</th></tr></thead><tbody>" + filas + "</tbody></table>" +
+  "<h4>3 · " + traduce("Conformidad") + "<i>" +
+    traduce("quién entrega y quién recibe el material y sus grids") + "</i></h4>" +
+  '<div class="sig">' +
+    '<div><div class="rl">' + traduce("Entrega (casa de renta)") + '</div><div class="box"></div>' +
+      '<div class="nm"><span>' + esc(p.comercial || traduce("nombre y función")) +
+      "</span><span>" + esc(String(e.salida)) + "</span></div></div>" +
+    '<div><div class="rl">' + traduce("Recibe (producción)") + '</div><div class="box"></div>' +
+      '<div class="nm"><span>' + esc(e.cliente || traduce("nombre y función")) +
+      "</span><span>" + traduce("fecha") + "</span></div></div>" +
+    '<div><div class="rl">' + traduce("Devuelto y revisado") + '</div><div class="box"></div>' +
+      '<div class="nm"><span>' + traduce("nombre y función") + "</span><span>" + traduce("fecha") +
+      "</span></div></div>" +
+  "</div>" +
+  '<div class="note2"><b>' + traduce("Para post:") + "</b> " +
+    traduce("el enlace de esta entrega abre las fichas de estas ópticas y sus grids. Si alguna óptica pasa por taller durante el rodaje, su grid deja de valer desde ese día.") + "</div>" +
+  '<div class="ffoot"><span>Wallio · Lens Grid Platform · ' + traduce("Albarán de grids") +
+    (pieCasa() ? " · " + esc(pieCasa()) : "") + "</span>" +
+    '<span class="m">' + esc(token.slice(0, 12)) + "</span></div>";
+  document.body.className = "pr-albaran";
+  setTimeout(function(){ window.print(); }, 120);
+}
+
+/* -------- hoja de servicio: lo que la casa le enseña a su cliente -------- */
+function hojaServicio(){
+  const p = csDePantalla();
+  CS.perfil = p; csGuardaLocal();
+  const hoy = new Date().toISOString().slice(0, 10);
+  $("albaran").innerHTML =
+  '<div class="head"><div class="brand">' + MARCA +
+    '<div><div class="wm">WALLIO</div><div class="wl">Lens Grid<br>Platform</div>' +
+    '<div class="dt">' + traduce("Servicio de grids") + "</div>" +
+    '<div class="std">' + esc(p.comercial || "") + (p.ciudad ? " · " + esc(p.ciudad) : "") + "</div></div></div>" +
+  '<div class="ctrl"><div class="ch">' + traduce("Control de documento") + "</div>" +
+    '<div class="cr"><b>' + traduce("Casa") + "</b><span>" + esc(p.comercial || "—") + "</span></div>" +
+    '<div class="cr"><b>' + traduce("Contacto") + "</b><span>" + esc(p.contacto || "—") + "</span></div>" +
+    '<div class="cr"><b>' + traduce("Web") + "</b><span>" + esc(p.web || "—") + "</span></div>" +
+    '<div class="cr"><b>' + traduce("Emitido") + "</b><span>" + hoy + "</span></div>" +
+  "</div></div>" +
+  "<h4>1 · " + traduce("Qué se entrega con el equipo") + "<i>" + traduce("además de la óptica") + "</i></h4>" +
+  '<div class="note2">' + esc(p.servicio || traduce("Grids medidos de cada unidad, el clip de cada grid y la ficha de calibración de la óptica.")) + "</div>" +
+  "<h4>2 · " + traduce("Por qué importa el número de serie") + "<i>" +
+    traduce("dos unidades del mismo modelo no distorsionan igual") + "</i></h4>" +
+  '<div class="note2">' + traduce("Cada grid está medido sobre una unidad concreta y guardado por su número de serie, no por el modelo. Un grid de la unidad equivocada mete error en el trackeo en vez de quitarlo, y no hay forma de verlo mirando la imagen. Por eso el albarán lleva los números de serie que salieron.") + "</div>" +
+  "<h4>3 · " + traduce("Qué recibe post") + "<i>" + traduce("y cómo lo recibe") + "</i></h4>" +
+  '<div class="note2">' + traduce("Un enlace con las ópticas de esa producción y sólo esas: la ficha de calibración de cada una, el grid medido y el clip original del grid con su huella, para comprobar que el archivo llegó entero. Sin cuenta, sin instalar nada y sin acceso al resto del almacén.") + "</div>" +
+  "<h4>4 · " + traduce("Cuándo deja de valer un grid") + "<i>" + traduce("y qué se hace entonces") + "</i></h4>" +
+  '<div class="note2">' + traduce("Cuando la óptica pasa por taller, se lleva un golpe o se recalibra. Esa intervención se apunta con su fecha y todos los grids anteriores quedan marcados como vencidos. Se vuelve a medir y el histórico queda: nunca se borra nada.") + "</div>" +
+  '<div class="ffoot"><span>Wallio · Lens Grid Platform · ' + traduce("Servicio de grids") +
+    (pieCasa() ? " · " + esc(pieCasa()) : "") + "</span><span class=\"m\">" + hoy + "</span></div>";
+  document.body.className = "pr-albaran";
+  setTimeout(function(){ window.print(); }, 120);
+}
+
+/* ---- si se abre la app con ?entrega=… : lo que ve el cliente ---- */
+async function abreEntrega(){
+  const t = new URLSearchParams(location.search).get("entrega");
+  if (!t) return false;
+  if (!NB.url || !NB.key) return false;
+  let d = null;
+  try { d = await nbPide("/rest/v1/rpc/entrega_por_enlace", {p_token: t}, false); }
+  catch(e){ return false; }
+  const e = d && d[0];
+  if (!e) return false;
+  const p = e.perfil || {};
+  const ops = e.opticas || [];
+  CS.entrega = e;
+  const filas = ops.map(function(f, i){
+    return '<div class="l"><span class="sem ' + ((Number(f.cobertura) || 0) >= 100 ? "ok" : "med") + '"></span>' +
+      '<div class="n">' + esc([f.fabricante, f.familia].filter(Boolean).join(" ")) + " " +
+        esc(f.focal ? f.focal + " mm" : "") + " · " + esc(f.serial) +
+        "<span>" + traduce("actualizada ") + esc(String(f.actualizada).slice(0, 10)) + "</span></div>" +
+      '<div class="pc">' + (Number(f.cobertura) || 0) + "%</div>" +
+      '<button class="ghost" onclick="entregaAbre(' + i + ')">abrir</button></div>';
+  }).join("");
+  $("cs_inv").innerHTML = '<div class="inv"><div class="cab">' +
+    '<div class="kpi"><b>' + ops.length + "</b><span>" + traduce("ópticas") + "</span></div>" +
+    '<div class="kpi"><b>' + esc(String(e.caduca).slice(0, 10)) + "</b><span>" + traduce("válido hasta") + "</span></div>" +
+    "</div>" + filas + "</div>";
+  csMsg(traduce("Entrega de ") + (p.comercial || e.casa || "—") + " · " + (e.produccion || "—") +
+        " · " + traduce("solo lectura"), "good");
+  show("casa");
+  return true;
+}
+function entregaAbre(i){
+  const e = CS.entrega; if (!e) return;
+  const f = (e.opticas || [])[i]; if (!f || !f.datos) return;
+  fundeFicha(f.datos, false);
+  S.nubeRev = 0;
+  refrescaTodo();
+  show("optica");
+}
+
+/* ---------------- intervenciones de la óptica ---------------- */
+const TIPOS_INTERV = ["calibracion", "taller", "golpe", "recalibrado", "revision", "otro"];
+async function pintaIntervenciones(){
+  const c = $("iv_lista"); if (!c) return;
+  if (!NB.casa || !S.lens.serial){
+    c.innerHTML = '<div class="empty">' +
+      traduce("Entra en la casa de renta y pon el número de serie.") + "</div>"; return; }
+  const d = await nbPide("/rest/v1/rpc/intervenciones_de",
+              {p_casa: NB.casa, p_clave: claveFicha(S.lens.marca, S.lens.serial)})
+            .catch(function(){ return []; });
+  if (!d || !d.length){
+    c.innerHTML = '<div class="empty">' + traduce("Ninguna intervención apuntada.") + "</div>"; return; }
+  c.innerHTML = d.map(function(x){
+    return `<div class="interv"><b>${esc(x.fecha)}</b><span class="t">${esc(x.tipo)}</span>
+      <span class="nt">${esc(x.nota || "")}</span>
+      <span style="color:var(--tx3);font-size:10.5px">${esc(x.correo || "")}</span></div>`;
+  }).join("") + '<div class="hint">' +
+    traduce("Cualquier intervención invalida los grids anteriores a su fecha.") + "</div>";
+}
+async function apuntaIntervencion(){
+  if (!NB.casa){ alert(traduce("Entra antes en la casa de renta.")); return; }
+  if (!S.lens.serial){ alert(traduce("Falta el número de serie de la óptica.")); return; }
+  const fecha = $("iv_fecha").value;
+  if (!fecha){ alert(traduce("Pon la fecha de la intervención.")); return; }
+  await nbPide("/rest/v1/rpc/apunta_intervencion", {
+    p_casa: NB.casa, p_clave: claveFicha(S.lens.marca, S.lens.serial),
+    p_fecha: fecha, p_tipo: $("iv_tipo").value, p_nota: $("iv_nota").value
+  }).catch(function(e){ alert(String(e.message || e)); });
+  $("iv_nota").value = "";
+  pintaIntervenciones();
+}
+
+/* ---------------- foto del número de serie grabado ---------------- */
+let FS_PEDIDO = false;
+function pideFotoSerial(){
+  if (!NB.casa){ alert(traduce("Para guardar la foto hace falta entrar en la casa de renta.")); return; }
+  if (!S.lens.serial){ alert(traduce("Falta el número de serie de la óptica.")); return; }
+  FS_PEDIDO = true;
+  const f = $("fs_file"); f.value = ""; f.click();
+}
+function fsRuta(){
+  return NB.casa + "/" + wlNorm(S.lens.marca) + "-" + wlNorm(S.lens.serial) + "/serial.jpg";
+}
+async function fsElegida(file){
+  if (!file || !FS_PEDIDO) return;
+  FS_PEDIDO = false;
+  const ruta = fsRuta();
+  guarda();
+  S.lens.fotoSerial = ruta;
+  pintaFotoSerial(true);
+  try {
+    const blob = await tgPrepara(file);
+    await tgSubeBlob(ruta, blob);
+    pintaFotoSerial();
+    autoguarda();
+  } catch(e){
+    S.lens.fotoSerial = "";
+    pintaFotoSerial();
+    alert(traduce("No se pudo guardar la foto: ") + String(e.message || e));
+  }
+}
+function pintaFotoSerial(subiendo){
+  const c = $("fs_caja"); if (!c) return;
+  const r = S.lens.fotoSerial;
+  if (!r){
+    c.innerHTML = '<div class="vac">' + traduce("sin foto") + "</div>" +
+      '<div class="d"><b>' + traduce("Foto del número de serie grabado") + "</b><br>" +
+      traduce("Es la prueba de que este grid es de ESTA unidad y no de otra igual. Sin ella, la ficha sale en ámbar cuando post la busque.") +
+      '</div><button class="ghost" onclick="pideFotoSerial()">' + traduce("añadir") + "</button>";
+    return;
+  }
+  c.innerHTML = '<img id="fs_img" alt="" onclick="lupaSerial()">' +
+    '<div class="d"><b>' + traduce("Foto del número de serie grabado") + "</b><br>" +
+    (subiendo ? traduce("guardando…") : traduce("guardada con la ficha")) +
+    '</div><button class="ghost" onclick="pideFotoSerial()">' + traduce("cambiar") + "</button>";
+  if (!subiendo && NB.token)
+    tgUrl(r).then(function(u){ const i = $("fs_img"); if (i) i.src = u; }).catch(function(){});
+}
+function lupaSerial(){
+  if (!S.lens.fotoSerial) return;
+  $("lupa_pie").textContent = S.lens.marca + " " + S.lens.fam + " " + S.lens.focal + " mm · " + S.lens.serial;
+  $("lupa_img").removeAttribute("src");
+  $("lupa").classList.add("on");
+  tgUrl(S.lens.fotoSerial).then(function(u){ $("lupa_img").src = u; }).catch(function(){});
+}
+
 /* ---------------- captura ---------------- */
 function sinAcentos(s){ return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
 function slug(s){
@@ -2204,6 +3448,21 @@ function renombra(fmtKey, foco, valor){
 }
 
 /* ---------------- fusión de fichas ---------------- */
+$("bs_csv").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f) buscaDesdeCSV(f);
+  e.target.value = "";
+});
+$("partIn").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f) cargaParte(f);
+  e.target.value = "";
+});
+$("fs_file").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f) fsElegida(f);
+  e.target.value = "";
+});
 $("mv_archivo").addEventListener("change", e => {
   const f = e.target.files[0];
   if (f) mvElegido(f);
@@ -2264,7 +3523,13 @@ if ($("mv_file")) $("mv_file").addEventListener("change", function(e){
 
 /* ================= nube: base compartida por casa de renta ================= */
 const NB_CONF = "wallio.nube.v1", NB_COLA = "wallio.cola.v1";
-let NB = {url:"", key:"", token:"", correo:"", casa:"", casaNombre:"", nombre:"", rol:"auxiliar"};
+/* La nube de wallioapp.com viene puesta de fábrica: URL del proyecto y su
+   clave PÚBLICA (hecha para el navegador; la seguridad la ponen las
+   políticas de la base, no este texto). Quien quiera su propio servidor
+   puede cambiarlo en la pestaña Emitir y queda guardado en su aparato. */
+let NB = {url:"https://nyaevkntqaxdhzxuzbtv.supabase.co",
+          key:"sb_publishable_VLj4d9z7jlBfAPgC2JxCSA_V82iwajL",
+          token:"", correo:"", casa:"", casaNombre:"", nombre:"", rol:"auxiliar"};
 try { NB = Object.assign(NB, JSON.parse(localStorage.getItem(NB_CONF) || "{}")); } catch(e){}
 
 function nbGuarda(){ try { localStorage.setItem(NB_CONF, JSON.stringify(NB)); } catch(e){} }
@@ -2330,6 +3595,15 @@ function nbTomaSesion(d){
   NB.rol = $("nb_rol").value;
   $("nb_pass").value = "";
   nbGuarda(); nbPinta(); nbMisCasas();
+}
+/* la app viene conectada a la nube de wallioapp.com; quien tenga su propio
+   Supabase pulsa esto, pega sus dos datos y al guardar quedan en su aparato */
+function nbOtroServidor(){
+  NB.url = ""; NB.key = ""; NB.token = ""; NB.casa = ""; NB.casaNombre = "";
+  const u = $("nb_url"), k = $("nb_key");
+  if (u) u.value = ""; if (k) k.value = "";
+  nbPinta();
+  nbMsg(traduce("Pega la URL y la clave pública de tu proyecto y guarda. Si no guardas nada, al reabrir vuelve la nube de wallioapp.com."), "");
 }
 function nubeSalir(){
   NB.token = ""; NB.casa = ""; NB.casaNombre = "";
@@ -2580,6 +3854,8 @@ function deshacer(){
   refrescaTodo(); pintaUndo();
 }
 function refrescaTodo(){
+  if (typeof fillProdParte === "function") setTimeout(fillProdParte, 0);
+  if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
   const L = Object.assign({}, S.lens);
   fillProd();
   if (L.marca) setLens(L);
@@ -2625,12 +3901,12 @@ function estadoPestanas(){
     if (!(v in est)) return;              // el buzón no es una fase del trabajo
     let i = b.querySelector("i");
     if (!i){ i = document.createElement("i"); b.appendChild(i); }
-    if (v === "captura"){ i.className = ok ? "ok" : "no"; i.textContent = t.done ? t.done + " grids" : "—"; }
+    if (v === "captura"){ i.className = ok ? "ok" : "no"; i.textContent = t.done ? String(t.done) : "—"; }
     else if (v === "parte"){ const nt = S.parte.tomas.length;
-      i.className = ok ? "ok" : "no"; i.textContent = nt ? nt + (nt === 1 ? " toma" : " tomas") : "—"; }
+      i.className = ok ? "ok" : "no"; i.textContent = nt ? String(nt) : "—"; }
     else if (v === "equipo"){ i.className = ok ? "ok" : "no";
       i.textContent = S.formats.length ? S.formats.length + " fmt" : "—"; }
-    else { i.className = ok ? "ok" : "no"; i.textContent = ok ? "completo" : "falta"; }
+    else { i.className = ok ? "ok" : "no"; i.textContent = ok ? "ok" : "falta"; }
   });
 }
 function updateChip(){
@@ -2824,7 +4100,7 @@ function renderFicha(){
       <div class="nm"><span>${esc(P.vfx || "nombre y función")}</span><span>fecha</span></div></div>
   </div>
 
-  <div class="ffoot"><span>Wallio · Lens Grid Platform · Registro de calibración óptica · un registro por número de serie</span>
+  <div class="ffoot"><span>Wallio · Lens Grid Platform · Registro de calibración óptica${pieCasa() ? " · " + esc(pieCasa()) : " · un registro por número de serie"}</span>
     <span class="m">${esc(fichaId)} · rev ${String(ap).padStart(2, "0")} · ${ver}</span></div>`;
 }
 
@@ -2845,12 +4121,7 @@ function codigoDe(base){
   return `${s1.slice(0,4)}-${s1.slice(4)}-${s2.slice(0,4)}-${s2.slice(4)}`;
 }
 
-const MARCA = `<svg viewBox="0 0 48 48" class="mark"><g fill="none" stroke="#12151a" stroke-width="2.1">
-<circle cx="24" cy="24" r="21"/></g><g fill="#12151a">
-<path d="M24 5.2 L38.6 13.6 L31.3 17.8 L24 13.6 Z"/><path d="M41.9 16.4 L41.9 33.2 L34.6 29 L34.6 20.6 Z"/>
-<path d="M38.6 36 L24 44.4 L24 36 L31.3 31.8 Z"/><path d="M20.4 44.4 L5.8 36 L13.1 31.8 L20.4 36 Z"/>
-<path d="M2.5 33.2 L2.5 16.4 L9.8 20.6 L9.8 29 Z"/><path d="M5.8 13.6 L20.4 5.2 L20.4 13.6 L13.1 17.8 Z"/>
-</g></svg>`;
+const MARCA = `<svg viewBox="0 0 48 48" class="mark" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="#12151a" stroke-linecap="butt" stroke-linejoin="round"><circle cx="24" cy="24" r="20.6" stroke-width="2.60"/><g stroke-width="2.00"><path d="M13.4 13.4 Q24 10.6 34.6 13.4 Q37.4 24 34.6 34.6 Q24 37.4 13.4 34.6 Q10.6 24 13.4 13.4 Z"/><path d="M24 11.3 L24 36.7"/><path d="M11.3 24 L36.7 24"/></g></g></svg>`;
 
 function hacerPDF(){
   if (!S.lens.serial){ alert(traduce("Falta el número de serie de la óptica.")); show("optica"); return; }
@@ -2902,6 +4173,254 @@ function guardarFicha(){
   setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 400);
 }
 
+
+/* ============ EL PARTE DE CÁMARA, POR SU CUENTA ============
+   Hay quien solo quiere el parte del rollo. Estos son los mismos datos de
+   producción de la primera pestaña, pero editables desde aquí: se escriba
+   donde se escriba, es el mismo dato. Así esta página se basta sola.   */
+const PROD_PARTE = ["proyecto", "productora", "unidad", "jornada",
+                    "localizacion", "fecha", "casa", "dit"];
+
+function enlazaProdParte(){
+  PROD_PARTE.forEach(function(k){
+    const el = $("pp_" + k); if (!el) return;
+    const pon = function(){
+      S.prod[k] = el.value;
+      const otro = $("p_" + k);
+      if (otro && otro.value !== el.value) otro.value = el.value;
+      updateChip(); avisoParte();
+    };
+    el.addEventListener("input", pon);
+    el.addEventListener("change", pon);
+  });
+  // y al revés: lo que se escriba en Producción se ve aquí
+  PROD_PARTE.forEach(function(k){
+    const el = $("p_" + k); if (!el) return;
+    const pon = function(){
+      const otro = $("pp_" + k);
+      if (otro && otro.value !== el.value) otro.value = el.value;
+    };
+    el.addEventListener("input", pon);
+    el.addEventListener("change", pon);
+  });
+}
+function fillProdParte(){
+  PROD_PARTE.forEach(function(k){
+    const el = $("pp_" + k);
+    if (el && S.prod[k] !== undefined) el.value = S.prod[k];
+  });
+  avisoParte();
+}
+/* dice si el parte ya se sostiene solo, mientras se escribe */
+function avisoParte(){
+  const av = $("pp_aviso");
+  if (av){
+    const faltan = ["proyecto", "fecha"].filter(function(k){ return !(S.prod[k] || "").trim(); });
+    av.className = faltan.length ? "hint bad" : "hint good";
+    av.textContent = faltan.length
+      ? traduce("Sin proyecto y fecha el parte no se puede archivar ni reclamar después.")
+      : traduce("Con esto el parte ya se sostiene solo: no hace falta pasar por ninguna otra pestaña.");
+  }
+  if (typeof pintaTira === "function") pintaTira();
+}
+/* volver a abrir un parte guardado, sin depender del resto de la app */
+function cargaParte(file){
+  const r = new FileReader();
+  r.onload = function(){
+    let d = null;
+    try { d = JSON.parse(r.result); } catch(e){}
+    const m = $("pt_msg");
+    if (!d || d.format !== "wlg-03-parte"){
+      if (m){ m.className = "hint bad"; m.textContent = traduce("Ese archivo no es un parte de cámara."); }
+      return;
+    }
+    guarda();
+    if (d.prod) S.prod = Object.assign({}, S.prod, d.prod);
+    S.parte = {roll: d.roll || {}, tomas: d.tomas || [],
+               campos: d.campos || [], camposRollo: d.camposRollo || []};
+    fillProd(); fillProdParte(); fillParte(); renderTomas();
+    renderCampos(); renderRollExtra(); updateChip(); autoguarda();
+    if (m){ m.className = "hint good";
+      m.textContent = traduce("Parte cargado: ") + (S.parte.tomas.length) +
+                      traduce(" tomas del rollo ") + (S.parte.roll.roll || "—") + "."; }
+  };
+  r.readAsText(file);
+}
+
+
+/* ============ EL PARTE COMO APP APARTE ============
+   El mismo archivo, con un interruptor. Si el <html> lleva data-solo="parte"
+   —o se abre con ?solo=parte— la app enseña el parte y nada más: ni ópticas,
+   ni grids, ni casa de renta. Así se puede instalar en el iPhone como una
+   app distinta, con su icono, para quien sólo hace partes.            */
+const SOLO_PARTE = (document.documentElement.dataset.solo === "parte") ||
+                   (new URLSearchParams(location.search).get("solo") === "parte");
+
+function modoParteSolo(){
+  if (!SOLO_PARTE) return;
+  document.documentElement.classList.add("solo-parte");
+  document.title = "WALLIO · Parte de cámara";
+  const wl = document.querySelector("header .wl");
+  if (wl) wl.textContent = traduce("Parte de cámara");
+  show("parte");
+  const dd = $("pp_bloque");
+  if (dd && !(S.prod.proyecto || "").trim()) dd.open = true;
+  // aquí no hay «otras pestañas» a las que mandar a nadie
+  const nota = document.querySelector("#v-parte > .note");
+  if (nota) nota.innerHTML = "<b>" + traduce("El parte del rollo.") + "</b> " +
+    traduce("Un parte por rollo o magazine. Cada toma queda unida al número de serie de la óptica: el día que esa óptica tenga ficha de calibración, post la encuentra por ese mismo número.");
+  const res = document.querySelector("#pp_bloque > summary");
+  if (res) res.innerHTML = "<b>" + traduce("Datos del proyecto") + "</b> — <span>" +
+    traduce("proyecto, jornada, fecha y quién responde") + "</span>";
+}
+
+/* ---- la tira: esto es de tal proyecto y tal rollo, siempre a la vista ---- */
+function pintaTira(){
+  const t = $("tiraParte"); if (!t) return;
+  const P = S.prod, R = (S.parte && S.parte.roll) || {};
+  const proy = (P.proyecto || "").trim();
+  const n = ((S.parte && S.parte.tomas) || []).length;
+  const det = [
+    P.jornada ? traduce("jornada ") + P.jornada : "",
+    P.fecha || "",
+    [R.cam, R.roll].filter(Boolean).join(" · "),
+    n ? n + " " + traduce("tomas") : traduce("sin tomas")
+  ].filter(Boolean).join("  ·  ");
+  t.classList.toggle("vacia", !proy);
+  $("tp_proy").textContent = proy || traduce("Sin proyecto");
+  $("tp_det").textContent = det;
+}
+function abreProdParte(){
+  const dd = $("pp_bloque"); if (!dd) return;
+  dd.open = true;
+  dd.scrollIntoView({block: "start"});
+  const p = $("pp_proyecto"); if (p) setTimeout(function(){ p.focus(); }, 120);
+}
+
+/* ---- los partes que viven en este aparato ---- */
+const PT_CLAVE = "wallio.partes.v1";
+function ptLee(){
+  try { return JSON.parse(localStorage.getItem(PT_CLAVE) || "[]") || []; }
+  catch(e){ return []; }
+}
+function ptEscribe(l){
+  try { localStorage.setItem(PT_CLAVE, JSON.stringify(l.slice(-60))); } catch(e){}
+}
+function ptId(){
+  const P = S.prod, R = (S.parte && S.parte.roll) || {};
+  return [slug(P.proyecto || "sin-proyecto"), P.fecha || "sin-fecha",
+          slug(R.roll || "sin-rollo")].join("|");
+}
+function ptPaquete(){
+  return {format: "wlg-03-parte", version: 2, prod: S.prod,
+          roll: (S.parte && S.parte.roll) || {},
+          campos: (S.parte && S.parte.campos) || [],
+          camposRollo: (S.parte && S.parte.camposRollo) || [],
+          tomas: (S.parte && S.parte.tomas) || []};
+}
+/* archiva el parte de ahora. Se llama sola al guardar y al imprimir: si el
+   auxiliar no pulsa nada, el parte queda igual. */
+function ptArchiva(aviso){
+  const P = S.prod;
+  if (!(P.proyecto || "").trim() && !((S.parte.tomas || []).length)){
+    if (aviso) ptMsg(traduce("No hay nada que guardar todavía."), "bad");
+    return null;
+  }
+  const l = ptLee(), id = ptId();
+  const fila = {id: id, t: Date.now(), proyecto: P.proyecto || "",
+                fecha: P.fecha || "", jornada: P.jornada || "",
+                roll: (S.parte.roll || {}).roll || "", cam: (S.parte.roll || {}).cam || "",
+                n: (S.parte.tomas || []).length, d: ptPaquete()};
+  const i = l.findIndex(function(x){ return x.id === id; });
+  if (i >= 0) l[i] = fila; else l.push(fila);
+  ptEscribe(l);
+  ptLista();
+  if (aviso) ptMsg(traduce("Guardado en este dispositivo: ") + (fila.proyecto || "—") +
+                   " · " + (fila.roll || "—"), "good");
+  return fila;
+}
+function ptMsg(t, clase){
+  const m = $("pt_msg"); if (!m) return;
+  m.className = "hint" + (clase ? " " + clase : ""); m.textContent = t;
+}
+function ptLista(){
+  const c = $("pt_lista"); if (!c) return;
+  const l = ptLee().slice().sort(function(a, b){ return b.t - a.t; });
+  if (!l.length){
+    c.innerHTML = '<div class="empty">' +
+      traduce("Todavía no hay ningún parte guardado en este dispositivo.") + "</div>";
+    return;
+  }
+  const ahora = ptId();
+  c.innerHTML = l.map(function(x){
+    return '<div class="pt"><div class="n"><b>' + esc(x.proyecto || "—") +
+      (x.id === ahora ? ' <em>· ' + traduce("el de ahora") + "</em>" : "") + "</b>" +
+      "<span>" + [x.fecha, x.jornada ? traduce("jornada ") + x.jornada : "",
+                  [x.cam, x.roll].filter(Boolean).join(" · "),
+                  x.n + " " + traduce("tomas")].filter(Boolean).join("  ·  ") + "</span></div>" +
+      '<button onclick="ptAbre(\'' + esc(x.id) + '\')">' + traduce("abrir") + "</button>" +
+      '<button onclick="ptExporta(\'' + esc(x.id) + '\')">' + traduce("archivo") + "</button>" +
+      '<button onclick="ptQuita(\'' + esc(x.id) + '\')">' + traduce("quitar") + "</button></div>";
+  }).join("");
+  if (typeof aplicaIdioma === "function") aplicaIdioma();
+}
+function ptAbre(id){
+  const x = ptLee().find(function(y){ return y.id === id; });
+  if (!x) return;
+  ptArchiva(false);                       // lo de ahora no se pierde al cambiar
+  const d = x.d || {};
+  if (d.prod) S.prod = Object.assign({}, S.prod, d.prod);
+  S.parte = {roll: d.roll || {}, tomas: d.tomas || [],
+             campos: d.campos || [], camposRollo: d.camposRollo || []};
+  if (typeof fillProd === "function") fillProd();
+  if (typeof fillProdParte === "function") fillProdParte();
+  fillParte(); renderTomas();
+  if (typeof renderCampos === "function") renderCampos();
+  if (typeof renderRollExtra === "function") renderRollExtra();
+  updateChip(); pintaTira(); autoguarda(); ptLista();
+  ptMsg(traduce("Abierto: ") + (x.proyecto || "—") + " · " + (x.roll || "—"), "good");
+  window.scrollTo(0, 0);
+}
+function ptExporta(id){
+  const x = ptLee().find(function(y){ return y.id === id; });
+  if (!x) return;
+  descargar(JSON.stringify(x.d, null, 2),
+            "WALLIO_parte_" + (x.roll || "rollo") + ".json", "application/json");
+}
+function ptQuita(id){
+  const x = ptLee().find(function(y){ return y.id === id; });
+  if (!x) return;
+  if (!confirm(traduce("¿Quitar este parte de este dispositivo? Sólo se borra de aquí; si lo has subido o exportado, eso no se toca.") +
+               "\n\n" + (x.proyecto || "—") + " · " + (x.roll || "—"))) return;
+  ptEscribe(ptLee().filter(function(y){ return y.id !== id; }));
+  ptLista();
+  ptMsg(traduce("Quitado de este dispositivo."), "");
+}
+/* sube el número de rollo conservando el formato: A001 → A002, R07 → R08 */
+function siguienteRollo(s){
+  s = String(s || "");
+  const m = s.match(/^(.*?)(\d+)(\D*)$/);
+  if (!m) return s ? s + "-2" : "";
+  const n = String(parseInt(m[2], 10) + 1);
+  return m[1] + (n.length < m[2].length ? m[2].slice(0, m[2].length - n.length) + n : n) + m[3];
+}
+/* el rollo siguiente del mismo día: se queda todo menos las tomas */
+function ptSiguienteRollo(){
+  if (!confirm(traduce("Se guarda este parte y se empieza el siguiente rollo con la misma producción y los mismos ajustes de cámara. Las tomas se vacían.")))
+    return;
+  ptArchiva(false);
+  const R = Object.assign({}, S.parte.roll || {});
+  R.roll = siguienteRollo(R.roll);
+  S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
+             camposRollo: (S.parte.camposRollo || []).slice()};
+  fillParte(); renderTomas();
+  if (typeof renderCampos === "function") renderCampos();
+  if (typeof renderRollExtra === "function") renderRollExtra();
+  updateChip(); pintaTira(); autoguarda(); ptLista();
+  ptMsg(traduce("Rollo nuevo: ") + (R.roll || "—"), "good");
+  window.scrollTo(0, 0);
+}
+
 /* ================= PARTE DE CÁMARA · WLG-03 ================= */
 /* cada toma: clave, etiqueta, hereda del rollo, ancho en el editor */
 const T_CAMPOS = [
@@ -2951,6 +4470,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
          `onchange="renderTomas()"></div>`;
 }
 function renderTomas(){
+  if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
   const L = S.parte.tomas;
   $("listaTomas").innerHTML = L.length ? L.map((t, i) => {
     const meta = [t.desc, t.serial, t.focal ? t.focal + " mm" : "", t.t ? "T" + t.t : "", t.filt,
@@ -3151,7 +4671,7 @@ function renderParte(){
     <div><div class="rl">Recibido por (DIT / lab)</div><div class="box"></div>
       <div class="nm"><span>nombre y función</span><span>fecha</span></div></div>
   </div>
-  <div class="ffoot"><span>Wallio · Lens Grid Platform · Parte de cámara · documento controlado</span>
+  <div class="ffoot"><span>Wallio · Lens Grid Platform · Parte de cámara${pieCasa() ? " · " + esc(pieCasa()) : " · documento controlado"}</span>
     <span>${esc(parteId())} · ${ver}</span></div>`;
 }
 
@@ -3160,6 +4680,7 @@ function hacerParte(){
   if (!S.parte.tomas.length){ alert(traduce("El parte no tiene ninguna toma.")); show("parte"); return; }
   renderParte();
   document.body.className = "pr-parte";
+  if (typeof ptArchiva === "function") ptArchiva(false);
   setTimeout(() => window.print(), 120);
 }
 function parteCSV(){
@@ -3185,6 +4706,7 @@ function guardarParte(){
                 emitido:new Date().toISOString().slice(0,10)};
   descargar(JSON.stringify(data, null, 2),
             "WALLIO_parte_" + (S.parte.roll.roll || "rollo") + ".json", "application/json");
+  if (typeof ptArchiva === "function") ptArchiva(false);
 }
 function descargar(texto, nombre, tipo){
   const b = new Blob([texto], {type: tipo + ";charset=utf-8"});
@@ -3396,17 +4918,17 @@ const EN = {
 "Cruces / retícula":"Crosses / reticle",
 "RAW de cámara":"Camera RAW","ProRes / mezzanine":"ProRes / mezzanine",
 "sin subir":"not uploaded","subir":"upload","reintentar":"try again","cancelar":"cancel",
-"enlace":"link","subiendo…":"uploading…","subiendo ":"uploading ",
+"enlace":"link","subiendo…":"uploading…","subiendo":"uploading",
 "sin huella: impórtala del ASC MHL":"no checksum: import it from the ASC MHL",
 "Paquete para post":"Package for post","Historial de archivos":"File history",
 "Todavía no hay nada subido de esta óptica.":"Nothing has been uploaded for this lens yet.",
-"Historial completo: ":"Full history: "," subidas, ninguna se ha perdido.":" uploads, none of them lost.",
+"Historial completo:":"Full history:","subidas, ninguna se ha perdido.":"uploads, none of them lost.",
 "Para guardar los clips hace falta entrar en la casa de renta (pestaña Emitir).":
  "To store the clips you must sign in to the rental house (Issue tab).",
 "Entra antes en la casa de renta.":"Sign in to the rental house first.",
 "Pidiendo los enlaces…":"Requesting the links…",
 "Esta óptica todavía no tiene ningún clip subido.":"This lens has no clips uploaded yet.",
-"Listo: ":"Done: "," archivos. Los enlaces caducan en 7 días.":" files. The links expire in 7 days.",
+"Listo:":"Done:","archivos. Los enlaces caducan en 7 días.":"files. The links expire in 7 days.",
 "Fotograma testigo":"Witness frame","añadir testigo":"add witness frame","cambiar":"replace",
 "sin testigo":"no witness frame","guardado en la casa":"stored in the rental house",
 "esperando red":"waiting for signal",
@@ -3417,7 +4939,7 @@ const EN = {
 "Reducido a 1920 px — unos 10 MB por óptica":"Scaled to 1920 px — about 10 MB per lens",
 "Reducido a 1280 px — unos 5 MB por óptica":"Scaled to 1280 px — about 5 MB per lens",
 "Se suben tal cual salen de la cámara.":"They are uploaded straight out of camera.",
-"Se subirán reducidos a ":"They will be scaled down to "," px de lado mayor.":" px on the long side.",
+"Se subirán reducidos a":"They will be scaled down to","px de lado mayor.":"px on the long side.",
 "Para guardar el testigo hace falta entrar en la casa de renta (pestaña Emitir).":
  "To store a witness frame you must sign in to the rental house (Issue tab).",
 "Marca antes esa celda como capturada.":"Tick that cell as captured first.",
@@ -3425,11 +4947,11 @@ const EN = {
 "La plataforma no guarda los clips: un grid completo de una óptica en ARRIRAW 4.6K Open Gate pasa de 50 GB. Guarda un fotograma de cada celda, que es lo que hace que el archivo se pueda mirar años después, más el puntero y la huella del clip.":
  "The platform does not store the clips: a full grid of one lens in ARRIRAW 4.6K Open Gate is over 50 GB. It stores one frame per cell, which is what makes the archive something you can still look at years later, plus the pointer and the checksum of the clip.",
 "Comentarios y sugerencias":"Comments and suggestions","Buzón":"Inbox",
-"Esto lo hace un foquista, no una empresa de software.":"This is built by a focus puller, not a software company.",
+"Lo que te estorbe, lo que te falte o lo que te haya salvado un día de rodaje: dilo aquí.":
+ "Whatever gets in your way, is missing, or saved your shooting day: say it here.",
+"Se lee todo.":"Everything gets read.",
 "Lo que te estorbe, lo que te falte o lo que te haya salvado un día de rodaje: dilo aquí. Se lee todo.":
  "Whatever gets in your way, is missing, or saved your shooting day: say it here. Everything gets read.",
-"Esto lo hace un foquista, no una empresa de software. Si algo te estorba, te falta o te ha salvado un día de rodaje, dilo aquí. Se lee todo.":
- "This is built by a focus puller, not a software company. If something gets in your way, is missing, or saved your shooting day, say so here. Everything gets read.",
 "Sugerencia":"Suggestion","Algo que no funciona":"Something is broken","Me ha servido":"It helped me",
 "Otra cosa":"Something else","Enviar":"Send","Cuéntame":"Tell me",
 "Tu función · 1er AC, DIT, casa de renta…":"Your role · 1st AC, DIT, rental house…",
@@ -3446,6 +4968,205 @@ const EN = {
  "No connection right now: it stays here and goes out when it comes back.",
 "visitas":"visits","hoy":"today","comentarios":"comments",
 "el contador todavía no está conectado":"the counter is not connected yet",
+"Buscar grids ya guardados":"Find stored grids","Buscar":"Search",
+"Desde el CSV del parte":"From the camera report CSV",
+"Foto del número de serie":"Photo of the serial number",
+"Foto del número de serie grabado":"Photo of the engraved serial number",
+"Intervenciones de esta óptica":"Work done on this lens",
+"Apuntar intervención":"Log it","Actualizar":"Refresh",
+"Fecha":"Date","Qué pasó":"What happened","Calibración":"Calibration",
+"Paso por taller":"Went to the workshop","Golpe o caída":"Knock or drop",
+"Recalibrado":"Recalibrated","Revisión":"Inspection","Otra cosa":"Something else",
+"Nota: qué se tocó, quién, número de parte…":"Note: what was touched, by whom, job number…",
+"Ninguna intervención apuntada.":"Nothing logged yet.",
+"Cualquier intervención invalida los grids anteriores a su fecha.":
+ "Any work on the lens voids every grid shot before that date.",
+"Entra en la casa de renta y pon el número de serie.":
+ "Sign in to the rental house and enter the serial number.",
+"Entra antes en la casa de renta.":"Sign in to the rental house first.",
+"Pon la fecha de la intervención.":"Set the date it happened.",
+"No hay ninguna ficha de esa óptica.":"There is no record for that lens.",
+"La óptica pasó por":"The lens went through","el":"on",
+", después del grid (":", after the grid (","). Hay que volver a medirla.":"). It must be measured again.",
+"Sin intervenciones desde el grid.":"No work on the lens since the grid.",
+"Hay una intervención el":"There is logged work on",
+"y el grid no tiene fecha: compruébalo a mano.":"and the grid has no date: check it by hand.",
+"No hay grid para":"There is no grid for",
+". Un grid solo vale para el área con la que se capturó.":
+ ". A grid is only valid for the active area it was captured with.",
+"Cubre el área activa que vas a usar.":"Covers the active area you are going to use.",
+"Grid a medias:":"Grid only part done:",
+"Las combinaciones sin medir no se pueden extrapolar.":
+ "The combinations that were not measured cannot be extrapolated.",
+"Sin foto del número de serie grabado: no hay prueba física de que el grid sea de esta unidad.":
+ "No photo of the engraved serial: there is no physical proof the grid belongs to this unit.",
+"Con foto del número de serie grabado.":"With a photo of the engraved serial.",
+"Sin fecha de calibración declarada.":"No calibration date declared.",
+"Calibración de hace":"Calibrated","meses (":"months ago (",
+"usar en este proyecto":"use in this project","enlace para post":"link for post",
+"ópticas buscadas":"lenses searched",
+"· contra el área activa de":"· against the active area of",
+"formato(s) que tienes puestos en Equipo":"format(s) you have set in Camera",
+"· sin formato puesto: no se comprueba el área activa":
+ "· no format set: the active area is not checked",
+"Pega los números de serie, o suelta el CSV del parte de cámara.":
+ "Paste the serial numbers, or drop the camera report CSV.",
+"Buscando…":"Searching…",
+"Ese archivo no trae ninguna columna de número de serie.":
+ "That file has no serial number column.",
+"No se pudo traer esa ficha.":"That record could not be fetched.",
+"Ficha traída a este proyecto. La producción sigue siendo la tuya; el grid queda marcado como reutilizado.":
+ "Record brought into this project. The production stays yours; the grid is marked as reused.",
+"No se pudo crear el enlace.":"The link could not be created.",
+"Enlace copiado, caduca el":"Link copied, it expires on",
+"Ficha compartida de solo lectura · caduca el":"Shared read-only record · expires on",
+"Es la prueba de que este grid es de ESTA unidad y no de otra igual. Sin ella, la ficha sale en ámbar cuando post la busque.":
+ "It proves this grid belongs to THIS unit and not to another one just like it. Without it, the record comes up amber when post searches for it.",
+"sin foto":"no photo","añadir":"add","guardando…":"saving…",
+"guardada con la ficha":"stored with the record",
+"Para guardar la foto hace falta entrar en la casa de renta.":
+ "To store the photo you must sign in to the rental house.",
+"No se pudo guardar la foto:":"The photo could not be stored:",
+"Si solo quieres el parte, esta página se basta sola:":
+ "If all you want is the report, this page stands on its own:",
+"abre el bloque de producción de aquí abajo y no hace falta que toques ninguna otra pestaña.":
+ "open the production block below and you never need to touch another tab.",
+"ábrelo si trabajas solo con el parte":"open it if you only work with the report",
+"Es el mismo dato que en la pestaña Producción: se escriba donde se escriba, va al mismo sitio. Aquí está para no obligarte a ir y volver.":
+ "It is the same data as in the Production tab: wherever you type it, it goes to the same place. It is here so you do not have to go back and forth.",
+"Sin proyecto y fecha el parte no se puede archivar ni reclamar después.":
+ "Without a project and a date the report cannot be filed or claimed later.",
+"Con esto el parte ya se sostiene solo: no hace falta pasar por ninguna otra pestaña.":
+ "With this the report stands on its own: no need to go through any other tab.",
+"Abrir un parte guardado":"Open a saved report",
+"Ese archivo no es un parte de cámara.":"That file is not a camera report.",
+"Parte cargado:":"Report loaded:","tomas del rollo":"takes from roll",
+"Para casas de renta.":"For rental houses.",
+"Tu casa":"Your house","Inventario":"Inventory",
+"Nombre comercial":"Trading name","Ciudad":"City","Contacto público":"Public contact",
+"Web":"Web","Calibración vencida a los (meses)":"Calibration expires after (months)",
+"Qué ofreces con el equipo":"What you offer with the gear",
+"Guardar":"Save","Traer lo guardado":"Fetch what is saved",
+"Hoja de servicio (PDF)":"Service sheet (PDF)",
+"Traer el inventario":"Fetch the inventory",
+"Marcar las que están listas":"Tick the ones that are ready",
+"Quitar marcas":"Clear ticks",
+"filtrar por serie o familia":"filter by serial or family",
+"Entrega a una producción":"Delivery to a production",
+"Cliente / contacto":"Client / contact",
+"El enlace vale (días)":"The link lasts (days)","Nota interna":"Internal note",
+"Crear la entrega con las marcadas":"Create the delivery with the ticked ones",
+"Ver las entregas":"See the deliveries",
+"Cómo se cobra esto":"How this gets charged",
+"Casa":"House","Copiar enlace":"Copy link","Albarán (PDF)":"Delivery note (PDF)",
+"Marcar devuelto":"Mark returned","fuera":"out","devuelto":"returned",
+"salida":"out on","el enlace caduca el":"the link expires on",
+"listas para salir":"ready to go out",
+"con clip guardado":"with a stored clip","calibración vencida":"calibration expired",
+"en el almacén":"in the store","marcadas":"ticked",
+"sin grid":"no grid","grid a medias":"grid half done",
+"el grid no tiene clip guardado: post no puede recibirlo":
+ "the grid has no stored clip: post cannot receive it",
+"sin fecha de calibración":"no calibration date",
+"calibración de hace":"calibrated","meses":"months ago",
+"intervención posterior al grid (":"work done after the grid (",
+"): hay que volver a medir":"): it has to be measured again",
+"calibrada":"calibrated","sin calibración":"no calibration",
+"clip(s)":"clip(s)","subida(s)":"upload(s)",
+"Trayendo el inventario…":"Fetching the inventory…",
+"Todavía no hay ninguna óptica en esta casa.":"There are no lenses in this house yet.",
+"Entra en la casa de renta (pestaña Emitir) para ver su inventario.":
+ "Sign in to the rental house (Issue tab) to see its inventory.",
+"Guardado en este dispositivo. Entra en la casa para compartirlo con los tuyos.":
+ "Saved on this device. Sign in to the house to share it with your people.",
+"Guardado. Ya sale en los documentos que emita cualquiera de la casa.":
+ "Saved. It now appears on any document issued by anyone in the house.",
+"Sin sesión sólo se ve lo de este dispositivo.":"Without a session you only see this device.",
+"Perfil de":"Profile of","Todavía no hay perfil guardado.":"No profile saved yet.",
+"Marca antes las ópticas que salen.":"Tick the lenses that are going out first.",
+"Pon el nombre de la producción: es lo que verá post al abrir el enlace.":
+ "Put the production name: that is what post sees when opening the link.",
+"De las marcadas, estas no están listas:":"Of the ticked ones, these are not ready:",
+"¿Entregarlas igualmente?":"Deliver them anyway?",
+"No se pudo crear la entrega.":"The delivery could not be created.",
+"Entrega creada y enlace copiado.":"Delivery created and link copied.",
+"Enlace copiado.":"Link copied.",
+"Copia el enlace a mano desde el recuadro.":"Copy the link by hand from the box.",
+"Todavía no has hecho ninguna entrega.":"You have not made any delivery yet.",
+"¿Marcar esta entrega como devuelta? El enlace sigue valiendo hasta que caduque.":
+ "Mark this delivery as returned? The link stays valid until it expires.",
+"Entrega cerrada. Si alguna óptica vuelve tocada, apunta la intervención en su ficha.":
+ "Delivery closed. If a lens comes back knocked about, log the work on its record.",
+"Trae antes las entregas.":"Fetch the deliveries first.",
+"Albarán de grids":"Grid delivery note",
+"Las ópticas que salen y el grid que va con cada una":
+ "The lenses going out and the grid that goes with each one",
+"Salida":"Out on","Emitido":"Issued","Ópticas":"Lenses",
+"Enlace válido hasta":"Link valid until","Entrega":"Delivery",
+"a quién va y con qué condiciones":"who it goes to and on what terms",
+"Cliente":"Client",
+"Ópticas y grids":"Lenses and grids",
+"cada grid vale para esa unidad y para el formato con el que se midió":
+ "each grid is good for that unit and for the format it was measured in",
+"Nº de serie":"Serial no.","Cobertura":"Coverage",
+"Calibrada":"Calibrated","Avisos":"Warnings",
+"Para post:":"For post:",
+"el enlace de esta entrega abre las fichas de estas ópticas y sus grids. Si alguna óptica pasa por taller durante el rodaje, su grid deja de valer desde ese día.":
+ "the link for this delivery opens the records of these lenses and their grids. If a lens goes to the workshop during the shoot, its grid stops being valid from that day.",
+"Prod.":"Prod.","Parte de cámara":"Camera report",
+"Otro servidor":"Other server",
+"Pega la URL y la clave pública de tu proyecto y guarda. Si no guardas nada, al reabrir vuelve la nube de wallioapp.com.":
+ "Paste your project URL and public key and save. If you save nothing, the wallioapp.com cloud comes back on reopen.",
+"El parte del rollo.":"The roll report.",
+"Datos del proyecto":"Project details",
+"proyecto, jornada, fecha y quién responde":"project, day, date and who signs",
+"Un parte por rollo o magazine. Cada toma queda unida al número de serie de la óptica: el día que esa óptica tenga ficha de calibración, post la encuentra por ese mismo número.":
+ "One report per roll or magazine. Every take is tied to the serial number of the lens: the day that lens has a calibration record, post finds it by that same number.",
+"Sin proyecto":"No project","jornada ":"day ","sin tomas":"no takes",
+"Datos":"Details",
+"Guardar en este dispositivo":"Save on this device",
+"Empezar el rollo siguiente":"Start the next roll",
+"Partes de este dispositivo":"Reports on this device",
+"Cada vez que guardas o imprimes un parte queda aquí, en el propio teléfono, aunque no haya cobertura. Sirve para volver al rollo de ayer sin buscar archivos.":
+ "Every time you save or print a report it stays here, on the phone itself, even with no signal. It is for going back to yesterday's roll without hunting for files.",
+"Todavía no hay ningún parte guardado en este dispositivo.":
+ "There is no report saved on this device yet.",
+"el de ahora":"the current one","abrir":"open","archivo":"file","quitar":"remove",
+"No hay nada que guardar todavía.":"There is nothing to save yet.",
+"Guardado en este dispositivo: ":"Saved on this device: ",
+"Abierto: ":"Opened: ","Quitado de este dispositivo.":"Removed from this device.",
+"¿Quitar este parte de este dispositivo? Sólo se borra de aquí; si lo has subido o exportado, eso no se toca.":
+ "Remove this report from this device? It is only deleted here; if you uploaded or exported it, that is not touched.",
+"Se guarda este parte y se empieza el siguiente rollo con la misma producción y los mismos ajustes de cámara. Las tomas se vacían.":
+ "This report is saved and the next roll starts with the same production and the same camera settings. The takes are cleared.",
+"Rollo nuevo: ":"New roll: ",
+"taller":"workshop","golpe":"knock","recalibrado":"recalibrated",
+"calibracion":"calibration","revision":"inspection","otro":"other",
+"Conformidad":"Sign-off",
+"quién entrega y quién recibe el material y sus grids":
+ "who hands over and who receives the gear and its grids",
+"Entrega (casa de renta)":"Handed over by (rental house)",
+"Recibe (producción)":"Received by (production)",
+"Devuelto y revisado":"Returned and checked",
+"Servicio de grids":"Grid service",
+"Qué se entrega con el equipo":"What is delivered with the gear",
+"además de la óptica":"besides the lens",
+"Grids medidos de cada unidad, el clip de cada grid y la ficha de calibración de la óptica.":
+ "Measured grids of every unit, the clip of every grid and the calibration record of the lens.",
+"Por qué importa el número de serie":"Why the serial number matters",
+"dos unidades del mismo modelo no distorsionan igual":
+ "two units of the same model do not distort the same",
+"Cada grid está medido sobre una unidad concreta y guardado por su número de serie, no por el modelo. Un grid de la unidad equivocada mete error en el trackeo en vez de quitarlo, y no hay forma de verlo mirando la imagen. Por eso el albarán lleva los números de serie que salieron.":
+ "Every grid is measured on one specific unit and stored by its serial number, not by model. A grid from the wrong unit adds error to the track instead of removing it, and there is no way to see it by looking at the image. That is why the delivery note carries the serial numbers that went out.",
+"Qué recibe post":"What post receives","y cómo lo recibe":"and how they receive it",
+"Un enlace con las ópticas de esa producción y sólo esas: la ficha de calibración de cada una, el grid medido y el clip original del grid con su huella, para comprobar que el archivo llegó entero. Sin cuenta, sin instalar nada y sin acceso al resto del almacén.":
+ "One link with the lenses of that production and only those: the calibration record of each one, the measured grid and the original grid clip with its checksum, so they can check the file arrived whole. No account, nothing to install and no access to the rest of the store.",
+"Cuándo deja de valer un grid":"When a grid stops being valid",
+"y qué se hace entonces":"and what is done then",
+"Cuando la óptica pasa por taller, se lleva un golpe o se recalibra. Esa intervención se apunta con su fecha y todos los grids anteriores quedan marcados como vencidos. Se vuelve a medir y el histórico queda: nunca se borra nada.":
+ "When the lens goes to the workshop, takes a knock or is recalibrated. That work is logged with its date and every earlier grid is marked as expired. It is measured again and the history stays: nothing is ever deleted.",
+"Entrega de":"Delivery from","solo lectura":"read only",
+"válido hasta":"valid until","actualizada":"updated",
 "Ancho activo (mm)":"Active width (mm)","Alto activo (mm)":"Active height (mm)",
 "Resolución (o «película»)":"Resolution (or «film»)","Añadir formato":"Add format",
 "Formatos a cubrir":"Formats to cover","3 · Distancias de foco":"3 · Focus distances",
@@ -3454,7 +5175,7 @@ const EN = {
 "Distancias del fabricante":"Manufacturer distances",
 "De esta óptica no hay foco mínimo publicado por el fabricante. Escribe tú las distancias.":
  "The manufacturer publishes no close focus for this lens. Type the distances yourself.",
-"Puestas ":"Set ", " distancias a partir del foco mínimo ":" distances from the close focus of ",
+"Puestas":"Set", "distancias a partir del foco mínimo":"distances from the close focus of",
 "Deshacer devuelve las anteriores.":"Undo brings the previous ones back.",
 "desde el plano del sensor":"from the sensor plane",
 "desde el plano de imagen":"from the image plane",
@@ -3651,7 +5372,7 @@ function traduce(s){
   return s;
 }
 const RAICES = () => [document.querySelector("header"), document.querySelector("main"),
-                      document.querySelector("nav"), $("ficha"), $("parte")].filter(Boolean);
+                      document.querySelector("nav"), $("ficha"), $("parte"), $("albaran")].filter(Boolean);
 function pinta(nodo){
   const w = document.createTreeWalker(nodo, NodeFilter.SHOW_TEXT);
   let n; const lista = [];
@@ -3843,9 +5564,15 @@ document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
 /* ---------------- arranque ---------------- */
 fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas(); chartCheck();
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
+enlazaProdParte(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo();
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
+if (!(S.prod.proyecto || "").trim()){ const dd = $("pp_bloque"); if (dd) dd.open = true; }
 cuentaVisita(); bzDrena();
+pintaFotoSerial();
+if (typeof abreEnlace === "function") abreEnlace();
+if (typeof abreEntrega === "function") abreEntrega();
+if (typeof csLeeLocal === "function"){ csLeeLocal(); csPinta_perfil(); }
 /* nube: se rellena lo guardado en este dispositivo y se intenta vaciar la cola */
 $("nb_url").value = NB.url; $("nb_key").value = NB.key;
 $("nb_correo").value = NB.correo; $("nb_nombre").value = NB.nombre;
