@@ -891,6 +891,23 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 }
 
 }  /* fin de @media screen */
+
+/* ---- la elección de la portada: plataforma entera o solo el parte ---- */
+.portada{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  margin:12px 11px 0;padding:12px 14px;border:1px solid var(--line);border-radius:6px}
+.portada .t{flex:1 1 230px;min-width:0}
+.portada .t b{display:block;font:650 14px/1.35 var(--ui,inherit)}
+.portada .t span{display:block;color:var(--tx2);font:12.5px/1.5 var(--ui,inherit);margin-top:2px}
+.portada a.abrirparte{flex:0 0 auto;display:inline-flex;align-items:center;min-height:40px;
+  padding:0 16px;border-radius:3px;text-decoration:none;
+  font:600 11px/1.15 var(--ui,inherit);letter-spacing:.06em;text-transform:uppercase;
+  color:#0a0d11;background:linear-gradient(180deg,#f6f9fc,#dde3ec);
+  border:1px solid rgba(255,255,255,.85)}
+.portada button{flex:0 0 auto}
+html.solo-parte .portada{display:none}
+
+/* ---- el aviso de jornada nueva, en la tira del parte ---- */
+.tira button.jsig{border-color:rgba(111,211,166,.5);color:#6fd3a6;margin-right:8px}
 </style>
 </head>
 <body>
@@ -917,6 +934,13 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 
 <!-- ===================== 0 · PRODUCCIÓN ===================== -->
 <section id="v-prod" class="on">
+  <div class="portada" id="portadaEleccion" hidden>
+    <div class="t"><b>¿Vienes solo por el parte de cámara?</b>
+      <span>El parte tiene su propia app: producción, rollos y tomas, y nada más.
+      Empieza pidiendo los datos de producción, con el mismo formato que aquí.</span></div>
+    <a class="abrirparte" href="parte/">Abrir la app del parte</a>
+    <button class="ghost" onclick="portadaFuera()">Uso la plataforma entera</button>
+  </div>
   <div class="note"><b>Toda captura empieza aquí.</b> Sin estos datos el registro no se puede
     archivar ni reclamar después. Se rellena una vez por jornada.</div>
   <div class="card">
@@ -1087,6 +1111,7 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 <section id="v-parte">
   <div class="tira" id="tiraParte">
     <div class="tx"><b id="tp_proy">—</b><span id="tp_det"></span></div>
+    <button class="jsig" id="tp_jsig" onclick="jornadaSiguiente()" hidden>Jornada nueva</button>
     <button onclick="abreProdParte()">Datos</button>
   </div>
   <div class="note"><b>El parte del rollo.</b> Cada toma queda unida al número de serie de la
@@ -1177,6 +1202,7 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
       <button class="ghost" onclick="document.getElementById('partIn').click()">Abrir un parte guardado</button>
       <button class="ghost" onclick="ptArchiva(true)">Guardar en este dispositivo</button>
       <button class="ghost" onclick="ptSiguienteRollo()">Empezar el rollo siguiente</button>
+      <button class="ghost" onclick="jornadaSiguiente()">Empezar la jornada siguiente</button>
     </div>
     <input type="file" id="partIn" accept=".json,application/json" style="display:none">
     <div class="hint" id="pt_msg"></div>
@@ -4248,6 +4274,24 @@ function cargaParte(file){
 }
 
 
+
+/* ============ LA ELECCIÓN DE LA PORTADA ============
+   Quien viene solo por el parte no tiene por qué pasear por ocho pestañas.
+   El aviso sale arriba al abrir; si eliges la plataforma entera, no se
+   vuelve a enseñar en este dispositivo.                                */
+const PORTADA_VISTA = "wallio.portada.v1";
+function pintaPortada(){
+  const p = $("portadaEleccion"); if (!p) return;
+  let vista = "";
+  try { vista = localStorage.getItem(PORTADA_VISTA) || ""; } catch(e){}
+  const hayTrabajo = (S.prod.proyecto || "").trim() || Object.keys(S.takes || {}).length;
+  p.hidden = !!vista || !!hayTrabajo || (typeof SOLO_PARTE !== "undefined" && SOLO_PARTE);
+}
+function portadaFuera(){
+  try { localStorage.setItem(PORTADA_VISTA, "plataforma"); } catch(e){}
+  const p = $("portadaEleccion"); if (p) p.hidden = true;
+}
+
 /* ============ EL PARTE COMO APP APARTE ============
    El mismo archivo, con un interruptor. Si el <html> lleva data-solo="parte"
    —o se abre con ?solo=parte— la app enseña el parte y nada más: ni ópticas,
@@ -4264,7 +4308,18 @@ function modoParteSolo(){
   if (wl) wl.textContent = traduce("Parte de cámara");
   show("parte");
   const dd = $("pp_bloque");
-  if (dd && !(S.prod.proyecto || "").trim()) dd.open = true;
+  if (dd && !(S.prod.proyecto || "").trim()){
+    dd.open = true;
+    // empezar es escribir: la fecha ya está puesta y el cursor en Proyecto
+    if (!(S.prod.fecha || "").trim()){
+      S.prod.fecha = hoyLocal();
+      const f1 = $("pp_fecha"), f2 = $("p_fecha");
+      if (f1) f1.value = S.prod.fecha;
+      if (f2) f2.value = S.prod.fecha;
+    }
+    const p = $("pp_proyecto");
+    if (p) setTimeout(function(){ p.focus(); }, 300);
+  }
   // aquí no hay «otras pestañas» a las que mandar a nadie
   const nota = document.querySelector("#v-parte > .note");
   if (nota) nota.innerHTML = "<b>" + traduce("El parte del rollo.") + "</b> " +
@@ -4272,6 +4327,14 @@ function modoParteSolo(){
   const res = document.querySelector("#pp_bloque > summary");
   if (res) res.innerHTML = "<b>" + traduce("Datos del proyecto") + "</b> — <span>" +
     traduce("proyecto, jornada, fecha y quién responde") + "</span>";
+}
+
+
+/* la fecha de HOY en hora local: toISOString va en UTC y a las 00:30 de
+   Madrid diría ayer; en un rodaje eso es un parte con la fecha mal */
+function hoyLocal(){
+  const d = new Date(), z = function(n){ return String(n).padStart(2, "0"); };
+  return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
 }
 
 /* ---- la tira: esto es de tal proyecto y tal rollo, siempre a la vista ---- */
@@ -4289,12 +4352,45 @@ function pintaTira(){
   t.classList.toggle("vacia", !proy);
   $("tp_proy").textContent = proy || traduce("Sin proyecto");
   $("tp_det").textContent = det;
+  /* el parte abierto es de una fecha anterior y ya tiene tomas: casi seguro
+     que hoy es otra jornada. Se ofrece el salto; no se salta solo, que los
+     rodajes terminan de madrugada y a las 00:30 la jornada sigue siendo la
+     de ayer. */
+  const js = $("tp_jsig");
+  if (js) js.hidden = !(proy && (P.fecha || "") && P.fecha < hoyLocal() && n > 0);
 }
 function abreProdParte(){
   const dd = $("pp_bloque"); if (!dd) return;
   dd.open = true;
   dd.scrollIntoView({block: "start"});
   const p = $("pp_proyecto"); if (p) setTimeout(function(){ p.focus(); }, 120);
+}
+
+
+/* ============ RODAJES DE VARIOS DÍAS ============
+   Al pasar de jornada, la producción se actualiza sola: la fecha pasa a
+   hoy, el número de jornada sube uno y el rollo sigue la numeración.
+   Solo se vacían las tomas. Proyecto, productora, unidad, localización,
+   casa, DIT y los ajustes de cámara viajan a la jornada nueva.        */
+function jornadaSiguiente(){
+  if (!confirm(traduce("Se guarda el parte de esta jornada y se empieza la siguiente: la fecha pasa a hoy, el número de jornada sube uno y el rollo sigue la numeración. Las tomas se vacían; todo lo demás se conserva.")))
+    return;
+  ptArchiva(false);                          // la jornada que acaba, al archivo
+  if ((S.prod.jornada || "").trim()) S.prod.jornada = siguienteRollo(S.prod.jornada);
+  S.prod.fecha = hoyLocal();
+  const R = Object.assign({}, S.parte.roll || {});
+  if ((R.roll || "").trim()) R.roll = siguienteRollo(R.roll);
+  S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
+             camposRollo: (S.parte.camposRollo || []).slice()};
+  if (typeof fillProd === "function") fillProd();
+  if (typeof fillProdParte === "function") fillProdParte();
+  fillParte(); renderTomas();
+  if (typeof renderCampos === "function") renderCampos();
+  if (typeof renderRollExtra === "function") renderRollExtra();
+  updateChip(); pintaTira(); autoguarda(); ptLista();
+  ptMsg(traduce("Jornada nueva: ") + (S.prod.jornada || "—") + " · " + S.prod.fecha +
+        " · " + traduce("rollo ") + ((S.parte.roll || {}).roll || "—"), "good");
+  window.scrollTo(0, 0);
 }
 
 /* ---- los partes que viven en este aparato ---- */
@@ -5115,6 +5211,16 @@ const EN = {
  "the link for this delivery opens the records of these lenses and their grids. If a lens goes to the workshop during the shoot, its grid stops being valid from that day.",
 "Prod.":"Prod.","Parte de cámara":"Camera report",
 "Otro servidor":"Other server",
+"¿Vienes solo por el parte de cámara?":"Here just for the camera report?",
+"El parte tiene su propia app: producción, rollos y tomas, y nada más. Empieza pidiendo los datos de producción, con el mismo formato que aquí.":
+ "The report has its own app: production, rolls and takes, nothing else. It starts by asking for the production details, in the same format as here.",
+"Abrir la app del parte":"Open the report app",
+"Uso la plataforma entera":"I use the whole platform",
+"Empezar la jornada siguiente":"Start the next day",
+"Jornada nueva":"New day",
+"Se guarda el parte de esta jornada y se empieza la siguiente: la fecha pasa a hoy, el número de jornada sube uno y el rollo sigue la numeración. Las tomas se vacían; todo lo demás se conserva.":
+ "This day's report is saved and the next one starts: the date moves to today, the day number goes up by one and the roll keeps its numbering. Takes are cleared; everything else is kept.",
+"Jornada nueva: ":"New day: ","rollo ":"roll ",
 "Pega la URL y la clave pública de tu proyecto y guarda. Si no guardas nada, al reabrir vuelve la nube de wallioapp.com.":
  "Paste your project URL and public key and save. If you save nothing, the wallioapp.com cloud comes back on reopen.",
 "El parte del rollo.":"The roll report.",
@@ -5564,7 +5670,7 @@ document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
 /* ---------------- arranque ---------------- */
 fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas(); chartCheck();
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
-enlazaProdParte(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo();
+enlazaProdParte(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
 if (!(S.prod.proyecto || "").trim()){ const dd = $("pp_bloque"); if (dd) dd.open = true; }
