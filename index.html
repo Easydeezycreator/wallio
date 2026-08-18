@@ -27,7 +27,8 @@ body{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
 /* ---- cabecera: el documento, no una app ---- */
 header{position:sticky;top:0;z-index:20;background:var(--bg);
  border-bottom:1.5px solid var(--tx);padding:calc(7px + env(safe-area-inset-top)) 11px 6px;
- display:flex;align-items:flex-start;gap:10px}
+ display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+header>*{min-width:0}
 header svg{width:22px;height:22px;flex:0 0 22px;margin-top:1px}
 header .wm{font:700 15px/1 var(--mono);letter-spacing:-.01em}
 header .wl{font:600 8px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;
@@ -52,6 +53,16 @@ header .sv{align-self:center;margin-right:10px;font:10px/1 var(--mono);color:var
 .selfmt .t span{display:block;font-size:10.5px;color:var(--tx3);margin-top:2px}
 .selfmt button{min-height:30px;min-width:34px;padding:0;color:var(--tx3)}
 
+/* iPhone SE de primera generación y similares: 320 px de ancho. Con la
+   letra normal las siete pestañas no caben y el navegador encogía la
+   página entera. Aquí se achica el rótulo en vez de encoger la app. */
+@media (max-width:359px){
+  nav button{font-size:8px;letter-spacing:.03em;padding:0 1px;min-height:56px}
+  nav button i{font-size:7px;margin-top:2px;letter-spacing:0}
+  header .st{margin-left:0;font-size:8.5px}
+  header .st b{font-size:11px}
+  header .wm{font-size:13px}
+}
 main{padding:0;max-width:820px;margin:0 auto}
 section{display:none}section.on{display:block}
 
@@ -60,6 +71,10 @@ section{display:none}section.on{display:block}
 .card h2{margin:0 0 7px;background:var(--band);color:#fff;
  font:600 9px/1 var(--mono);letter-spacing:.19em;text-transform:uppercase;padding:6px 14px}
 .card > *:not(h2){margin-left:11px;margin-right:11px}
+/* un campo suelto dentro de la tarjeta lleva width:100%, y con los márgenes
+   se salía 22 px por la derecha; en el iPhone eso hacía que el navegador
+   encogiera TODA la página y la barra de pestañas se saliera por abajo */
+.card > *:not(h2){max-width:calc(100% - 22px)}
 .grid{display:grid;grid-template-columns:1fr;gap:0}
 @media(min-width:480px){.grid{grid-template-columns:1fr 1fr;column-gap:16px}.grid .wide{grid-column:1/-1}}
 @media(min-width:700px){.grid{grid-template-columns:1fr 1fr 1fr}.grid .wide{grid-column:1/-1}}
@@ -86,7 +101,10 @@ button:active{background:var(--panel)}
 button.primary{background:var(--tx);border-color:var(--tx);color:var(--bg)}
 button.ghost{color:var(--tx2)}
 button.danger{color:var(--err);border-color:rgba(196,84,75,.4)}
-.btnrow{display:flex;gap:0;margin-top:8px;border:1px solid var(--line)}
+/* si los botones no caben de una fila, se pasan a la siguiente: antes se
+   salían de la pantalla y el móvil encogía la página entera */
+.btnrow{display:flex;flex-wrap:wrap;gap:0;margin-top:8px;border:1px solid var(--line)}
+.btnrow button{flex:1 1 108px}
 .btnrow button{flex:1;border:none;border-right:1px solid var(--line)}
 .btnrow button:last-child{border-right:none}
 
@@ -161,7 +179,8 @@ button.danger{color:var(--err);border-color:rgba(196,84,75,.4)}
 /* ---- barra inferior: texto, sin iconos ---- */
 nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:var(--bg);
  border-top:1px solid var(--tx);padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;border:none;border-right:1px solid var(--line);background:none;
+nav button{flex:1;min-width:0;border:none;border-right:1px solid var(--line);
+ overflow-wrap:anywhere;background:none;
  color:var(--tx3);font:600 9.5px/1 var(--mono);letter-spacing:.11em;text-transform:uppercase;
  min-height:52px;padding:0 2px}
 nav button:last-child{border-right:none}
@@ -366,7 +385,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   header .sv{font-size:11.5px}
   .card{padding:0 0 11px}
   .card h2{font-size:11px;letter-spacing:.2em;padding:8px 18px;margin-bottom:10px}
-  .card > *:not(h2){margin-left:18px;margin-right:18px}
+  .card > *:not(h2){margin-left:18px;margin-right:18px;max-width:calc(100% - 36px)}
   .grid{column-gap:26px}
   .f{padding:5px 0}
   label{font-size:9.5px;letter-spacing:.13em;margin-bottom:3px}
@@ -460,6 +479,27 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 .visitas span{display:flex;gap:5px;align-items:baseline}
 #chipVis{font-size:11px;color:var(--tx3);letter-spacing:.04em}
 @media print{#v-prod .bz,.visitas{display:none!important}}
+
+/* ================= PANTALLAS QUE SE TOCAN CON EL DEDO =================
+   Los ajustes de arriba iban por ANCHO de pantalla, así que un iPad de
+   834 px se quedaba con los tamaños de ratón: campos de 13 px (que hacen
+   que iPadOS haga zoom solo al tocarlos) y botones de 26 px, imposibles
+   de acertar. Esto va por tipo de puntero, no por ancho, así que coge
+   cualquier iPhone y cualquier iPad, en vertical y en horizontal.       */
+@media (pointer:coarse){
+  input,select,textarea{font-size:16px}
+  button,select{min-height:40px}
+  header .lang{min-height:36px;padding:0 12px}
+  .toma .th button,.toma .th button.x,.toma .th button.si{min-height:40px}
+  .selfmt button,.cellrow button,.rescate button,
+  .mv button,.tg button,.bz button,.btnrow button{min-height:40px}
+  .toma .row input,.toma .row select,input.fn,input.fn.m{font-size:16px;min-height:40px}
+  .cellrow input,.cellrow select{font-size:16px}
+  .bz textarea,#bz_texto{font-size:16px}
+  .tog{min-height:38px !important;font-size:11px !important}
+  .med input,.med select{font-size:16px;min-height:38px}
+  nav button{min-height:58px}
+}
 </style>
 </head>
 <body>
