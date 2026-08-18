@@ -2,7 +2,7 @@
    Caché aparte de la plataforma entera: son dos apps distintas en el
    teléfono y no se pisan la una a la otra.                              */
 
-const VERSION = "wallio-parte-v10";
+const VERSION = "wallio-parte-v11";
 const BASICOS = [
   "./",
   "./index.html",
