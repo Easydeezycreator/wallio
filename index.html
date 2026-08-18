@@ -390,7 +390,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   header .lang{min-height:32px;padding:0 12px;font-size:11.5px}
   header .sv{font-size:11.5px}
   .card{padding:0 0 11px}
-  .card h2{font-size:11px;letter-spacing:.2em;padding:8px 18px;margin-bottom:10px}
+  .card h2{font-size:13px;letter-spacing:.2em;padding:10px 18px;margin-bottom:10px}
   .card > *:not(h2){margin-left:18px;margin-right:18px;max-width:calc(100% - 36px)}
   .grid{column-gap:26px}
   .f{padding:5px 0}
@@ -444,6 +444,8 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
   .big{font-size:34px}
   nav button{min-height:66px;font-size:12px}
 }
+/* la tira vacía no dice nada que el usuario no sepa: fuera hasta que haya proyecto */
+.tira.vacia{display:none}
 @page{size:A4;margin:11mm 12mm}
 
 .tg{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-top:1px solid var(--line);flex-wrap:wrap}
@@ -650,7 +652,7 @@ label{font:650 10px/1.35 var(--ui);letter-spacing:.075em;margin-bottom:3px}
 .tira b{font:650 15px/1.25 var(--disp);letter-spacing:-.015em}
 
 /* ---------------- bandas de sección: menos grito, más orden ---------------- */
-.card h2{font:650 9.5px/1 var(--ui);letter-spacing:.17em;padding:8px 14px;margin:0 0 10px}
+.card h2{font:650 11.5px/1 var(--ui);letter-spacing:.17em;padding:9px 14px;margin:0 0 10px}
 .card{padding:0 0 12px}
 
 /* ---------------- botones ---------------- */
@@ -732,7 +734,7 @@ input[spellcheck=false],textarea[spellcheck=false],
 }
 @media (min-width:700px){
   header .wm{font-size:23px}
-  .card h2{font-size:10px;padding:9px 16px}
+  .card h2{font-size:12px;padding:10px 16px}
   .note{font-size:14px}
 }
 
@@ -929,7 +931,7 @@ html.solo-parte .portada{display:none}
   label{font-size:11px;letter-spacing:.14em;margin-bottom:5px}
   .f{padding:10px 0}
   .grid{column-gap:44px}
-  .card h2{font-size:12.5px;letter-spacing:.22em;padding:12px 22px}
+  .card h2{font-size:14.5px;letter-spacing:.22em;padding:13px 22px}
   .card > *:not(h2){margin-left:22px;margin-right:22px;max-width:calc(100% - 44px)}
   header svg{width:40px;height:40px;flex-basis:40px}
   header .wm{font-size:26px}
@@ -1034,10 +1036,6 @@ html.solo-parte .portada{display:none}
   </div>
   <div class="card">
     <h2>Intervenciones de esta óptica</h2>
-    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
-      Un grid vale para la óptica tal como estaba cuando se midió. Si pasa por taller,
-      se lleva un golpe o se recalibra, hay que volver a medirla — y aquí queda apuntado
-      para que nadie use un grid caducado sin saberlo.</p>
     <div id="iv_lista"></div>
     <div class="grid">
       <div class="f"><label>Fecha</label><input id="iv_fecha" type="date"></div>
@@ -1058,9 +1056,6 @@ html.solo-parte .portada{display:none}
   </div>
   <div class="card">
     <h2>Ficha existente</h2>
-    <p style="margin:0 11px 11px;color:var(--tx2);font-size:14px">
-      Si esta óptica ya tiene grid hecho por otra persona, carga su ficha y lo nuevo se
-      <b style="color:var(--tx)">añade</b> a lo que ya había. No se duplica ni se pisa.</p>
     <div class="btnrow">
       <button onclick="document.getElementById('fIn').click()">Cargar ficha existente</button>
     </div>
@@ -1103,10 +1098,6 @@ html.solo-parte .portada{display:none}
 <section id="v-captura">
   <div class="card">
     <h2>Volcado · archivos de cámara</h2>
-    <p style="margin:0 11px 11px;color:var(--tx2);font-size:13.5px">
-      La ficha no guarda los clips: un grid de una óptica en ARRIRAW pasa de los 50 GB. Guarda
-      <b>dónde están y su huella</b>, que es lo que permite comprobar dentro de tres años que ese
-      archivo es exactamente este grid. El DIT ya genera esa huella al volcar.</p>
     <div class="grid">
       <div class="f"><label>Volumen / LTO / cartucho</label><input id="mv_vol" placeholder="EFD_GRIDS_001"></div>
       <div class="f"><label>Volcado hecho por</label><input id="mv_por" placeholder="M. Motril · DIT"></div>
@@ -1116,8 +1107,7 @@ html.solo-parte .portada{display:none}
       <button class="ghost" onclick="olvidaMhl()" id="mv_borrar" hidden>Olvidar volcado</button>
     </div>
     <input type="file" id="mv_file" accept=".mhl,.xml" hidden>
-    <div class="hint" id="mv_msg">
-      Arrástralo aquí y la app rellena sola la huella y la ruta de cada celda.</div>
+    <div class="hint" id="mv_msg">O arrástralo aquí.</div>
   </div>
   <div id="listaCaptura"></div>
 </section>
@@ -1277,10 +1267,6 @@ html.solo-parte .portada{display:none}
   </div>
   <div class="card">
     <h2>Buscar grids ya guardados</h2>
-    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
-      Se busca por <b style="color:var(--tx)">número de serie</b>, nunca por modelo: dos unidades
-      del mismo objetivo tienen distorsión distinta, y un grid de la unidad equivocada es peor que
-      no tener grid. Pega la lista, o suelta el CSV del parte de cámara y los saca él solo.</p>
     <div style="padding:0 11px">
       <textarea id="bs_seriales" style="min-height:78px;width:100%"
         placeholder="S7FF50-11938&#10;S7FF75-11944&#10;…"></textarea>
@@ -1312,9 +1298,6 @@ html.solo-parte .portada{display:none}
   </div>
   <div class="card">
     <h2>Instrumental y condiciones</h2>
-    <p style="margin:0 11px 11px;color:var(--tx2);font-size:13.5px">
-      Un certificado sin instrumental declarado no lo acepta post. Esto es lo que hace auditable
-      la medida.</p>
     <div class="grid">
       <div class="f w"><label>Carta de test — elígela y se rellena sola</label><select id="i_cartaSel" onchange="eligeCarta()"></select></div>
       <div class="f"><label>Carta · fabricante y referencia</label><input id="i_carta" placeholder="DSC Labs · CamAlign 1400"></div>
@@ -1337,9 +1320,6 @@ html.solo-parte .portada{display:none}
   </div>
   <div class="card">
     <h2>Generar</h2>
-    <p style="margin:0 11px 11px;color:var(--tx2);font-size:14px">
-      El PDF es la ficha para post. El archivo de ficha es lo que se guarda y lo que otra persona
-      cargará el día que amplíe esta óptica con otra resolución.</p>
     <div class="btnrow">
       <button class="primary" onclick="hacerPDF()">Generar PDF de la ficha</button>
       <button onclick="paquetePost()">Paquete para post</button>
@@ -1347,14 +1327,6 @@ html.solo-parte .portada{display:none}
       <button onclick="guardarFicha()">Guardar archivo de ficha</button>
       <button class="danger" onclick="empezarDeCero()">Empezar de cero</button>
     </div>
-  </div>
-  <div class="card">
-    <h2>Cómo crece la base de datos</h2>
-    <p style="margin:0;color:var(--tx2);font-size:13.5px">
-      Cada ficha se identifica por el fabricante y el número de serie, no solo por el número: dos fabricantes pueden repetirlo. Si otro asistente captura esa misma óptica
-      en un formato que no estaba, carga la ficha, añade lo suyo y vuelve a guardarla: la cobertura
-      sube y el historial queda. Cada aportación deja fecha y autor, así que siempre se sabe quién
-      midió qué y cuándo.</p>
   </div>
 </section>
 
@@ -1364,9 +1336,6 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <h2>Tu casa</h2>
-    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
-      Esto es lo que sale impreso en los registros y en los albaranes que emitas. El trabajo lleva
-      tu nombre.</p>
     <div class="grid">
       <div class="f"><label>Nombre comercial</label><input id="cs_comercial" placeholder="EFD Studios"></div>
       <div class="f"><label>Ciudad</label><input id="cs_ciudad" placeholder="Madrid"></div>
@@ -1390,10 +1359,6 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <h2>Inventario</h2>
-    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
-      Una línea por óptica, por número de serie. El semáforo dice si esa unidad está lista para
-      salir: <b style="color:var(--tx)">verde</b> es grid completo, clip guardado y calibración en
-      plazo. Marca las que van a una producción y crea la entrega ahí abajo.</p>
     <div class="btnrow">
       <button class="primary" onclick="csInventario()">Traer el inventario</button>
       <button class="ghost" onclick="csMarcaListas()">Marcar las que están listas</button>
@@ -1406,9 +1371,6 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <h2>Entrega a una producción</h2>
-    <p style="margin:0 11px 9px;color:var(--tx2);font-size:13.5px">
-      Sale un enlace con las ópticas marcadas y nada más. Quien lo tenga ve esas fichas y se baja
-      esos grids, sin cuenta y sin entrar en tu almacén. Queda apuntado qué salió, cuándo y a quién.</p>
     <div class="grid">
       <div class="f"><label>Producción</label><input id="cs_prod" placeholder="EL PRIMER DÍA"></div>
       <div class="f"><label>Cliente / contacto</label><input id="cs_cliente" placeholder="Nombre · correo"></div>
@@ -1423,15 +1385,6 @@ html.solo-parte .portada{display:none}
     <div id="cs_ents"></div>
   </div>
 
-  <div class="card">
-    <h2>Cómo se cobra esto</h2>
-    <p style="margin:0;color:var(--tx2);font-size:13.5px">
-      La casa no paga por óptica ni por proyecto: paga por lo que guarda. Los grids y sus clips
-      quedan en el almacén de la casa indefinidamente, y desde ahí se entregan tantas veces como
-      haga falta, a tantas producciones como haga falta. Un grid medido una vez se cobra en cada
-      alquiler de esa óptica, durante toda su vida útil. Cuando la óptica pasa por taller se apunta
-      la intervención y el grid queda marcado como vencido: es entonces cuando toca volver a medir.</p>
-  </div>
 </section>
 
 <!-- ===================== 7 · BUZÓN ===================== -->
@@ -3288,8 +3241,7 @@ function pintaFotoSerial(subiendo){
   const r = S.lens.fotoSerial;
   if (!r){
     c.innerHTML = '<div class="vac">' + traduce("sin foto") + "</div>" +
-      '<div class="d"><b>' + traduce("Foto del número de serie grabado") + "</b><br>" +
-      traduce("Es la prueba de que este grid es de ESTA unidad y no de otra igual. Sin ella, la ficha sale en ámbar cuando post la busque.") +
+      '<div class="d"><b>' + traduce("Foto del número de serie grabado") + "</b>" +
       '</div><button class="ghost" onclick="pideFotoSerial()">' + traduce("añadir") + "</button>";
     return;
   }
@@ -5031,6 +4983,7 @@ const EN = {
 "Silverstack, YoYotta y ShotPut escriben un ASC MHL al volcar. Arrástralo aquí y la app rellena sola la huella y la ruta de cada celda.":
  "Silverstack, YoYotta and ShotPut all write an ASC MHL on offload. Drop it here and the app fills in the hash and path of every cell for you.",
 "archivo":"file","Archivo de cámara":"Camera file","Rollo":"Roll","Timecode":"Timecode",
+"O arrástralo aquí.":"Or drop it here.",
 "— sin asignar —":"— not assigned —","sin huella":"no hash",
 "· asigna el archivo o importa el ASC MHL del volcado":"· assign the file or import the offload's ASC MHL",
 "Ese archivo no es un ASC MHL legible.":"That file is not a readable ASC MHL.",
@@ -5064,6 +5017,11 @@ const EN = {
 "Completa fabricante, familia y focal para poder generar los grids.":
  "Fill in manufacturer, family and focal length before the grids can be generated.",
 "añadida a mano":"added by hand","esférica":"spherical","anamórfica":"anamorphic","Otra":"Other",
+"Grids medidos de cada unidad, clip del grid y ficha de calibración":
+ "Measured grids for every unit, the grid clip and the calibration record",
+"Nombre · correo":"Name · email","SmallHD 24″ · sin LUT":"SmallHD 24″ · no LUT",
+"mínimo 6 caracteres":"6 characters minimum","tu@correo.com":"you@email.com",
+"Cruces / retícula":"Crosses / grid",
 "75   ·   o   25-250":"75   ·   or   25-250",
 "Carta de test — elígela y se rellena sola":"Test chart — pick it and it fills itself",
 "Elige la carta y se rellena sola":"Pick the chart and it fills itself",
@@ -5615,6 +5573,9 @@ const EN = {
 };
 /* patrones con números dentro */
 const EN_RX = [
+ [/^([\d.]+)× anamórfica$/, "$1× anamorphic"],
+ [/^([\d.]+)× · esférica$/, "$1× · spherical"],
+ [/^TE251 rejilla de distorsión(.*)$/, "TE251 distortion grid$1"],
  [/^Volcado leído: (\d+) archivo\(s\), (\d+) emparejado\(s\) por nombre\. (\d+) de (\d+) celdas marcadas tienen archivo asignado\.(.*)$/,
   "Offload read: $1 file(s), $2 matched by name. $3 of $4 ticked cells have a file assigned.$5"],
  [/^Si los clips conservan el nombre original de cámara no hay forma de adivinarlo: abre «archivo» en las celdas que falten y elígelo de la lista\.$/,
