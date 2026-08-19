@@ -3759,6 +3759,9 @@ let NB = {url:"https://nyaevkntqaxdhzxuzbtv.supabase.co",
           key:"sb_publishable_VLj4d9z7jlBfAPgC2JxCSA_V82iwajL",
           token:"", correo:"", casa:"", casaNombre:"", nombre:"", rol:"auxiliar"};
 try { NB = Object.assign(NB, JSON.parse(localStorage.getItem(NB_CONF) || "{}")); } catch(e){}
+/* si un aparato guardó una conexión vacía, vuelve la de fábrica */
+if (!NB.url) NB.url = "https://nyaevkntqaxdhzxuzbtv.supabase.co";
+if (!NB.key) NB.key = "sb_publishable_VLj4d9z7jlBfAPgC2JxCSA_V82iwajL";
 
 function nbGuarda(){ try { localStorage.setItem(NB_CONF, JSON.stringify(NB)); } catch(e){} }
 function nbCola(){ try { return JSON.parse(localStorage.getItem(NB_COLA) || "[]"); } catch(e){ return []; } }
@@ -3809,14 +3812,25 @@ async function nubeAlta(){
     if (!d || !d.access_token)
       return nbMsg(traduce("Cuenta creada. Confirma el correo y luego pulsa Entrar."), "good");
     nbTomaSesion(d);
-  } catch(e){ nbMsg(e.message, "bad"); }
+  } catch(e){ nbMsg(nbError(e), "bad"); }
+}
+/* los errores de la nube, dichos con palabras que ayudan */
+function nbError(e){
+  const m = String((e && e.message) || e);
+  if (/email not confirmed/i.test(m))
+    return traduce("Ese correo aún no está confirmado. Mira tu bandeja de correo (y el spam).");
+  if (/invalid login credentials/i.test(m))
+    return traduce("Correo o contraseña no coinciden. Si aún no tienes cuenta, pulsa «Crear cuenta».");
+  if (/already registered|already been registered/i.test(m))
+    return traduce("Ese correo ya tiene cuenta: pulsa «Entrar» con tu contraseña.");
+  return m;
 }
 async function nubeEntrar(){
   try {
     const d = await nbPide("/auth/v1/token?grant_type=password",
       {email: $("nb_correo").value.trim().toLowerCase(), password: $("nb_pass").value}, false);
     nbTomaSesion(d);
-  } catch(e){ nbMsg(e.message, "bad"); }
+  } catch(e){ nbMsg(nbError(e), "bad"); }
 }
 function nbTomaSesion(d){
   NB.token = d.access_token;
@@ -5119,6 +5133,12 @@ const EN = {
 "Guardar conexión":"Save connection","Tu correo":"Your email","Tu contraseña":"Your password",
 "Tu nombre":"Your name","Tu función":"Your role","auxiliar":"assistant","DIT":"DIT",
 "casa de renta":"rental house","Entrar":"Sign in","Crear cuenta":"Create account",
+"Ese correo aún no está confirmado. Mira tu bandeja de correo (y el spam).":
+ "That email is not confirmed yet. Check your inbox (and the spam folder).",
+"Correo o contraseña no coinciden. Si aún no tienes cuenta, pulsa «Crear cuenta».":
+ "Email or password do not match. If you have no account yet, press “Create account”.",
+"Ese correo ya tiene cuenta: pulsa «Entrar» con tu contraseña.":
+ "That email already has an account: press “Sign in” with your password.",
 "La contraseña no se guarda en ningún sitio: viaja a Supabase y ya está.":
  "The password is not stored anywhere: it goes to Supabase and that is that.",
 "Código de la casa de renta":"Rental house code","lo da la casa":"the house gives it to you",
