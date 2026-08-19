@@ -360,6 +360,11 @@ html.pfilm #listaTomas .f[data-k="dur"],html.pfilm #listaTomas .f[data-k="res"],
 html.pfilm #listaTomas .f[data-k="wb"],html.pfilm #listaTomas .f[data-k="lut"]{display:none}
 html:not(.pfilm) #listaTomas .f[data-k="dial"],html:not(.pfilm) #listaTomas .f[data-k="pies"]{display:none}
 html:not(.pfilm) #filmRollo,html:not(.pfilm) #cardLab{display:none}
+#combo{position:absolute;z-index:9999;background:var(--panel);border:1px solid var(--line);
+  max-height:42vh;overflow:auto;box-shadow:0 14px 34px rgba(0,0,0,.55);-webkit-overflow-scrolling:touch}
+#combo .op{padding:11px 13px;font:500 13px/1.25 var(--mono);color:var(--tx);cursor:pointer;border-bottom:1px solid var(--line)}
+#combo .op:last-child{border-bottom:none}
+#combo .op:active{background:var(--tx);color:var(--bg)}
 .toma .th button.x{min-width:34px;padding:0;color:var(--tx3)}
 .toma .row{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
 .toma .row .w{grid-column:1/-1}
@@ -6304,6 +6309,46 @@ document.querySelectorAll("input").forEach(e => {
   e.setAttribute("readonly", "");
   e.addEventListener("focus", () => e.removeAttribute("readonly"), {once: true});
 });
+/* desplegable propio: iPhone/iPad no ensenan las listas nativas — este se ve igual en todas partes */
+(function(){
+  const caja = document.createElement("div"); caja.id = "combo"; caja.hidden = true;
+  document.body.appendChild(caja);
+  let activo = null;
+  const cierra = () => { caja.hidden = true; activo = null; };
+  const pinta = (inp) => {
+    const id = inp.getAttribute("data-lista"); const dl = id && document.getElementById(id);
+    if (!dl) return cierra();
+    const v = (inp.value || "").toLowerCase().trim();
+    const ops = [...dl.options].map(o => o.value)
+      .filter(x => !v || x.toLowerCase().includes(v));
+    if (!ops.length) return cierra();
+    caja.innerHTML = ops.slice(0, 60).map(x =>
+      '<div class="op">' + x.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</div>").join("");
+    const r = inp.getBoundingClientRect();
+    caja.style.left = (r.left + scrollX) + "px";
+    caja.style.top = (r.bottom + scrollY + 2) + "px";
+    caja.style.minWidth = r.width + "px";
+    caja.hidden = false; activo = inp;
+    [...caja.children].forEach(d => d.onpointerdown = ev => { ev.preventDefault();
+      inp.value = d.textContent;
+      inp.dispatchEvent(new Event("input", {bubbles: true}));
+      inp.dispatchEvent(new Event("change", {bubbles: true}));
+      cierra(); });
+  };
+  document.addEventListener("focusin", e => { const t = e.target;
+    if (t.tagName === "INPUT" && t.hasAttribute("list")){
+      t.setAttribute("data-lista", t.getAttribute("list")); t.removeAttribute("list"); }
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t); else cierra(); });
+  document.addEventListener("input", e => { const t = e.target;
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t); });
+  document.addEventListener("click", e => { const t = e.target;
+    if (t.tagName === "INPUT" && t.hasAttribute("list")){
+      t.setAttribute("data-lista", t.getAttribute("list")); t.removeAttribute("list"); }
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t); });
+  document.addEventListener("pointerdown", e => {
+    if (!caja.contains(e.target) && e.target !== activo) cierra(); });
+  window.addEventListener("scroll", cierra, true);
+})();
 if (NB.rol) $("nb_rol").value = NB.rol;
 nbPinta();
 aplicaIdioma();
