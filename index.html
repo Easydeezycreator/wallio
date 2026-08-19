@@ -1029,6 +1029,7 @@ html.solo-parte .portada{display:none}
       </div>
     </div>
     <div class="hint" id="l_resumen"></div>
+    <div class="hint" id="l_stock" hidden></div>
   </div>
   <div class="card">
     <h2>Foto del número de serie</h2>
@@ -1817,6 +1818,8 @@ function syncLens(){
       })();
   updateChip();
   if (typeof pintaFotoSerial === "function") pintaFotoSerial();
+  if (typeof autoMinimo === "function") autoMinimo();
+  if (typeof stockDeLaOptica === "function") stockDeLaOptica();
 }
 /* coloca una óptica en la interfaz venga del catálogo o no */
 function setLens(L){
@@ -1987,7 +1990,7 @@ function leeFocos(){
 function renderFoco(mover){
   const filas = S.focos.map(function(f, i){
     return `<div class="cellrow${f && f === mover ? " mov" : ""}"><div class="lbl">Distancia ${i + 1}</div>
-     <input value="${esc(f)}" placeholder="2.40 m" oninput="tecleaFoco()" onchange="confirmaFocos()"
+     <input value="${esc(f)}" placeholder="2.40 m" onfocus="tocaFoco(this)" oninput="tecleaFoco()" onchange="confirmaFocos()"
        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">
      <button class="ghost" style="min-height:40px;flex:0 0 auto" onclick="quitaFoco(${i})">×</button></div>`;
   }).join("");
@@ -1998,6 +2001,95 @@ function renderFoco(mover){
     : "";
   $("listaFoco").innerHTML = filas + aviso;
 }
+/* lo de fábrica se aparta solo: al tocar una distancia que puso la app
+   (no él), se borra en el acto. Lo suyo solo se selecciona. */
+function tocaFoco(el){
+  const fab = S.focosFab || [];
+  const k = fab.indexOf(el.value);
+  if (k >= 0){
+    el.value = "";
+    fab.splice(k, 1);
+    S.focos = leeFocos();
+    updateChip();
+  } else if (el.value){ try { el.select(); } catch(e){} }
+}
+
+/* el foco mínimo publicado entra solo al elegir la óptica,
+   mientras esa casilla siga siendo de fábrica */
+function autoMinimo(){
+  const L = S.lens || {};
+  if (!L.marca || !L.fam || !L.focal) return;
+  const d = modDe(L.marca, L.fam, L.focal); if (!d) return;
+  const fab = S.focosFab || (S.focosFab = []);
+  const i = S.focos.findIndex(function(f){ return RX_MIN.test(f) && fab.indexOf(f) >= 0; });
+  if (i < 0) return;
+  const objetivo = traduce("Mínimo") + " " + fmtMetros(d.m);
+  const viejo = S.focos[i];
+  if (viejo === objetivo) return;
+  renombraFoco(viejo, objetivo);
+  S.focos[i] = objetivo;
+  fab[fab.indexOf(viejo)] = objetivo;
+  S.focosPrev = S.focos.slice();
+  renderFoco(); renderCaptura(); updateChip();
+}
+
+/* ---- el stock de la casa, reflejado en la pestaña de la óptica ---- */
+let L_STOCK_T = null;
+function stockDeLaOptica(){
+  const caja = $("l_stock"); if (!caja) return;
+  const serial = ((S.lens && S.lens.serial) || "").trim();
+  if (!serial || serial.length < 3){ caja.hidden = true; return; }
+  if (!NB.url || !NB.key || !NB.casa){
+    caja.hidden = false; caja.className = "hint";
+    caja.textContent = traduce("¿Ya está en el stock? Entra en la casa (pestaña Emitir) y te lo digo aquí.");
+    return;
+  }
+  clearTimeout(L_STOCK_T);
+  L_STOCK_T = setTimeout(function(){ stockMira(serial); }, 600);
+}
+async function stockMira(serial){
+  const caja = $("l_stock"); if (!caja) return;
+  caja.hidden = false; caja.className = "hint";
+  caja.textContent = traduce("Buscando en el stock de la casa…");
+  let d = [];
+  try { d = (await nbPide("/rest/v1/rpc/buscar_fichas", {p_casa: NB.casa, p_claves: [serial]})) || []; }
+  catch(e){ caja.textContent = traduce("El stock no contesta ahora mismo."); return; }
+  const f = d.find(function(x){ return wlNorm(x.serial) === wlNorm(serial) ||
+    wlNorm(((x.clave || "").split("|")[1] || "")) === wlNorm(serial); });
+  if (!f){
+    caja.className = "hint";
+    caja.textContent = traduce("Esta unidad aún no está en el stock de la casa: la estrenas tú.");
+    return;
+  }
+  const v = veredicto(f, areasPedidas());
+  caja.className = "hint good";
+  caja.innerHTML = "<b>" + traduce("Ya está en el stock:") + " " +
+    esc(f.fabricante + " " + f.familia + " " + f.focal + " mm · " + f.serial) + "</b><br>" +
+    v.motivos.map(function(m){ return esc(m.t); }).join(" · ") +
+    '<div class="btnrow" style="margin-top:8px">' +
+    '<button class="ghost" onclick="traeFicha(\'' + esc(f.clave) + '\')">' +
+      traduce("usar en este proyecto") + "</button>" +
+    '<button class="ghost" onclick="enlaceDit(\'' + esc(f.clave) + '\')">' +
+      traduce("enlace para el DIT") + "</button></div>";
+}
+/* el enlace que el DIT abre en la prep: la ficha y sus clips, sin cuenta */
+async function enlaceDit(clave){
+  const caja = $("l_stock");
+  const d = await nbPide("/rest/v1/rpc/crea_enlace", {p_casa: NB.casa, p_clave: clave, p_dias: 30})
+              .catch(function(){ return null; });
+  const e = d && (d[0] || d);
+  if (!e || !e.token){
+    if (caja){ caja.className = "hint bad"; caja.textContent = traduce("No se pudo crear el enlace."); }
+    return;
+  }
+  const url = location.origin + location.pathname + "?ficha=" + e.token;
+  try { await navigator.clipboard.writeText(url); } catch(x){}
+  if (caja) caja.insertAdjacentHTML("beforeend",
+    '<div style="word-break:break-all;margin-top:6px">' +
+    traduce("Enlace copiado para el DIT, caduca el") + " " + String(e.caduca).slice(0, 10) +
+    ":<br>" + esc(url) + "</div>");
+}
+
 let ordenTimer = null;
 function tecleaFoco(){
   S.focos = leeFocos();
@@ -2125,6 +2217,7 @@ function focosDelFabricante(){
   const previas = leeFocos().filter(function(x){ return x; });
   S.focos = nuevas;
   ordenaFocos();
+  S.focosFab = S.focos.slice();
   S.focosPrev = S.focos.slice();
   renderFoco(); renderCaptura(); updateChip();
   if (typeof aplicaIdioma === "function") aplicaIdioma();
@@ -3608,6 +3701,7 @@ function nbPinta(){
   else { clase = "on"; txt = NB.casaNombre + " · " + traduce("al día") + " · " + NB.correo; }
   if (!navigator.onLine && hayCasa){ clase = "esp"; txt += " · " + traduce("sin red"); }
   pt.className = "pt " + clase; tx.textContent = txt;
+  if (typeof stockDeLaOptica === "function") stockDeLaOptica();
 }
 async function nbPide(ruta, cuerpo, conSesion){
   if (!NB.url || !NB.key) throw new Error(traduce("Falta configurar la conexión."));
@@ -3926,6 +4020,7 @@ function empezarDeCero(){
        lens:{marca:"", fam:"", focal:"", serial:"", casa:"", set:"", t:"", sq:1.0, mount:"", xd:""},
        formats:[], focos:[LANG === "en" ? "Minimum" : "Mínimo", "2.40 m", "INF"], takes:{}, base:{}, historial:[], mhl:[], volcado:{},
        parte:{roll:{}, tomas:[], campos:[], camposRollo:[]}};
+  S.focosFab = S.focos.slice();
   try { localStorage.removeItem(CLAVE); } catch(e){}
   document.querySelectorAll("input, select").forEach(e => { if (e.type !== "file") e.value = ""; });
   refrescaTodo(); show("prod");
@@ -4191,6 +4286,7 @@ function fundeFicha(d, conservarOptica){
   const mios = S.focos.filter(f => f && DEF.indexOf(f) < 0);
   S.focos = d.focos && d.focos.length ? [...new Set(d.focos.concat(mios))] : S.focos;
   ordenaFocos(); S.focosPrev = S.focos.slice();
+  S.focosFab = (S.focosFab || []).filter(function(x){ return S.focos.indexOf(x) >= 0; });
   (d.formats || []).forEach(f => { if (!S.formats.some(x => x.key === f.key)) S.formats.push(f); });
   S.base  = Object.assign({}, d.takes || {});
   S.takes = Object.assign({}, d.takes || {}, S.takes);   // lo nuevo no pisa lo viejo
@@ -5121,6 +5217,14 @@ const EN = {
 "Sin fecha de calibración declarada.":"No calibration date declared.",
 "Calibración de hace":"Calibrated","meses (":"months ago (",
 "usar en este proyecto":"use in this project","enlace para post":"link for post",
+"enlace para el DIT":"link for the DIT","Ya está en el stock:":"Already in stock:",
+"¿Ya está en el stock? Entra en la casa (pestaña Emitir) y te lo digo aquí.":
+ "Already in stock? Sign in to the rental house (Export tab) and I will tell you here.",
+"Buscando en el stock de la casa…":"Searching the rental house stock…",
+"El stock no contesta ahora mismo.":"The stock is not answering right now.",
+"Esta unidad aún no está en el stock de la casa: la estrenas tú.":
+ "This unit is not in the rental house stock yet: you are the first.",
+"Enlace copiado para el DIT, caduca el":"Link copied for the DIT, expires on",
 "ópticas buscadas":"lenses searched",
 "· contra el área activa de":"· against the active area of",
 "formato(s) que tienes puestos en Equipo":"format(s) you have set in Camera",
@@ -5420,6 +5524,10 @@ const EN = {
 "Puestas":"Set", "distancias a partir del foco mínimo":"distances from the close focus of",
 "Deshacer devuelve las anteriores.":"Undo brings the previous ones back.",
 "desde el plano del sensor":"from the sensor plane",
+"· foco mínimo del fabricante":"· manufacturer's published minimum focus",
+"(desde el plano del sensor)":"(from the sensor plane)",
+"(desde el plano de imagen)":"(from the image plane)",
+"(el fabricante no dice desde dónde mide)":"(the manufacturer does not say where it is measured from)",
 "desde el plano de imagen":"from the image plane",
 "el fabricante no dice desde dónde mide":"the manufacturer does not say where it is measured from",
 "foco mínimo del fabricante":"manufacturer close focus",
@@ -5655,6 +5763,18 @@ function cambiaIdioma(){
   try { localStorage.setItem(IDIOMA_GUARDADO, LANG); } catch(e){}
   location.hash = LANG;
   aplicaIdioma();
+  if (typeof focosAlIdioma === "function") focosAlIdioma();
+  if (typeof stockDeLaOptica === "function") stockDeLaOptica();
+}
+/* el «Mínimo» de fábrica habla el idioma en uso; las tomas viajan con el nombre */
+function focosAlIdioma(){
+  const fab = S.focosFab || []; let cambio = false;
+  S.focos.forEach(function(f, i){
+    if (fab.indexOf(f) < 0) return;
+    const n = (LANG === "en") ? f.replace(/^M[íi]nimo/, "Minimum") : f.replace(/^Minimum/, "Mínimo");
+    if (n !== f){ renombraFoco(f, n); S.focos[i] = n; fab[fab.indexOf(f)] = n; cambio = true; }
+  });
+  if (cambio){ S.focosPrev = S.focos.slice(); renderFoco(); renderCaptura(); updateChip(); }
 }
 new MutationObserver(muts => {
   if (LANG === "es") return;
@@ -5825,6 +5945,7 @@ document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
 /* ---------------- arranque ---------------- */
 /* el idioma manda también en la distancia de fábrica: en inglés, «Minimum» */
 if (LANG === "en" && S.focos.join("|") === "Mínimo|2.40 m|INF") S.focos[0] = "Minimum";
+S.focosFab = S.focos.slice();      // lo de fábrica se aparta solo al tocarlo
 fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas(); chartCheck();
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
 enlazaProdParte(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
