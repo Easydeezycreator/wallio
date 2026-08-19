@@ -987,26 +987,26 @@ html.solo-parte .portada{display:none}
   <div class="card">
     <h2>Producción</h2>
     <div class="grid">
-      <div class="f"><label>Proyecto</label><input id="p_proyecto"></div>
-      <div class="f"><label>Producción / cliente</label><input id="p_productora"></div>
-      <div class="f"><label>Unidad</label><input id="p_unidad" placeholder="Unidad principal"></div>
-      <div class="f"><label>Nº de jornada</label><input id="p_jornada"></div>
-      <div class="f"><label>Localización</label><input id="p_localizacion"></div>
-      <div class="f"><label>Fecha de captura</label><input id="p_fecha" type="date"></div>
+      <div class="f"><label>Proyecto</label><input id="p_proyecto" autocomplete="off"></div>
+      <div class="f"><label>Producción / cliente</label><input id="p_productora" autocomplete="off"></div>
+      <div class="f"><label>Unidad</label><input id="p_unidad" placeholder="Unidad principal" autocomplete="off"></div>
+      <div class="f"><label>Nº de jornada</label><input id="p_jornada" autocomplete="off"></div>
+      <div class="f"><label>Localización</label><input id="p_localizacion" autocomplete="off"></div>
+      <div class="f"><label>Fecha de captura</label><input id="p_fecha" type="date" autocomplete="off"></div>
     </div>
   </div>
   <div class="card">
     <h2>Responsables</h2>
     <div class="grid">
-      <div class="f"><label>Capturado por</label><input id="p_por"></div>
+      <div class="f"><label>Capturado por</label><input id="p_por" autocomplete="off"></div>
       <div class="f"><label>Función</label><select id="p_rol">
         <option>1er AC / foquista</option><option>2º AC</option><option>VP camera tech</option>
         <option>DIT</option><option>Técnico de la casa de renta</option><option>Supervisor de VFX</option>
       </select></div>
-      <div class="f"><label>Casa de renta / propietario</label><input id="p_casa"></div>
-      <div class="f"><label>Técnico de cámara / DIT</label><input id="p_dit"></div>
-      <div class="f"><label>Supervisor de VFX</label><input id="p_vfx"></div>
-      <div class="f"><label>Contacto</label><input id="p_contacto" inputmode="email"></div>
+      <div class="f"><label>Casa de renta / propietario</label><input id="p_casa" autocomplete="off"></div>
+      <div class="f"><label>Técnico de cámara / DIT</label><input id="p_dit" autocomplete="off"></div>
+      <div class="f"><label>Supervisor de VFX</label><input id="p_vfx" autocomplete="off"></div>
+      <div class="f"><label>Contacto</label><input id="p_contacto" inputmode="email" autocomplete="off"></div>
     </div>
   </div>
 
@@ -1020,16 +1020,16 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Fabricante</label><select id="l_marca"></select></div>
       <div class="f"><label>Familia</label><select id="l_fam"></select></div>
       <div class="f"><label>Focal</label><select id="l_focal"></select></div>
-      <div class="f"><label>Nº de serie de la unidad</label><input id="l_serial" placeholder="SP50-11938" autocapitalize="characters"></div>
-      <div class="f"><label>Casa de renta / propietario</label><input id="l_casa" placeholder="EFD Studios"></div>
-      <div class="f"><label>Juego</label><input id="l_set" placeholder="Supreme Prime A"></div>
+      <div class="f"><label>Nº de serie de la unidad</label><input id="l_serial" placeholder="SP50-11938" autocapitalize="characters" autocomplete="off"></div>
+      <div class="f"><label>Casa de renta / propietario</label><input id="l_casa" placeholder="EFD Studios" autocomplete="off"></div>
+      <div class="f"><label>Juego</label><input id="l_set" placeholder="Supreme Prime A" autocomplete="off"></div>
     </div>
     <div id="l_custom" style="display:none">
       <div class="grid">
-        <div class="f" id="fc_marca"><label>Fabricante (a mano)</label><input id="lc_marca" placeholder="Nombre del fabricante"></div>
-        <div class="f" id="fc_fam"><label>Familia / serie (a mano)</label><input id="lc_fam" placeholder="Nombre de la serie"></div>
-        <div class="f" id="fc_focal"><label>Focal (a mano)</label><input id="lc_focal" placeholder="75   ·   o   25-250"></div>
-        <div class="f" id="fc_t"><label>Apertura máxima T</label><input id="lc_t" placeholder="2.0" inputmode="decimal"></div>
+        <div class="f" id="fc_marca"><label>Fabricante (a mano)</label><input id="lc_marca" placeholder="Nombre del fabricante" autocomplete="off"></div>
+        <div class="f" id="fc_fam"><label>Familia / serie (a mano)</label><input id="lc_fam" placeholder="Nombre de la serie" autocomplete="off"></div>
+        <div class="f" id="fc_focal"><label>Focal (a mano)</label><input id="lc_focal" placeholder="75   ·   o   25-250" autocomplete="off"></div>
+        <div class="f" id="fc_t"><label>Apertura máxima T</label><input id="lc_t" placeholder="2.0" inputmode="decimal" autocomplete="off"></div>
         <div class="f" id="fc_sq"><label>Squeeze</label><select id="lc_sq"></select></div>
         <div class="f" id="fc_mo"><label>Montura</label><select id="lc_mount"></select></div>
         <div class="f" id="fc_xd"><label>Datos de lente en vivo</label><select id="lc_xd"></select></div>
@@ -1060,7 +1060,7 @@ html.solo-parte .portada{display:none}
     <h2>Intervenciones de esta óptica</h2>
     <div id="iv_lista"></div>
     <div class="grid">
-      <div class="f"><label>Fecha</label><input id="iv_fecha" type="date"></div>
+      <div class="f"><label>Fecha</label><input id="iv_fecha" type="date" autocomplete="off"></div>
       <div class="f"><label>Qué pasó</label><select id="iv_tipo">
         <option value="calibracion">Calibración</option>
         <option value="taller">Paso por taller</option>
@@ -1070,7 +1070,7 @@ html.solo-parte .portada{display:none}
         <option value="otro">Otra cosa</option>
       </select></div>
     </div>
-    <input id="iv_nota" placeholder="Nota: qué se tocó, quién, número de parte…">
+    <input id="iv_nota" placeholder="Nota: qué se tocó, quién, número de parte…" autocomplete="off">
     <div class="btnrow">
       <button onclick="apuntaIntervencion()">Apuntar intervención</button>
       <button class="ghost" onclick="pintaIntervenciones()">Actualizar</button>
@@ -1096,11 +1096,11 @@ html.solo-parte .portada{display:none}
     <h2>Cámara no catalogada</h2>
     <div class="grid">
       <div class="f"><label>Soporte</label><select id="x_sop"><option value="digital">Digital</option><option value="pelicula">Película</option></select></div>
-      <div class="f"><label>Fabricante y cámara</label><input id="x_cam" placeholder="Marca Modelo"></div>
-      <div class="f"><label>Formato / ventanilla</label><input id="x_fmt" placeholder="Open Gate 4.6K"></div>
-      <div class="f"><label>Resolución (o «película»)</label><input id="x_res" placeholder="4608x3164"></div>
-      <div class="f"><label>Ancho activo (mm)</label><input id="x_w" inputmode="decimal" placeholder="27.99"></div>
-      <div class="f"><label>Alto activo (mm)</label><input id="x_h" inputmode="decimal" placeholder="19.22"></div>
+      <div class="f"><label>Fabricante y cámara</label><input id="x_cam" placeholder="Marca Modelo" autocomplete="off"></div>
+      <div class="f"><label>Formato / ventanilla</label><input id="x_fmt" placeholder="Open Gate 4.6K" autocomplete="off"></div>
+      <div class="f"><label>Resolución (o «película»)</label><input id="x_res" placeholder="4608x3164" autocomplete="off"></div>
+      <div class="f"><label>Ancho activo (mm)</label><input id="x_w" inputmode="decimal" placeholder="27.99" autocomplete="off"></div>
+      <div class="f"><label>Alto activo (mm)</label><input id="x_h" inputmode="decimal" placeholder="19.22" autocomplete="off"></div>
     </div>
     <div class="btnrow" style="margin-top:11px"><button class="primary" onclick="addCustom()">Añadir formato</button></div>
   </div>
@@ -1112,8 +1112,8 @@ html.solo-parte .portada{display:none}
   <div class="card">
     <h2>Volcado · archivos de cámara</h2>
     <div class="grid">
-      <div class="f"><label>Volumen / LTO / cartucho</label><input id="mv_vol" placeholder="EFD_GRIDS_001"></div>
-      <div class="f"><label>Volcado hecho por</label><input id="mv_por" placeholder="M. Motril · DIT"></div>
+      <div class="f"><label>Volumen / LTO / cartucho</label><input id="mv_vol" placeholder="EFD_GRIDS_001" autocomplete="off"></div>
+      <div class="f"><label>Volcado hecho por</label><input id="mv_por" placeholder="M. Motril · DIT" autocomplete="off"></div>
     </div>
     <div class="btnrow" style="margin-top:11px">
       <button class="ghost" onclick="$('mv_file').click()">Importar ASC MHL del volcado</button>
@@ -1137,14 +1137,14 @@ html.solo-parte .portada{display:none}
     <summary><b>Producción</b> — <span>ábrelo si trabajas solo con el parte</span></summary>
     <div class="cuerpo">
       <div class="grid">
-        <div class="f"><label>Proyecto</label><input id="pp_proyecto"></div>
-        <div class="f"><label>Productora / cliente</label><input id="pp_productora"></div>
-        <div class="f"><label>Unidad</label><input id="pp_unidad"></div>
-        <div class="f"><label>Nº de jornada</label><input id="pp_jornada"></div>
-        <div class="f"><label>Localización</label><input id="pp_localizacion"></div>
-        <div class="f"><label>Fecha</label><input id="pp_fecha" type="date"></div>
-        <div class="f"><label>Casa de renta / propietario</label><input id="pp_casa"></div>
-        <div class="f"><label>Técnico de cámara / DIT</label><input id="pp_dit"></div>
+        <div class="f"><label>Proyecto</label><input id="pp_proyecto" autocomplete="off"></div>
+        <div class="f"><label>Productora / cliente</label><input id="pp_productora" autocomplete="off"></div>
+        <div class="f"><label>Unidad</label><input id="pp_unidad" autocomplete="off"></div>
+        <div class="f"><label>Nº de jornada</label><input id="pp_jornada" autocomplete="off"></div>
+        <div class="f"><label>Localización</label><input id="pp_localizacion" autocomplete="off"></div>
+        <div class="f"><label>Fecha</label><input id="pp_fecha" type="date" autocomplete="off"></div>
+        <div class="f"><label>Casa de renta / propietario</label><input id="pp_casa" autocomplete="off"></div>
+        <div class="f"><label>Técnico de cámara / DIT</label><input id="pp_dit" autocomplete="off"></div>
       </div>
     </div>
   </details>
@@ -1156,36 +1156,36 @@ html.solo-parte .portada{display:none}
       <button id="tp_film" class="ghost" onclick="ponTipo('film')">Película</button>
     </div>
     <div class="grid">
-      <div class="f"><label>Cámara</label><input id="r_cam" placeholder="A"></div>
-      <div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001"></div>
-      <div class="f"><label>Cuerpo</label><input id="r_body" list="dlBodies" placeholder="ARRI ALEXA 35"></div>
-      <div class="f"><label>Formato de captura</label><input id="r_fmt" list="dlFmts" placeholder="Open Gate 4.6K"></div>
-      <div class="f"><label>Soporte</label><input id="r_media" placeholder="Codex Compact 2 TB · 04"></div>
-      <div class="f"><label>Codec / emulsión</label><input id="r_codec" placeholder="ARRIRAW 4.6K OG"></div>
-      <div class="f"><label>Fotogramas por segundo</label><input id="r_fps" inputmode="decimal" placeholder="25"></div>
-      <div class="f"><label>EI / ISO</label><input id="r_ei" inputmode="numeric" placeholder="800"></div>
-      <div class="f"><label>Obturador</label><input id="r_shutter" placeholder="180°"></div>
-      <div class="f"><label>Temperatura de color</label><input id="r_wb" placeholder="5600 K · +0"></div>
-      <div class="f"><label>LUT / look</label><input id="r_lut" placeholder="ARRI 709 · show LUT v3"></div>
-      <div class="f"><label>Filtros fijos</label><input id="r_filt" placeholder="Black Pro-Mist 1/4"></div>
-      <div class="f"><label>Foquista</label><input id="r_ac"></div>
-      <div class="f"><label>Auxiliar · 2º AC</label><input id="r_ac2"></div>
-      <div class="f"><label>Director de fotografía</label><input id="r_dop"></div>
+      <div class="f"><label>Cámara</label><input id="r_cam" placeholder="A" autocomplete="off"></div>
+      <div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div>
+      <div class="f"><label>Cuerpo <span style="float:right;cursor:pointer" onclick="otraCamara()">+ otra cámara</span></label><input id="r_body" list="dlBodies" onfocus="this.select()" placeholder="ARRI ALEXA 35" autocomplete="off"></div>
+      <div class="f"><label>Formato de captura</label><input id="r_fmt" list="dlFmts" onfocus="this.select()" placeholder="Open Gate 4.6K" autocomplete="off"></div>
+      <div class="f"><label>Soporte</label><input id="r_media" placeholder="Codex Compact 2 TB · 04" autocomplete="off"></div>
+      <div class="f"><label>Codec / emulsión</label><input id="r_codec" placeholder="ARRIRAW 4.6K OG" autocomplete="off"></div>
+      <div class="f"><label>Fotogramas por segundo</label><input id="r_fps" inputmode="decimal" placeholder="25" autocomplete="off"></div>
+      <div class="f"><label>EI / ISO</label><input id="r_ei" inputmode="numeric" placeholder="800" autocomplete="off"></div>
+      <div class="f"><label>Obturador</label><input id="r_shutter" placeholder="180°" autocomplete="off"></div>
+      <div class="f"><label>Temperatura de color</label><input id="r_wb" placeholder="5600 K · +0" autocomplete="off"></div>
+      <div class="f"><label>LUT / look</label><input id="r_lut" placeholder="ARRI 709 · show LUT v3" autocomplete="off"></div>
+      <div class="f"><label>Filtros fijos</label><input id="r_filt" placeholder="Black Pro-Mist 1/4" autocomplete="off"></div>
+      <div class="f"><label>Foquista</label><input id="r_ac" autocomplete="off"></div>
+      <div class="f"><label>Auxiliar · 2º AC</label><input id="r_ac2" autocomplete="off"></div>
+      <div class="f"><label>Director de fotografía</label><input id="r_dop" autocomplete="off"></div>
     </div>
     <div class="grid" id="filmRollo">
-      <div class="f"><label>Laboratorio</label><input id="r2_lab" placeholder="Fotofilm Madrid"></div>
-      <div class="f"><label>Nº de magazine</label><input id="r2_mag" placeholder="M3"></div>
-      <div class="f"><label>Emulsión</label><input id="r2_emul" list="dlEmul" placeholder="KODAK VISION3 500T 5219"></div>
-      <div class="f"><label>Lote / batch</label><input id="r2_lote" placeholder="0231 042"></div>
-      <div class="f"><label>Carga</label><input id="r2_carga" inputmode="numeric" list="dlCarga" placeholder="1000"></div>
+      <div class="f"><label>Laboratorio</label><input id="r2_lab" placeholder="Fotofilm Madrid" autocomplete="off"></div>
+      <div class="f"><label>Nº de magazine</label><input id="r2_mag" placeholder="M3" autocomplete="off"></div>
+      <div class="f"><label>Emulsión</label><input id="r2_emul" list="dlEmul" placeholder="KODAK VISION3 500T 5219" autocomplete="off" onfocus="this.select()"></div>
+      <div class="f"><label>Lote / batch</label><input id="r2_lote" placeholder="0231 042" autocomplete="off"></div>
+      <div class="f"><label>Carga</label><input id="r2_carga" inputmode="numeric" list="dlCarga" placeholder="1000" autocomplete="off" onfocus="this.select()"></div>
       <div class="f"><label>Unidad de medida</label><select id="r2_unidad">
         <option value="ft">Pies (ft)</option><option value="m">Metros (m)</option></select></div>
       <div class="f"><label>Paso</label><select id="r2_perf">
         <option value="4">35 mm · 4 perf</option><option value="3">35 mm · 3 perf</option>
         <option value="2">35 mm · 2 perf</option><option value="16">16 mm</option>
         <option value="65">65 mm · 5 perf</option></select></div>
-      <div class="f"><label>Cargado por</label><input id="r2_loader"></div>
-      <div class="f"><label>Contador al empezar</label><input id="r2_dial0" inputmode="numeric" placeholder="0"></div>
+      <div class="f"><label>Cargado por</label><input id="r2_loader" autocomplete="off"></div>
+      <div class="f"><label>Contador al empezar</label><input id="r2_dial0" inputmode="numeric" placeholder="0" autocomplete="off"></div>
     </div>
     <div id="rollExtra"></div>
     <div class="btnrow"><button onclick="addCampoRollo()">+ Añadir campo del rollo</button></div>
@@ -1216,7 +1216,7 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Positivado / escaneo</label><select id="r2_copia">
         <option>Best light</option><option>One-light</option><option>Etalonado (timed)</option>
         <option>Escaneo 2K</option><option>Escaneo 4K</option><option>Escaneo 4K HDR</option></select></div>
-      <div class="f wide"><label>Instrucciones al laboratorio</label><input id="r2_labnotas" placeholder="revelar aparte del resto"></div>
+      <div class="f wide"><label>Instrucciones al laboratorio</label><input id="r2_labnotas" placeholder="revelar aparte del resto" autocomplete="off"></div>
     </div>
   </div>
 
@@ -1357,20 +1357,20 @@ html.solo-parte .portada{display:none}
     <h2>Instrumental y condiciones</h2>
     <div class="grid">
       <div class="f w"><label>Carta de test — elígela y se rellena sola</label><select id="i_cartaSel" onchange="eligeCarta()"></select></div>
-      <div class="f"><label>Carta · fabricante y referencia</label><input id="i_carta" placeholder="DSC Labs · CamAlign 1400"></div>
+      <div class="f"><label>Carta · fabricante y referencia</label><input id="i_carta" placeholder="DSC Labs · CamAlign 1400" autocomplete="off"></div>
       <div class="f"><label>Patrón</label><select id="i_patron"><option>Retícula de puntos</option><option>Casillas (damero)</option><option>Cruces / retícula</option><option>Otro</option></select></div>
-      <div class="f"><label>Separación (mm)</label><input id="i_sep" inputmode="decimal"></div>
-      <div class="f"><label>Medidas de la carta (mm)</label><input id="i_medidas" placeholder="1400 × 990"></div>
-      <div class="f"><label>Diagonal 1 (mm)</label><input id="i_d1" inputmode="decimal"></div>
-      <div class="f"><label>Diagonal 2 (mm)</label><input id="i_d2" inputmode="decimal"></div>
-      <div class="f"><label>Distancia a la carta (m)</label><input id="i_dist" inputmode="decimal"></div>
+      <div class="f"><label>Separación (mm)</label><input id="i_sep" inputmode="decimal" autocomplete="off"></div>
+      <div class="f"><label>Medidas de la carta (mm)</label><input id="i_medidas" placeholder="1400 × 990" autocomplete="off"></div>
+      <div class="f"><label>Diagonal 1 (mm)</label><input id="i_d1" inputmode="decimal" autocomplete="off"></div>
+      <div class="f"><label>Diagonal 2 (mm)</label><input id="i_d2" inputmode="decimal" autocomplete="off"></div>
+      <div class="f"><label>Distancia a la carta (m)</label><input id="i_dist" inputmode="decimal" autocomplete="off"></div>
       <div class="f"><label>Referencia de distancia</label><select id="i_ref"><option>Pupila de entrada</option><option>Plano de imagen</option></select></div>
-      <div class="f"><label>Medición de distancia</label><input id="i_instrdist" placeholder="Leica Disto D2"></div>
-      <div class="f"><label>Nivelación</label><input id="i_nivel" placeholder="Inclinómetro digital 0.1°"></div>
-      <div class="f"><label>Monitor de control</label><input id="i_monitor" placeholder="SmallHD 24″ · sin LUT"></div>
-      <div class="f"><label>Temperatura (°C)</label><input id="i_temp" inputmode="decimal"></div>
-      <div class="f"><label>Humedad relativa (%)</label><input id="i_hum" inputmode="decimal"></div>
-      <div class="f"><label>Última calibración de la óptica</label><input id="i_calib" type="date"></div>
+      <div class="f"><label>Medición de distancia</label><input id="i_instrdist" placeholder="Leica Disto D2" autocomplete="off"></div>
+      <div class="f"><label>Nivelación</label><input id="i_nivel" placeholder="Inclinómetro digital 0.1°" autocomplete="off"></div>
+      <div class="f"><label>Monitor de control</label><input id="i_monitor" placeholder="SmallHD 24″ · sin LUT" autocomplete="off"></div>
+      <div class="f"><label>Temperatura (°C)</label><input id="i_temp" inputmode="decimal" autocomplete="off"></div>
+      <div class="f"><label>Humedad relativa (%)</label><input id="i_hum" inputmode="decimal" autocomplete="off"></div>
+      <div class="f"><label>Última calibración de la óptica</label><input id="i_calib" type="date" autocomplete="off"></div>
     </div>
     <div class="hint" id="i_cartaInfo"></div>
     <div class="hint" id="i_chart"></div>
@@ -1394,12 +1394,12 @@ html.solo-parte .portada{display:none}
   <div class="card">
     <h2>Tu casa</h2>
     <div class="grid">
-      <div class="f"><label>Nombre comercial</label><input id="cs_comercial" placeholder="EFD Studios"></div>
-      <div class="f"><label>Ciudad</label><input id="cs_ciudad" placeholder="Madrid"></div>
-      <div class="f"><label>Contacto público</label><input id="cs_contacto" placeholder="grids@efd.es"></div>
-      <div class="f"><label>Web</label><input id="cs_web" placeholder="efdstudios.com" spellcheck="false"></div>
+      <div class="f"><label>Nombre comercial</label><input id="cs_comercial" placeholder="EFD Studios" autocomplete="off"></div>
+      <div class="f"><label>Ciudad</label><input id="cs_ciudad" placeholder="Madrid" autocomplete="off"></div>
+      <div class="f"><label>Contacto público</label><input id="cs_contacto" placeholder="grids@efd.es" autocomplete="off"></div>
+      <div class="f"><label>Web</label><input id="cs_web" placeholder="efdstudios.com" spellcheck="false" autocomplete="off"></div>
       <div class="f"><label>Calibración vencida a los (meses)</label>
-        <input id="cs_meses" inputmode="numeric" placeholder="12"></div>
+        <input id="cs_meses" inputmode="numeric" placeholder="12" autocomplete="off"></div>
     </div>
     <div style="padding:0 11px">
       <div class="f"><label>Qué ofreces con el equipo</label>
@@ -1422,17 +1422,17 @@ html.solo-parte .portada{display:none}
       <button class="ghost" onclick="csDesmarca()">Quitar marcas</button>
     </div>
     <div class="filtro"><input id="cs_filtro" placeholder="filtrar por serie o familia"
-      oninput="csPinta()" spellcheck="false"></div>
+      oninput="csPinta()" spellcheck="false" autocomplete="off"></div>
     <div id="cs_inv"></div>
   </div>
 
   <div class="card">
     <h2>Entrega a una producción</h2>
     <div class="grid">
-      <div class="f"><label>Producción</label><input id="cs_prod" placeholder="EL PRIMER DÍA"></div>
-      <div class="f"><label>Cliente / contacto</label><input id="cs_cliente" placeholder="Nombre · correo"></div>
-      <div class="f"><label>El enlace vale (días)</label><input id="cs_dias" inputmode="numeric" placeholder="180"></div>
-      <div class="f"><label>Nota interna</label><input id="cs_nota" placeholder="pedido 2451"></div>
+      <div class="f"><label>Producción</label><input id="cs_prod" placeholder="EL PRIMER DÍA" autocomplete="off"></div>
+      <div class="f"><label>Cliente / contacto</label><input id="cs_cliente" placeholder="Nombre · correo" autocomplete="off"></div>
+      <div class="f"><label>El enlace vale (días)</label><input id="cs_dias" inputmode="numeric" placeholder="180" autocomplete="off"></div>
+      <div class="f"><label>Nota interna</label><input id="cs_nota" placeholder="pedido 2451" autocomplete="off"></div>
     </div>
     <div class="btnrow">
       <button class="primary" onclick="csCreaEntrega()">Crear la entrega con las marcadas</button>
@@ -1456,9 +1456,9 @@ html.solo-parte .portada{display:none}
           <option value="elogio">Me ha servido</option>
           <option value="otro">Otra cosa</option>
         </select></div>
-      <div class="f"><label>Tu función</label><input id="bz_rol" placeholder="1er AC"></div>
-      <div class="f"><label>Nombre (opcional)</label><input id="bz_nombre"></div>
-      <div class="f"><label>Correo (opcional)</label><input id="bz_correo" type="email" inputmode="email"></div>
+      <div class="f"><label>Tu función</label><input id="bz_rol" placeholder="1er AC" autocomplete="off"></div>
+      <div class="f"><label>Nombre (opcional)</label><input id="bz_nombre" autocomplete="off"></div>
+      <div class="f"><label>Correo (opcional)</label><input id="bz_correo" type="email" inputmode="email" autocomplete="off"></div>
     </div>
     <div class="bz" style="padding:0 11px 11px">
       <div class="f"><label>Cuéntame</label>
@@ -2048,7 +2048,7 @@ function renderFoco(mover){
   const filas = S.focos.map(function(f, i){
     return `<div class="cellrow${f && f === mover ? " mov" : ""}"><div class="lbl">Distancia ${i + 1}</div>
      <input value="${esc(f)}" placeholder="2.40 m" onfocus="tocaFoco(this)" oninput="tecleaFoco()" onchange="confirmaFocos()"
-       onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">
+       onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" autocomplete="off">
      <button class="ghost" style="min-height:40px;flex:0 0 auto" onclick="quitaFoco(${i})">×</button></div>`;
   }).join("");
   const aviso = focoBorrado
@@ -3526,7 +3526,7 @@ function renderCaptura(){
       return `<div class="cellrow">
         <div class="lbl"><div class="fo">${esc(foco || "—")}${pill ? " " + pill : ""}</div>
           ${t ? `<input class="fn m" value="${esc(t.file)}"
-                   oninput="renombra('${id}', this.value)" spellcheck="false">`
+                   oninput="renombra('${id}', this.value)" spellcheck="false" autocomplete="off">`
               : `<div class="na">sin capturar</div>`}</div>
         <button class="ghost tog" style="flex:0 0 auto"
           onclick="verMedia('${id}')" ${t ? "" : "hidden"}>archivo</button>
@@ -3570,7 +3570,7 @@ function bloqueMedia(k, id){
   const campo = hay
     ? `<select onchange="setMedia('${id}','cam',this.value)">${opcionesMhl(t.cam)}</select>`
     : `<input value="${esc(t.cam || "")}" placeholder="A007C003_260817_R1AB.mxf"
-         oninput="setMedia('${id}','cam',this.value)" spellcheck="false">`;
+         oninput="setMedia('${id}','cam',this.value)" spellcheck="false" autocomplete="off">`;
   const huella = t.hash
     ? `<div class="hh"><b>${esc((t.alg || "hash").toUpperCase())} ${esc(t.hash)}</b>${
         t.bytes ? " · " + tam(t.bytes) : ""}${t.ruta ? "<br>" + esc(t.ruta) : ""}</div>`
@@ -3579,11 +3579,11 @@ function bloqueMedia(k, id){
     <div class="r">
       <div class="c w"><label>Archivo de cámara</label>${campo}</div>
       <div class="c"><label>Rollo</label><input value="${esc(t.roll || "")}" placeholder="A007"
-        oninput="setMedia('${id}','roll',this.value)"></div>
+        oninput="setMedia('${id}','roll',this.value)" autocomplete="off"></div>
       <div class="c"><label>Timecode</label><input value="${esc(t.tc || "")}" placeholder="10:04:21:07"
-        oninput="setMedia('${id}','tc',this.value)"></div>
+        oninput="setMedia('${id}','tc',this.value)" autocomplete="off"></div>
       <div class="c"><label>Duración (s)</label><input value="${esc(t.dur || "")}" placeholder="3"
-        inputmode="decimal" oninput="setMedia('${id}','dur',this.value)"></div>
+        inputmode="decimal" oninput="setMedia('${id}','dur',this.value)" autocomplete="off"></div>
     </div>${huella}</div>`;
 }
 function tam(b){
@@ -4853,6 +4853,10 @@ function cambiaUnidad(nueva){
   fillParte(); renderTomas();
 }
 function ponTipo(t){ guarda(); S.parte.roll.tipo = t; pintaTipo(); renderTomas(); }
+function otraCamara(){
+  guarda(); S.parte.roll.body = "";
+  const e = $("r_body"); if (e){ e.value = ""; e.focus(); }
+}
 function pintaTipo(){
   const f = esFilm();
   document.documentElement.classList.toggle("pfilm", f);
@@ -4900,11 +4904,19 @@ function wireParte(){
       S.parte.roll[k] = el.value;
       if (k === "carga" || k === "dial0" || k === "perf") resumenParte(); };
   });
+  const eb = $("r_body");
+  if (eb) eb.onchange = () => {
+    const v = eb.value.trim(); if (!v) return;
+    S.camarasPropias = S.camarasPropias || [];
+    const modo = esFilm() ? "pelicula" : "digital";
+    if (!S.camarasPropias.some(c => c.n === v && c.s === modo)){
+      guarda(); S.camarasPropias.push({n: v, s: modo}); fillParte(); }
+  };
 }
 function fillParte(){
   const P = S.prod, R = S.parte.roll;
-  if (!R.ac && P.por) R.ac = P.por;
-  if (!R.dop && P.dop) R.dop = P.dop;
+  if (R.ac === undefined && P.por) R.ac = P.por;
+  if (R.dop === undefined && P.dop) R.dop = P.dop;
   R_CAMPOS.forEach(k => { const el = $("r_" + k); if (el) el.value = R[k] || ""; });
   if (!R.tipo) R.tipo = "digital";
   if (!R.unidad) R.unidad = "ft";
@@ -4915,14 +4927,15 @@ function fillParte(){
   pintaTipo();
   const film = esFilm();
   const CAT = FORMATS.filter(f => film ? f.s === "pelicula" : f.s !== "pelicula");
-  const bodies = [...new Set((film ? [] : S.formats.map(f => f.body)).concat(CAT.map(f => f.m + " " + f.c)))];
+  const propias = (S.camarasPropias || []).filter(c => c.s === (film ? "pelicula" : "digital")).map(c => c.n);
+  const bodies = [...new Set(propias.concat(film ? [] : S.formats.map(f => f.body)).concat(CAT.map(f => f.m + " " + f.c)))];
   const fmts   = [...new Set((film ? [] : S.formats.map(f => f.fmt)).concat(CAT.map(f => f.f)))];
   const series = [...new Set([S.lens.serial].concat(S.parte.tomas.map(t => t.serial)).filter(Boolean))];
   const dl = (id, arr) => { const e = $(id); if (e) e.innerHTML = arr.map(v => `<option value="${esc(v)}">`).join(""); };
   dl("dlBodies", bodies); dl("dlFmts", fmts); dl("dlSeries", series);
   dl("dlCarga", (R.unidad === "m") ? ["30","61","122","305","610"] : ["100","200","400","1000","2000"]);
-  if (!film && !R.body && S.formats.length) { R.body = S.formats[0].body; $("r_body").value = R.body; }
-  if (!film && !R.fmt  && S.formats.length) { R.fmt  = S.formats[0].fmt;  $("r_fmt").value  = R.fmt;  }
+  if (!film && R.body === undefined && S.formats.length) { R.body = S.formats[0].body; $("r_body").value = R.body; }
+  if (!film && R.fmt  === undefined && S.formats.length) { R.fmt  = S.formats[0].fmt;  $("r_fmt").value  = R.fmt;  }
 }
 
 function campoToma(i, k, etiqueta, lista, ancho){
@@ -4930,7 +4943,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
   const l = lista ? ` list="${lista}"` : "";
   return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}</label>` +
          `<input value="${v}"${l} oninput="S.parte.tomas[${i}].${k}=this.value" ` +
-         `onchange="renderTomas()"></div>`;
+         `onchange="renderTomas()" autocomplete="off"></div>`;
 }
 function renderTomas(){
   if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
@@ -4946,7 +4959,7 @@ function renderTomas(){
       `<div class="f"><label>${esc(n)}</label>
         <input value="${esc((t.extra || {})[n] || "")}"
           oninput="if(!S.parte.tomas[${i}].extra)S.parte.tomas[${i}].extra={};S.parte.tomas[${i}].extra['${esc(n)}']=this.value"
-          onchange="renderTomas()"></div>`).join("");
+          onchange="renderTomas()" autocomplete="off"></div>`).join("");
     return `<div class="toma">
       <div class="th">
         <div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
@@ -4967,7 +4980,7 @@ function renderRollExtra(){
     `<div class="f"><label>${esc(n)} <span style="float:right;cursor:pointer"
         onclick="quitarCampoRollo(${i})">×</span></label>
       <input value="${esc(S.parte.roll.extra[n] || "")}"
-        oninput="S.parte.roll.extra['${esc(n)}']=this.value"></div>`).join("") + '</div>' : "";
+        oninput="S.parte.roll.extra['${esc(n)}']=this.value" autocomplete="off"></div>`).join("") + '</div>' : "";
 }
 function addCampoRollo(){
   const n = (prompt(traduce("Nombre del campo nuevo del rollo (aparece una vez, en el apartado 3 del parte):")) || "").trim();
@@ -5235,7 +5248,7 @@ function descargar(texto, nombre, tipo){
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
 "Sin tomas todavía. Pulsa «+ Toma».":"No takes yet. Press «+ Take».",
-"Película":"Film","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
+"Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Paso":"Gauge · perfs","Cargado por":"Loaded by",
