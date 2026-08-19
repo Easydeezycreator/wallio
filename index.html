@@ -5138,14 +5138,14 @@ function renderParte(){
     ${F("Casa de renta", P.casa)}</div>
 
   <h4>2 · Responsables<i>quién hizo el parte y quién responde de la imagen</i></h4>
-  <div class="fl">${F("Foquista / parte", R.ac || P.por)}${F("Auxiliar · 2º AC", R.ac2)}
-    ${F("Director de fotografía", R.dop)}${F("Técnico de cámara / DIT", P.dit)}</div>
+  <div class="fl">${F("Director de fotografía", R.dop)}${F("Foquista / parte", R.ac || P.por)}
+    ${F("Auxiliar · 2º AC", R.ac2)}${film ? F("Cargado por", R.loader) : F("Técnico de cámara / DIT", P.dit)}</div>
 
   <h4>3 · Cámara y rollo<i>lo que no cambia toma a toma</i></h4>
   <div class="fl">${F("Cuerpo", R.body)}${F("Formato de captura", R.fmt)}${film ? `
     ${F("Emulsión", R.emul)}${F("Lote / batch", R.lote)}
     ${F("Nº de magazine", R.mag)}${F("Carga", R.carga ? R.carga + " " + uTxt() : "")}
-    ${F("Paso", pasoTexto(R.perf))}${F("Cargado por", R.loader)}
+    ${F("Paso", pasoTexto(R.perf))}
     ${F("Contador al empezar", (R.dial0 || "0") + " " + uTxt())}` : `
     ${F("Codec / emulsión", R.codec)}${F("Soporte", R.media)}`}
     ${F("Fotogramas por segundo", R.fps)}${F("EI / ISO", R.ei)}
