@@ -1031,10 +1031,6 @@ html.solo-parte .portada{display:none}
     <div class="hint" id="l_resumen"></div>
     <div class="hint" id="l_stock" hidden></div>
     <div class="hint" id="l_juego" hidden></div>
-    <div class="btnrow" id="l_acciones" style="margin-top:9px">
-      <button class="primary" onclick="stockGuarda()">Guardar en el stock</button>
-      <button class="ghost" onclick="anadeLente()">Añadir otra óptica</button>
-    </div>
   </div>
   <div class="card">
     <h2>Foto del número de serie</h2>
@@ -1048,6 +1044,10 @@ html.solo-parte .portada{display:none}
       <button class="ghost" onclick="focosDelFabricante()">Distancias del fabricante</button>
     </div>
     <div class="hint" id="focoFab" style="color:var(--ok)"></div>
+    <div class="btnrow" id="l_acciones" style="margin-top:10px">
+      <button class="primary" onclick="stockGuarda()">Guardar en el stock</button>
+      <button class="ghost" onclick="anadeLente()">Añadir otra óptica</button>
+    </div>
   </div>
   <div class="card">
     <h2>Intervenciones de esta óptica</h2>
@@ -2123,7 +2123,8 @@ async function juegoMira(juego){
    terminar se vuelve a mirar el stock para que la caja diga la verdad */
 async function stockGuarda(){
   const caja = $("l_stock");
-  if (caja){ caja.hidden = false; caja.className = "hint"; }
+  if (caja){ caja.hidden = false; caja.className = "hint";
+    try { caja.scrollIntoView({behavior: "smooth", block: "center"}); } catch(e){} }
   if (!((S.lens && S.lens.serial) || "").trim()){
     if (caja){ caja.className = "hint bad";
       caja.textContent = traduce("Falta el número de serie de la óptica."); }
