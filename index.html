@@ -1134,7 +1134,7 @@ html.solo-parte .portada{display:none}
   </div>
 
   <details class="solo" id="pp_bloque">
-    <summary><b>Producción</b> — <span>ábrelo si trabajas solo con el parte</span></summary>
+    <summary><b>Producción</b></summary>
     <div class="cuerpo">
       <div class="grid">
         <div class="f"><label>Proyecto</label><input id="pp_proyecto" autocomplete="off"></div>
@@ -5635,7 +5635,7 @@ const EN = {
  "If all you want is the report, this page stands on its own:",
 "abre el bloque de producción de aquí abajo y no hace falta que toques ninguna otra pestaña.":
  "open the production block below and you never need to touch another tab.",
-"ábrelo si trabajas solo con el parte":"open it if you only work with the report",
+
 "Es el mismo dato que en la pestaña Producción: se escriba donde se escriba, va al mismo sitio. Aquí está para no obligarte a ir y volver.":
  "It is the same data as in the Production tab: wherever you type it, it goes to the same place. It is here so you do not have to go back and forth.",
 "Sin proyecto y fecha el parte no se puede archivar ni reclamar después.":
@@ -6344,6 +6344,14 @@ if (typeof csLeeLocal === "function"){ csLeeLocal(); csPinta_perfil(); }
 /* nube: se rellena lo guardado en este dispositivo y se intenta vaciar la cola */
 $("nb_url").value = NB.url; $("nb_key").value = NB.key;
 $("nb_correo").value = NB.correo; $("nb_nombre").value = NB.nombre;
+/* Chrome rellena su correo en campos tipo «contacto» aunque autocomplete diga off:
+   candado hasta que el usuario entra de verdad — lo bloqueado no se puede autorrellenar */
+document.querySelectorAll("input").forEach(e => {
+  if (e.id && e.id.indexOf("nb_") === 0) return;
+  if (e.type === "file" || e.type === "date") return;
+  e.setAttribute("readonly", "");
+  e.addEventListener("focus", () => e.removeAttribute("readonly"), {once: true});
+});
 if (NB.rol) $("nb_rol").value = NB.rol;
 nbPinta();
 aplicaIdioma();
