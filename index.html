@@ -5132,16 +5132,16 @@ function renderParte(){
     </div>
   </div>
 
-  <h4>1 · Producción<i>los datos de archivo del trabajo</i></h4>
+  <h4>1 · Producción</h4>
   <div class="fl">${F("Proyecto", P.proyecto)}${F("Producción / cliente", P.productora)}
     ${F("Unidad", P.unidad)}${F("Localización", P.localizacion)}
     ${F("Casa de renta", P.casa)}</div>
 
-  <h4>2 · Responsables<i>quién hizo el parte y quién responde de la imagen</i></h4>
+  <h4>2 · Responsables</h4>
   <div class="fl">${F("Director de fotografía", R.dop)}${F("Foquista / parte", R.ac || P.por)}
     ${F("Auxiliar · 2º AC", R.ac2)}${film ? F("Cargado por", R.loader) : F("Técnico de cámara / DIT", P.dit)}</div>
 
-  <h4>3 · Cámara y rollo<i>lo que no cambia toma a toma</i></h4>
+  <h4>3 · Cámara y rollo</h4>
   <div class="fl">${F("Cuerpo", R.body)}${F("Formato de captura", R.fmt)}${film ? `
     ${F("Emulsión", R.emul)}${F("Lote / batch", R.lote)}
     ${F("Nº de magazine", R.mag)}${F("Carga", R.carga ? R.carga + " " + uTxt() : "")}
@@ -5153,13 +5153,13 @@ function renderParte(){
     ${film ? "" : F("LUT / look", R.lut)}${F("Filtros fijos", R.filt)}
     ${(S.parte.camposRollo || []).map(n => F(n, (R.extra || {})[n])).join("")}</div>${film ? `
 
-  <h4>4 · Laboratorio<i>qué hacer con este rollo</i></h4>
+  <h4>4 · Laboratorio</h4>
   <div class="fl">${F("Laboratorio", R.lab)}${F("Revelado", R.rev || "Normal")}
     ${F("Positivado / escaneo", R.copia || "Best light")}
     ${F("Fin del rollo", pf && pf.ultimo !== null ? pf.ultimo + " " + uTxt() : "")}
     ${F("Instrucciones", R.labnotas)}</div>` : ""}
 
-  <h4>${film ? "5" : "4"} · Tomas<i>◯ marca la toma buena · la segunda línea recoge lo demás</i></h4>
+  <h4>${film ? "5" : "4"} · Tomas</h4>
   ${film ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:6%"><col style="width:4.5%">
     <col style="width:3%"><col style="width:19%"><col style="width:20%"><col style="width:5%">
     <col style="width:10%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
