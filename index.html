@@ -353,6 +353,13 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
  text-overflow:ellipsis;white-space:nowrap}
 .toma .th button{min-height:30px;min-width:52px;flex:0 0 auto;font-size:9.5px;padding:0 9px}
 .toma .th button.si{background:var(--ok);border-color:var(--ok);color:#04160e}
+html.pfilm .f:has(> #r_media),html.pfilm .f:has(> #r_codec),
+html.pfilm .f:has(> #r_wb),html.pfilm .f:has(> #r_lut){display:none}
+html.pfilm #listaTomas .f[data-k="clip"],html.pfilm #listaTomas .f[data-k="tc"],
+html.pfilm #listaTomas .f[data-k="dur"],html.pfilm #listaTomas .f[data-k="res"],
+html.pfilm #listaTomas .f[data-k="wb"],html.pfilm #listaTomas .f[data-k="lut"]{display:none}
+html:not(.pfilm) #listaTomas .f[data-k="dial"],html:not(.pfilm) #listaTomas .f[data-k="pies"]{display:none}
+html:not(.pfilm) #filmRollo,html:not(.pfilm) #cardLab{display:none}
 .toma .th button.x{min-width:34px;padding:0;color:var(--tx3)}
 .toma .row{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
 .toma .row .w{grid-column:1/-1}
@@ -1144,6 +1151,10 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <h2>Cámara y rollo</h2>
+    <div class="btnrow" id="tipoRollo">
+      <button id="tp_dig" class="primary" onclick="ponTipo('digital')">Digital</button>
+      <button id="tp_film" class="ghost" onclick="ponTipo('film')">Película</button>
+    </div>
     <div class="grid">
       <div class="f"><label>Cámara</label><input id="r_cam" placeholder="A"></div>
       <div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001"></div>
@@ -1160,6 +1171,19 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Foquista</label><input id="r_ac"></div>
       <div class="f"><label>Auxiliar · 2º AC</label><input id="r_ac2"></div>
       <div class="f"><label>Director de fotografía</label><input id="r_dop"></div>
+    </div>
+    <div class="grid" id="filmRollo">
+      <div class="f"><label>Laboratorio</label><input id="r2_lab" placeholder="Fotofilm Madrid"></div>
+      <div class="f"><label>Nº de magazine</label><input id="r2_mag" placeholder="M3"></div>
+      <div class="f"><label>Emulsión</label><input id="r2_emul" list="dlEmul" placeholder="KODAK VISION3 500T 5219"></div>
+      <div class="f"><label>Lote / batch</label><input id="r2_lote" placeholder="0231 042"></div>
+      <div class="f"><label>Carga (pies)</label><input id="r2_carga" inputmode="numeric" list="dlCarga" placeholder="1000"></div>
+      <div class="f"><label>Paso</label><select id="r2_perf">
+        <option value="4">35 mm · 4 perf</option><option value="3">35 mm · 3 perf</option>
+        <option value="2">35 mm · 2 perf</option><option value="16">16 mm</option>
+        <option value="65">65 mm · 5 perf</option></select></div>
+      <div class="f"><label>Cargado por</label><input id="r2_loader"></div>
+      <div class="f"><label>Contador al empezar (pies)</label><input id="r2_dial0" inputmode="numeric" placeholder="0"></div>
     </div>
     <div id="rollExtra"></div>
     <div class="btnrow"><button onclick="addCampoRollo()">+ Añadir campo del rollo</button></div>
@@ -1181,13 +1205,26 @@ html.solo-parte .portada{display:none}
     <div class="btnrow"><button onclick="addCampo()">+ Añadir campo</button></div>
   </div>
 
+  <div class="card" id="cardLab">
+    <h2>Laboratorio</h2>
+    <div class="grid">
+      <div class="f"><label>Revelado</label><select id="r2_rev">
+        <option>Normal</option><option>Forzado +1</option><option>Forzado +2</option>
+        <option>Retenido −1</option><option>Retenido −2</option></select></div>
+      <div class="f"><label>Positivado / escaneo</label><select id="r2_copia">
+        <option>Best light</option><option>One-light</option><option>Etalonado (timed)</option>
+        <option>Escaneo 2K</option><option>Escaneo 4K</option><option>Escaneo 4K HDR</option></select></div>
+      <div class="f wide"><label>Instrucciones al laboratorio</label><input id="r2_labnotas" placeholder="revelar aparte del resto"></div>
+    </div>
+  </div>
+
   <div class="card">
     <h2>Resumen del rollo</h2>
     <div class="stat">
       <div><div class="big" id="p_sc">0</div><div class="l">escenas</div></div>
       <div><div class="big" id="p_tk">0</div><div class="l">tomas</div></div>
       <div><div class="big" id="p_ok">0</div><div class="l">buenas</div></div>
-      <div><div class="big" id="p_dur">0′00″</div><div class="l">duración</div></div>
+      <div><div class="big" id="p_dur">0′00″</div><div class="l" id="p_durl">duración</div></div>
     </div>
   </div>
 
@@ -1213,6 +1250,16 @@ html.solo-parte .portada{display:none}
 </section>
 
 <datalist id="dlBodies"></datalist>
+<datalist id="dlEmul">
+  <option value="KODAK VISION3 500T 5219"><option value="KODAK VISION3 250D 5207">
+  <option value="KODAK VISION3 200T 5213"><option value="KODAK VISION3 50D 5203">
+  <option value="KODAK DOUBLE-X 5222"><option value="KODAK EKTACHROME 100D 5294">
+  <option value="KODAK VISION3 500T 7219"><option value="KODAK VISION3 250D 7207">
+  <option value="KODAK VISION3 200T 7213"><option value="KODAK VISION3 50D 7203">
+</datalist>
+<datalist id="dlCarga">
+  <option value="100"><option value="200"><option value="400"><option value="1000"><option value="2000">
+</datalist>
 <datalist id="dlFmts"></datalist>
 <datalist id="dlSeries"></datalist>
 
@@ -4766,9 +4813,10 @@ function ptSiguienteRollo(){
 /* ================= PARTE DE CÁMARA · WLG-03 ================= */
 /* cada toma: clave, etiqueta, hereda del rollo, ancho en el editor */
 const T_CAMPOS = [
-  ["sc","Escena"], ["tk","Toma"], ["desc","Descripción",null,"w"],
+  ["sc","Escena"], ["tk","Toma"], ["desc","Descripción",null,"w"], ["clip","Archivo / clip"],
   ["serial","Óptica · nº de serie","", "dlSeries"], ["focal","Focal (mm)"],
   ["t","Diafragma T"], ["filt","Filtro","filt"], ["foco","Distancia de foco"],
+  ["dial","Contador (pies)"], ["pies","Pies"],
   ["alt","Altura de óptica"], ["tilt","Tilt"], ["roll","Roll"],
   ["wb","Temperatura de color","wb"], ["fps","FPS","fps"], ["shutter","Obturador","shutter"],
   ["ei","EI / ISO","ei"], ["lut","LUT","lut"], ["res","Resolución","fmt"],
@@ -4779,15 +4827,57 @@ function tomaVacia(){
   const t = {}; T_CLAVES.forEach(k => t[k] = "");
   T_CAMPOS.forEach(([k,,hereda]) => { if (hereda && S.parte.roll[hereda]) t[k] = S.parte.roll[hereda]; });
   t.serial = S.lens.serial || ""; t.focal = String(S.lens.focal || "");
-  t.ok = false; t.extra = {};
+  t.ok = false; t.mos = false; t.extra = {};
   return t;
 }
 const R_CAMPOS = ["cam","roll","body","fmt","media","codec","fps","ei","shutter","wb","lut","filt","ac","ac2","dop"];
+const R2_CAMPOS = ["lab","mag","emul","lote","carga","perf","loader","dial0","rev","copia","labnotas"];
+const FPP = {"4":16, "3":64/3, "2":32, "16":40, "65":12.8};
+function esFilm(){ return ((S.parte.roll || {}).tipo || "digital") === "film"; }
+function pasoTexto(p){ return {"4":"35 mm · 4 perf","3":"35 mm · 3 perf","2":"35 mm · 2 perf",
+  "16":"16 mm","65":"65 mm · 5 perf"}[p || "4"]; }
+function ponTipo(t){ guarda(); S.parte.roll.tipo = t; pintaTipo(); renderTomas(); }
+function pintaTipo(){
+  const f = esFilm();
+  document.documentElement.classList.toggle("pfilm", f);
+  const a = $("tp_dig"), b = $("tp_film");
+  if (a && b){ a.className = f ? "ghost" : "primary"; b.className = f ? "primary" : "ghost"; }
+}
+function piesDeToma(i){
+  const L = S.parte.tomas, t = L[i] || {};
+  const p = parseFloat(t.pies);
+  if ((t.pies || "") !== "" && !isNaN(p)) return p;
+  const d = parseFloat(t.dial); if (isNaN(d)) return 0;
+  let prev = parseFloat((S.parte.roll || {}).dial0) || 0;
+  for (let j = i - 1; j >= 0; j--){ const dj = parseFloat(L[j].dial); if (!isNaN(dj)){ prev = dj; break; } }
+  return Math.max(0, Math.round(d - prev));
+}
+function piesResumen(){
+  const L = S.parte.tomas, R = S.parte.roll || {};
+  const dial0 = parseFloat(R.dial0) || 0;
+  let suma = 0, G = 0, NG = 0, ultimo = null;
+  L.forEach((t, i) => { const p = piesDeToma(i); suma += p; if (t.ok) G += p; else NG += p;
+    const d = parseFloat(t.dial); if (!isNaN(d) && (ultimo === null || d > ultimo)) ultimo = d; });
+  const T = ultimo !== null ? Math.max(0, Math.round(ultimo - dial0)) : Math.round(suma);
+  const W = Math.max(0, T - Math.round(G) - Math.round(NG));
+  const carga = parseFloat(R.carga);
+  return {G: Math.round(G), NG: Math.round(NG), W, T,
+          SE: isNaN(carga) ? null : Math.max(0, Math.round(carga - T)), ultimo};
+}
+function durFilm(pies, R){
+  const fps = parseFloat((R || {}).fps) || 24;
+  return durTexto(pies * (FPP[(R || {}).perf || "4"] || 16) / fps);
+}
 
 function wireParte(){
   R_CAMPOS.forEach(k => {
     const el = $("r_" + k); if (!el) return;
     el.oninput = () => { S.parte.roll[k] = el.value; updateChip(); };
+  });
+  R2_CAMPOS.forEach(k => {
+    const el = $("r2_" + k); if (!el) return;
+    el.oninput = () => { S.parte.roll[k] = el.value;
+      if (k === "carga" || k === "dial0" || k === "perf") resumenParte(); };
   });
 }
 function fillParte(){
@@ -4795,6 +4885,12 @@ function fillParte(){
   if (!R.ac && P.por) R.ac = P.por;
   if (!R.dop && P.dop) R.dop = P.dop;
   R_CAMPOS.forEach(k => { const el = $("r_" + k); if (el) el.value = R[k] || ""; });
+  if (!R.tipo) R.tipo = "digital";
+  if (!R.perf) R.perf = "4";
+  if (!R.rev) R.rev = "Normal";
+  if (!R.copia) R.copia = "Best light";
+  R2_CAMPOS.forEach(k => { const el = $("r2_" + k); if (el) el.value = R[k] || ""; });
+  pintaTipo();
   const bodies = [...new Set(S.formats.map(f => f.body).concat(FORMATS.map(f => f.m + " " + f.c)))];
   const fmts   = [...new Set(S.formats.map(f => f.fmt).concat(FORMATS.map(f => f.f)))];
   const series = [...new Set([S.lens.serial].concat(S.parte.tomas.map(t => t.serial)).filter(Boolean))];
@@ -4807,7 +4903,7 @@ function fillParte(){
 function campoToma(i, k, etiqueta, lista, ancho){
   const v = esc(S.parte.tomas[i][k] || "");
   const l = lista ? ` list="${lista}"` : "";
-  return `<div class="f${ancho ? " w" : ""}"><label>${etiqueta}</label>` +
+  return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}</label>` +
          `<input value="${v}"${l} oninput="S.parte.tomas[${i}].${k}=this.value" ` +
          `onchange="renderTomas()"></div>`;
 }
@@ -4815,8 +4911,9 @@ function renderTomas(){
   if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
   const L = S.parte.tomas;
   $("listaTomas").innerHTML = L.length ? L.map((t, i) => {
-    const meta = [t.desc, t.serial, t.focal ? t.focal + " mm" : "", t.t ? "T" + t.t : "", t.filt,
-                  t.foco, t.tc, t.dur ? t.dur + " s" : ""]
+    const pft = esFilm() ? piesDeToma(i) : 0;
+    const meta = [t.mos ? "MOS" : "", t.desc, t.clip, t.serial, t.focal ? t.focal + " mm" : "", t.t ? "T" + t.t : "", t.filt,
+                  t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " ft" : ""]
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
     const campos = T_CAMPOS.map(([k, et, , extra]) =>
       campoToma(i, k, et, extra === "dlSeries" ? "dlSeries" : null, extra === "w")).join("");
@@ -4829,6 +4926,7 @@ function renderTomas(){
       <div class="th">
         <div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}</div>
+        <button class="${t.mos ? "si" : ""}" onclick="guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
         <button class="${t.ok ? "si" : ""}" onclick="guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
         <button class="x" onclick="borrarToma(${i})">×</button>
       </div>
@@ -4881,6 +4979,7 @@ function nuevaToma(nuevaEscena){
   const L = S.parte.tomas, u = L[L.length - 1];
   const t = u ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
+  t.clip = ""; t.dial = ""; t.pies = ""; t.mos = false;
   if (nuevaEscena){ t.sc = ""; t.tk = "1"; }
   else t.tk = String((parseInt(t.tk, 10) || 0) + 1);
   L.push(t); renderTomas();
@@ -4903,7 +5002,15 @@ function resumenParte(){
   const ok = L.filter(t => t.ok).length;
   const dur = L.reduce((a, t) => a + (parseFloat(t.dur) || 0), 0);
   $("p_sc").textContent = sc; $("p_tk").textContent = L.length;
-  $("p_ok").textContent = ok; $("p_dur").textContent = durTexto(dur);
+  $("p_ok").textContent = ok;
+  const el = $("p_dur"), lb = $("p_durl");
+  if (esFilm()){ const pf = piesResumen();
+    if (el) el.textContent = pf.T + " ft";
+    if (lb) lb.textContent = pf.SE === null ? traduce("pies expuestos") : traduce("quedan") + " " + pf.SE + " ft";
+  } else {
+    if (el) el.textContent = durTexto(dur);
+    if (lb) lb.textContent = traduce("duración");
+  }
   return {sc, tk: L.length, ok, dur};
 }
 function parteId(){
@@ -4913,6 +5020,7 @@ function parteId(){
 
 function renderParte(){
   const P = S.prod, R = S.parte.roll, L = S.parte.tomas, t = resumenParte();
+  const film = esFilm(), pf = film ? piesResumen() : null;
   const hoy = new Date().toISOString().slice(0, 10);
   const ver = codigoDe(JSON.stringify({r: R, t: L, p: P}));
   const F = (k, v) => `<div><div class="k">${k}</div><div class="v">${esc(v || "—")}</div></div>`;
@@ -4924,24 +5032,31 @@ function renderParte(){
     const tr = [x.tilt ? "tilt " + x.tilt : "", x.roll ? "roll " + x.roll : ""].filter(Boolean).join(" · ");
     const extra = Object.entries(x.extra || {}).map(([k, v]) => par(k, v)).filter(Boolean);
     const cont = [par("fps", x.fps), par("obt.", x.shutter), par("EI", x.ei),
-                  par("temp.", x.wb), par("LUT", x.lut), par("resol.", x.res),
+                  film ? par("altura", x.alt) : "", film && tr ? esc(tr) : "",
+                  film ? "" : par("temp.", x.wb), film ? "" : par("LUT", x.lut), film ? "" : par("resol.", x.res),
                   ...extra, x.nota ? `<i>${esc(x.nota)}</i>` : ""].filter(Boolean).join("  ·  ");
+    const pft = film ? piesDeToma(i) : 0;
+    const finales = film
+      ? `<td class="mo">${esc(x.dial || "—")}</td>
+      <td class="mo">${pft ? pft + " ft" : "—"}</td>`
+      : `<td class="mo">${esc(x.alt || "—")}${tr ? `<span class="sn">${esc(tr)}</span>` : ""}</td>
+      <td class="mo">${esc(x.tc || "—")}</td>
+      <td class="mo">${esc(x.dur ? x.dur + " s" : "—")}</td>`;
     return `<tr class="${x.ok ? "buena" : ""}">
       <td class="n">${String(i+1).padStart(2,"0")}</td>
       <td class="sl">${esc(x.sc || "—")}</td>
       <td class="sl">${esc(x.tk || "—")}</td>
       <td><span class="cir">${x.ok ? "◯" : ""}</span></td>
-      <td>${esc(x.desc || "—")}</td>
+      <td>${esc(x.desc || "—")}${x.mos ? " · MOS" : ""}</td>${film ? "" : `
+      <td class="mo">${esc(x.clip || "—")}</td>`}
       <td>${esc(x.focal ? x.focal + " mm" : "—")}
         <span class="sn">${esc(x.serial || "sin nº de serie")}${ficha ? " · con ficha WLG-02" : ""}</span></td>
       <td class="mo">${esc(x.t ? "T" + String(x.t).replace(/^T/i,"") : "—")}</td>
       <td>${esc(x.filt || "—")}</td>
       <td class="mo fo">${esc(x.foco || "—")}</td>
-      <td class="mo">${esc(x.alt || "—")}${tr ? `<span class="sn">${esc(tr)}</span>` : ""}</td>
-      <td class="mo">${esc(x.tc || "—")}</td>
-      <td class="mo">${esc(x.dur ? x.dur + " s" : "—")}</td></tr>` +
+      ${finales}</tr>` +
       (cont ? `<tr class="cont ${x.ok ? "buena" : ""}"><td></td>
-        <td colspan="11">${cont}</td></tr>` : "");
+        <td colspan="${film ? 10 : 12}">${cont}</td></tr>` : "");
   }).join("");
 
   $("parte").innerHTML = `
@@ -4949,13 +5064,14 @@ function renderParte(){
     <div class="brand">${MARCA}
       <div><div class="wm">WALLIO</div>
         <div class="wl">Lens Grid<br>Platform</div>
-        <div class="dt">Parte de cámara</div>
+        <div class="dt">${film ? "Parte de cámara · película" : "Parte de cámara"}</div>
         <div class="std">Un parte por rollo · cada toma referida al número de serie de la óptica</div>
       </div></div>
     <div class="ctrl">
       <div class="ch">Control de documento</div>
       <div class="cr"><b>Nº de parte</b><span>${esc(parteId())}</span></div>
-      <div class="cr"><b>Cámara / rollo</b><span>${esc((R.cam || "—") + " · " + (R.roll || "—"))}</span></div>
+      <div class="cr"><b>Cámara / rollo</b><span>${esc((R.cam || "—") + " · " + (R.roll || "—"))}</span></div>${film && R.lab ? `
+      <div class="cr"><b>Laboratorio</b><span>${esc(R.lab)}</span></div>` : ""}
       <div class="cr"><b>Fecha</b><span>${esc(P.fecha || hoy)}</span></div>
       <div class="cr"><b>Nº de jornada</b><span>${esc(P.jornada || "—")}</span></div>
       <div class="cr"><b>Código de verificación</b><span>${ver}</span></div>
@@ -4973,30 +5089,57 @@ function renderParte(){
     ${F("Director de fotografía", R.dop)}${F("Técnico de cámara / DIT", P.dit)}</div>
 
   <h4>3 · Cámara y rollo<i>lo que no cambia toma a toma</i></h4>
-  <div class="fl">${F("Cuerpo", R.body)}${F("Formato de captura", R.fmt)}
-    ${F("Codec / emulsión", R.codec)}${F("Soporte", R.media)}
+  <div class="fl">${F("Cuerpo", R.body)}${F("Formato de captura", R.fmt)}${film ? `
+    ${F("Emulsión", R.emul)}${F("Lote / batch", R.lote)}
+    ${F("Nº de magazine", R.mag)}${F("Carga (pies)", R.carga)}
+    ${F("Paso", pasoTexto(R.perf))}${F("Cargado por", R.loader)}
+    ${F("Contador al empezar (pies)", R.dial0 || "0")}` : `
+    ${F("Codec / emulsión", R.codec)}${F("Soporte", R.media)}`}
     ${F("Fotogramas por segundo", R.fps)}${F("EI / ISO", R.ei)}
-    ${F("Obturador", R.shutter)}${F("Temperatura de color", R.wb)}
-    ${F("LUT / look", R.lut)}${F("Filtros fijos", R.filt)}
-    ${(S.parte.camposRollo || []).map(n => F(n, (R.extra || {})[n])).join("")}</div>
+    ${F("Obturador", R.shutter)}${film ? "" : F("Temperatura de color", R.wb)}
+    ${film ? "" : F("LUT / look", R.lut)}${F("Filtros fijos", R.filt)}
+    ${(S.parte.camposRollo || []).map(n => F(n, (R.extra || {})[n])).join("")}</div>${film ? `
 
-  <h4>4 · Tomas<i>◯ marca la toma buena · la segunda línea recoge lo demás</i></h4>
-  <table class="rep"><colgroup><col style="width:3%"><col style="width:5.5%"><col style="width:4.5%">
-    <col style="width:3%"><col style="width:15%"><col style="width:17%"><col style="width:5%">
-    <col style="width:8.5%"><col style="width:7%"><col style="width:11%"><col style="width:12.5%">
-    <col style="width:5.5%"></colgroup>
+  <h4>4 · Laboratorio<i>qué hacer con este rollo</i></h4>
+  <div class="fl">${F("Laboratorio", R.lab)}${F("Revelado", R.rev || "Normal")}
+    ${F("Positivado / escaneo", R.copia || "Best light")}
+    ${F("Fin del rollo (pies)", pf && pf.ultimo !== null ? pf.ultimo : "")}
+    ${F("Instrucciones", R.labnotas)}</div>` : ""}
+
+  <h4>${film ? "5" : "4"} · Tomas<i>◯ marca la toma buena · la segunda línea recoge lo demás</i></h4>
+  ${film ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:6%"><col style="width:4.5%">
+    <col style="width:3%"><col style="width:19%"><col style="width:20%"><col style="width:5%">
+    <col style="width:10%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
     <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th>
+    <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Contador</th><th>Pies</th></tr></thead>
+    <tbody>${filas || `<tr><td colspan="11" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`
+  : `<table class="rep"><colgroup><col style="width:3%"><col style="width:5%"><col style="width:4%">
+    <col style="width:3%"><col style="width:12.5%"><col style="width:9%"><col style="width:15.5%"><col style="width:4.5%">
+    <col style="width:8%"><col style="width:6.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:5.5%"></colgroup>
+    <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th><th>Archivo</th>
     <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Altura</th><th>Timecode</th>
     <th>Dur.</th></tr></thead>
-    <tbody>${filas || '<tr><td colspan="12" style="color:#aab1be">Sin tomas registradas</td></tr>'}</tbody></table>
+    <tbody>${filas || `<tr><td colspan="13" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`}
 
-  <h4>5 · Resumen del rollo</h4>
+  <h4>${film ? "6" : "5"} · Resumen del rollo</h4>
+  ${film ? `<div class="sum">
+    <div><b>${pf.G}</b><span>G · buenas (imprimir)</span></div>
+    <div><b>${pf.NG}</b><span>NG · no buenas</span></div>
+    <div><b>${pf.W}</b><span>W · desperdicio</span></div>
+    <div><b>${pf.T}</b><span>T · pies expuestos</span></div>
+    <div><b>${pf.SE === null ? "—" : pf.SE}</b><span>SE · cola sin exponer</span></div>
+  </div>
   <div class="sum">
     <div><b>${t.sc}</b><span>escenas</span></div>
     <div><b>${t.tk}</b><span>tomas</span></div>
     <div><b>${t.ok}</b><span>buenas</span></div>
+    <div><b>${durFilm(pf.T, R)}</b><span>duración estimada</span></div>
+  </div>` : `<div class="sum">
+    <div><b>${t.sc}</b><span>escenas</span></div>
+    <div><b>${t.tk}</b><span>tomas</span></div>
+    <div><b>${t.ok}</b><span>buenas</span></div>
     <div><b>${durTexto(t.dur)}</b><span>duración registrada</span></div>
-  </div>
+  </div>`}
 
   <div class="decl">
     <b class="t">Se hace constar</b>
@@ -5031,12 +5174,18 @@ function parteCSV(){
   const cab = ["proyecto","fecha","jornada","camara","rollo_magazine","cuerpo","formato_rollo",
     "codec","soporte","escena","toma","buena","descripcion","optica_serie","focal_mm","diafragma_t",
     "filtro","distancia_foco","altura_optica","tilt","roll_grados","temperatura_color","fps",
-    "obturador","ei_iso","lut","resolucion","timecode","duracion_s","notas"].concat(pr).concat(props);
+    "obturador","ei_iso","lut","resolucion","timecode","duracion_s","notas",
+    "tipo","archivo_clip","mos","contador_pies","pies_toma","laboratorio","magazine","emulsion",
+    "lote","carga_pies","paso","cargado_por","contador_inicial","revelado","positivado_escaneo",
+    "instrucciones_lab"].concat(pr).concat(props);
   const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
-  const filas = S.parte.tomas.map(x => [P.proyecto, P.fecha, P.jornada, R.cam, R.roll, R.body,
+  const filas = S.parte.tomas.map((x, i) => [P.proyecto, P.fecha, P.jornada, R.cam, R.roll, R.body,
     R.fmt, R.codec, R.media, x.sc, x.tk, x.ok ? "si" : "no", x.desc, x.serial, x.focal, x.t,
     x.filt, x.foco, x.alt, x.tilt, x.roll, x.wb, x.fps, x.shutter, x.ei, x.lut, x.res, x.tc,
-    x.dur, x.nota].concat(pr.map(n => (R.extra || {})[n] || ""))
+    x.dur, x.nota,
+    R.tipo || "digital", x.clip, x.mos ? "si" : "no", x.dial, esFilm() ? (piesDeToma(i) || "") : "",
+    R.lab, R.mag, R.emul, R.lote, R.carga, esFilm() ? pasoTexto(R.perf) : "", R.loader,
+    R.dial0, R.rev, R.copia, R.labnotas].concat(pr.map(n => (R.extra || {})[n] || ""))
     .concat(props.map(n => (x.extra || {})[n] || "")).map(q).join(","));
   descargar("﻿" + [cab.join(","), ...filas].join("\r\n"),
             "WALLIO_parte_" + (R.roll || "rollo") + ".csv", "text/csv");
@@ -5061,6 +5210,25 @@ function descargar(texto, nombre, tipo){
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
 "Sin tomas todavía. Pulsa «+ Toma».":"No takes yet. Press «+ Take».",
+"Película":"Film","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
+"Emulsión":"Film stock","Lote / batch":"Batch","Carga (pies)":"Load (feet)",
+"Paso":"Gauge · perfs","Cargado por":"Loaded by",
+"Contador al empezar (pies)":"Counter at start (feet)",
+"Revelado":"Processing","Positivado / escaneo":"Print / scan",
+"Forzado +1":"Push +1","Forzado +2":"Push +2","Retenido −1":"Pull −1","Retenido −2":"Pull −2",
+"Etalonado (timed)":"Timed print","Escaneo 2K":"2K scan","Escaneo 4K":"4K scan","Escaneo 4K HDR":"4K HDR scan",
+"Instrucciones al laboratorio":"Lab instructions","Instrucciones":"Instructions",
+"revelar aparte del resto":"process apart from the rest",
+"Archivo / clip":"File / clip","Contador (pies)":"Counter (feet)","Pies":"Feet",
+"Archivo":"File","Contador":"Counter",
+"G · buenas (imprimir)":"G · good (print)","NG · no buenas":"NG · no good",
+"W · desperdicio":"W · waste","T · pies expuestos":"T · feet exposed",
+"SE · cola sin exponer":"SE · short end","duración estimada":"estimated runtime",
+"pies expuestos":"feet exposed","quedan":"left:",
+"Parte de cámara · película":"Camera report · film",
+"4 · Laboratorio":"4 · Laboratory","qué hacer con este rollo":"what to do with this roll",
+"5 · Tomas":"5 · Takes","6 · Resumen del rollo":"6 · Roll summary",
+"Fin del rollo (pies)":"Roll out at (feet)",
 "Deshacer":"Undo","guardado":"saved","cobertura":"coverage",
 "Hay trabajo sin terminar guardado en este dispositivo":"There is unfinished work saved on this device",
 "¿Seguir donde lo dejaste?":"Carry on where you left off?","quitar":"remove","marcar":"mark","nuevo":"new","Empezar de cero":"Start over",
