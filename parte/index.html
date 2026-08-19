@@ -1210,12 +1210,8 @@ html.solo-parte .portada{display:none}
   <div class="card" id="cardLab">
     <h2>Laboratorio</h2>
     <div class="grid">
-      <div class="f"><label>Revelado</label><select id="r2_rev">
-        <option>Normal</option><option>Forzado +1</option><option>Forzado +2</option>
-        <option>Retenido −1</option><option>Retenido −2</option></select></div>
-      <div class="f"><label>Positivado / escaneo</label><select id="r2_copia">
-        <option>Best light</option><option>One-light</option><option>Etalonado (timed)</option>
-        <option>Escaneo 2K</option><option>Escaneo 4K</option><option>Escaneo 4K HDR</option></select></div>
+      <div class="f"><label>Revelado</label><input id="r2_rev" list="dlRev" onfocus="this.select()" autocomplete="off" placeholder="Normal"></div>
+      <div class="f"><label>Positivado / escaneo</label><input id="r2_copia" list="dlCopia" onfocus="this.select()" autocomplete="off" placeholder="Best light"></div>
       <div class="f wide"><label>Instrucciones al laboratorio</label><input id="r2_labnotas" placeholder="revelar aparte del resto" autocomplete="off"></div>
     </div>
   </div>
@@ -1259,6 +1255,8 @@ html.solo-parte .portada{display:none}
   <option value="KODAK VISION3 500T 7219"><option value="KODAK VISION3 250D 7207">
   <option value="KODAK VISION3 200T 7213"><option value="KODAK VISION3 50D 7203">
 </datalist>
+<datalist id="dlRev"></datalist>
+<datalist id="dlCopia"></datalist>
 <datalist id="dlCarga">
   <option value="100"><option value="200"><option value="400"><option value="1000"><option value="2000">
 </datalist>
@@ -4813,12 +4811,27 @@ function cambiaUnidad(nueva){
   const factor = nueva === "m" ? 0.3048 : 1 / 0.3048;
   const conv = v => { const n = parseFloat(v);
     return (v === "" || v == null || isNaN(n)) ? v : String(Math.round(n * factor * 10) / 10); };
-  R.carga = conv(R.carga); R.dial0 = conv(R.dial0);
+  /* la carga se ajusta a las latas estandar (400 ft = 122 m, 1000 ft = 305 m...) para que la lista salga entera */
+  const ajustaCarga = v => { const n = parseFloat(v); if (isNaN(n)) return v;
+    for (const s of (nueva === "m" ? ["30","61","122","305","610"] : ["100","200","400","1000","2000"]))
+      if (Math.abs(n - parseFloat(s)) <= (nueva === "m" ? 0.7 : 2.2)) return s;
+    return v; };
+  R.carga = ajustaCarga(conv(R.carga)); R.dial0 = conv(R.dial0);
   (S.parte.tomas || []).forEach(t => { t.dial = conv(t.dial); t.pies = conv(t.pies); });
   R.unidad = nueva;
   fillParte(); renderTomas();
 }
-function ponTipo(t){ guarda(); S.parte.roll.tipo = t; pintaTipo(); renderTomas(); }
+function ponTipo(t){ guarda(); S.parte.roll.tipo = t;
+  /* si la camara o el formato son del OTRO modo, se limpian: con el campo vacio la lista sale entera */
+  const R = S.parte.roll, film = t === "film";
+  const otrosB = new Set(FORMATS.filter(f => film ? f.s !== "pelicula" : f.s === "pelicula").map(f => f.m + " " + f.c)
+    .concat(film ? S.formats.map(f => f.body) : [])
+    .concat((S.camarasPropias || []).filter(c => c.s === (film ? "digital" : "pelicula")).map(c => c.n)));
+  const otrosF = new Set(FORMATS.filter(f => film ? f.s !== "pelicula" : f.s === "pelicula").map(f => f.f)
+    .concat(film ? S.formats.map(f => f.fmt) : []));
+  if (R.body && otrosB.has(R.body)) R.body = "";
+  if (R.fmt && otrosF.has(R.fmt)) R.fmt = "";
+  pintaTipo(); renderTomas(); }
 function otraCamara(){
   guarda(); S.parte.roll.body = "";
   const e = $("r_body"); if (e){ e.value = ""; e.focus(); }
@@ -4900,6 +4913,8 @@ function fillParte(){
   const dl = (id, arr) => { const e = $(id); if (e) e.innerHTML = arr.map(v => `<option value="${esc(v)}">`).join(""); };
   dl("dlBodies", bodies); dl("dlFmts", fmts); dl("dlSeries", series);
   dl("dlCarga", (R.unidad === "m") ? ["30","61","122","305","610"] : ["100","200","400","1000","2000"]);
+  dl("dlRev", ["Normal","Forzado +1","Forzado +2","Retenido −1","Retenido −2"].map(traduce));
+  dl("dlCopia", ["Best light","One-light","Etalonado (timed)","Escaneo 2K","Escaneo 4K","Escaneo 4K HDR"].map(traduce));
   if (!film && R.body === undefined && S.formats.length) { R.body = S.formats[0].body; $("r_body").value = R.body; }
   if (!film && R.fmt  === undefined && S.formats.length) { R.fmt  = S.formats[0].fmt;  $("r_fmt").value  = R.fmt;  }
 }
