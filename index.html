@@ -3845,7 +3845,7 @@ function nbPinta(){
   else if (!hayTok) { txt = traduce("falta entrar con tu cuenta"); }
   else if (!hayCasa) { txt = traduce("falta elegir tu espacio de trabajo"); }
   else if (cola) { clase = "esp"; txt = NB.casaNombre + " · " + cola + " " + traduce("por subir"); }
-  else { clase = "on"; txt = NB.casaNombre + " · " + traduce("al día") + " · " + NB.correo; }
+  else { clase = "on"; txt = NB.casaNombre + " · " + traduce("al día"); }
   if (!navigator.onLine && hayCasa){ clase = "esp"; txt += " · " + traduce("sin red"); }
   pt.className = "pt " + clase; tx.textContent = txt;
   if (typeof stockDeLaOptica === "function") stockDeLaOptica();
