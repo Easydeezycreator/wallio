@@ -2041,7 +2041,9 @@ function stockDeLaOptica(){
   if (!serial || serial.length < 3){ caja.hidden = true; return; }
   if (!NB.url || !NB.key || !NB.casa){
     caja.hidden = false; caja.className = "hint";
-    caja.textContent = traduce("¿Ya está en el stock? Entra en la casa (pestaña Emitir) y te lo digo aquí.");
+    caja.innerHTML = esc(traduce("¿Ya está en el stock? Entra en la casa (pestaña Emitir) y te lo digo aquí.")) +
+      '<div class="btnrow" style="margin-top:8px"><button class="ghost" onclick="anadeLente()">' +
+      traduce("Añadir otra óptica") + "</button></div>";
     return;
   }
   clearTimeout(L_STOCK_T);
@@ -2058,7 +2060,10 @@ async function stockMira(serial){
     wlNorm(((x.clave || "").split("|")[1] || "")) === wlNorm(serial); });
   if (!f){
     caja.className = "hint";
-    caja.textContent = traduce("Esta unidad aún no está en el stock de la casa: la estrenas tú.");
+    caja.innerHTML = esc(traduce("Esta unidad aún no está en el stock de la casa: la estrenas tú.")) +
+      '<div class="btnrow" style="margin-top:8px">' +
+      '<button class="primary" onclick="stockGuarda()">' + traduce("Guardar en el stock") + "</button>" +
+      '<button class="ghost" onclick="anadeLente()">' + traduce("Añadir otra óptica") + "</button></div>";
     return;
   }
   const v = veredicto(f, areasPedidas());
@@ -2070,8 +2075,37 @@ async function stockMira(serial){
     '<button class="ghost" onclick="traeFicha(\'' + esc(f.clave) + '\')">' +
       traduce("usar en este proyecto") + "</button>" +
     '<button class="ghost" onclick="enlaceDit(\'' + esc(f.clave) + '\')">' +
-      traduce("enlace para el DIT") + "</button></div>";
+      traduce("enlace para el DIT") + "</button>" +
+    '<button class="ghost" onclick="anadeLente()">' + traduce("Añadir otra óptica") + "</button></div>";
 }
+/* guardar la óptica nueva en el stock desde la propia pestaña: el mismo
+   camino que «Subir esta ficha» (cola sin red, fusión de choques), y al
+   terminar se vuelve a mirar el stock para que la caja diga la verdad */
+async function stockGuarda(){
+  const caja = $("l_stock");
+  if (caja){ caja.hidden = false; caja.className = "hint";
+    caja.textContent = traduce("Guardando en el stock…"); }
+  await nubeSube();
+  stockDeLaOptica();
+}
+
+/* la siguiente óptica del juego: producción, cámara, formatos y distancias
+   se quedan; se vacían el serial, su foto y las capturas de ESTA lente */
+function anadeLente(){
+  if (Object.keys(S.takes).length &&
+      !confirm(traduce("¿Otra óptica? Las capturas de esta solo quedan si la guardaste en el stock. La producción, la cámara y las distancias se conservan."))) return;
+  guarda();
+  S.takes = {}; S.base = {}; S.historial = []; S.nubeRev = 0;
+  S.lens.serial = ""; S.lens.fotoSerial = "";
+  const si = $("l_serial"); if (si) si.value = "";
+  const mm = $("mergeMsg"); if (mm) mm.textContent = "";
+  syncLens(); renderCaptura(); updateChip();
+  if (typeof pintaFotoSerial === "function") pintaFotoSerial();
+  if (typeof pintaIntervenciones === "function") pintaIntervenciones();
+  show("optica");
+  if (si) si.focus();
+}
+
 /* el enlace que el DIT abre en la prep: la ficha y sus clips, sin cuenta */
 async function enlaceDit(clave){
   const caja = $("l_stock");
@@ -5225,6 +5259,10 @@ const EN = {
 "Esta unidad aún no está en el stock de la casa: la estrenas tú.":
  "This unit is not in the rental house stock yet: you are the first.",
 "Enlace copiado para el DIT, caduca el":"Link copied for the DIT, expires on",
+"Guardar en el stock":"Save to the stock","Añadir otra óptica":"Add another lens",
+"Guardando en el stock…":"Saving to the stock…",
+"¿Otra óptica? Las capturas de esta solo quedan si la guardaste en el stock. La producción, la cámara y las distancias se conservan.":
+ "Another lens? This one's captures only remain if you saved it to the stock. Production, camera and distances are kept.",
 "ópticas buscadas":"lenses searched",
 "· contra el área activa de":"· against the active area of",
 "formato(s) que tienes puestos en Equipo":"format(s) you have set in Camera",
