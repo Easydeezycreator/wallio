@@ -1177,13 +1177,15 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Nº de magazine</label><input id="r2_mag" placeholder="M3"></div>
       <div class="f"><label>Emulsión</label><input id="r2_emul" list="dlEmul" placeholder="KODAK VISION3 500T 5219"></div>
       <div class="f"><label>Lote / batch</label><input id="r2_lote" placeholder="0231 042"></div>
-      <div class="f"><label>Carga (pies)</label><input id="r2_carga" inputmode="numeric" list="dlCarga" placeholder="1000"></div>
+      <div class="f"><label>Carga</label><input id="r2_carga" inputmode="numeric" list="dlCarga" placeholder="1000"></div>
+      <div class="f"><label>Unidad de medida</label><select id="r2_unidad">
+        <option value="ft">Pies (ft)</option><option value="m">Metros (m)</option></select></div>
       <div class="f"><label>Paso</label><select id="r2_perf">
         <option value="4">35 mm · 4 perf</option><option value="3">35 mm · 3 perf</option>
         <option value="2">35 mm · 2 perf</option><option value="16">16 mm</option>
         <option value="65">65 mm · 5 perf</option></select></div>
       <div class="f"><label>Cargado por</label><input id="r2_loader"></div>
-      <div class="f"><label>Contador al empezar (pies)</label><input id="r2_dial0" inputmode="numeric" placeholder="0"></div>
+      <div class="f"><label>Contador al empezar</label><input id="r2_dial0" inputmode="numeric" placeholder="0"></div>
     </div>
     <div id="rollExtra"></div>
     <div class="btnrow"><button onclick="addCampoRollo()">+ Añadir campo del rollo</button></div>
@@ -4816,7 +4818,7 @@ const T_CAMPOS = [
   ["sc","Escena"], ["tk","Toma"], ["desc","Descripción",null,"w"], ["clip","Archivo / clip"],
   ["serial","Óptica · nº de serie","", "dlSeries"], ["focal","Focal (mm)"],
   ["t","Diafragma T"], ["filt","Filtro","filt"], ["foco","Distancia de foco"],
-  ["dial","Contador (pies)"], ["pies","Pies"],
+  ["dial","Contador"], ["pies","Metraje"],
   ["alt","Altura de óptica"], ["tilt","Tilt"], ["roll","Roll"],
   ["wb","Temperatura de color","wb"], ["fps","FPS","fps"], ["shutter","Obturador","shutter"],
   ["ei","EI / ISO","ei"], ["lut","LUT","lut"], ["res","Resolución","fmt"],
@@ -4831,17 +4833,33 @@ function tomaVacia(){
   return t;
 }
 const R_CAMPOS = ["cam","roll","body","fmt","media","codec","fps","ei","shutter","wb","lut","filt","ac","ac2","dop"];
-const R2_CAMPOS = ["lab","mag","emul","lote","carga","perf","loader","dial0","rev","copia","labnotas"];
+const R2_CAMPOS = ["lab","mag","emul","lote","carga","unidad","perf","loader","dial0","rev","copia","labnotas"];
 const FPP = {"4":16, "3":64/3, "2":32, "16":40, "65":12.8};
 function esFilm(){ return ((S.parte.roll || {}).tipo || "digital") === "film"; }
 function pasoTexto(p){ return {"4":"35 mm · 4 perf","3":"35 mm · 3 perf","2":"35 mm · 2 perf",
   "16":"16 mm","65":"65 mm · 5 perf"}[p || "4"]; }
+function uTxt(){ return ((S.parte.roll || {}).unidad === "m") ? "m" : "ft"; }
+function red(x){ return uTxt() === "m" ? Math.round(x * 10) / 10 : Math.round(x); }
+function cambiaUnidad(nueva){
+  const R = S.parte.roll, vieja = R.unidad || "ft";
+  if (nueva === vieja){ R.unidad = nueva; return; }
+  guarda();
+  const factor = nueva === "m" ? 0.3048 : 1 / 0.3048;
+  const conv = v => { const n = parseFloat(v);
+    return (v === "" || v == null || isNaN(n)) ? v : String(Math.round(n * factor * 10) / 10); };
+  R.carga = conv(R.carga); R.dial0 = conv(R.dial0);
+  (S.parte.tomas || []).forEach(t => { t.dial = conv(t.dial); t.pies = conv(t.pies); });
+  R.unidad = nueva;
+  fillParte(); renderTomas();
+}
 function ponTipo(t){ guarda(); S.parte.roll.tipo = t; pintaTipo(); renderTomas(); }
 function pintaTipo(){
   const f = esFilm();
   document.documentElement.classList.toggle("pfilm", f);
   const a = $("tp_dig"), b = $("tp_film");
   if (a && b){ a.className = f ? "ghost" : "primary"; b.className = f ? "primary" : "ghost"; }
+  [["r_body", f ? "ARRICAM LT" : "ARRI ALEXA 35"], ["r_fmt", f ? "Super 35 3-perf" : "Open Gate 4.6K"]]
+    .forEach(([id, ej]) => { const e = $(id); if (e){ e.setAttribute("placeholder", ej); e.__op = ej; } });
 }
 function piesDeToma(i){
   const L = S.parte.tomas, t = L[i] || {};
@@ -4850,7 +4868,7 @@ function piesDeToma(i){
   const d = parseFloat(t.dial); if (isNaN(d)) return 0;
   let prev = parseFloat((S.parte.roll || {}).dial0) || 0;
   for (let j = i - 1; j >= 0; j--){ const dj = parseFloat(L[j].dial); if (!isNaN(dj)){ prev = dj; break; } }
-  return Math.max(0, Math.round(d - prev));
+  return Math.max(0, red(d - prev));
 }
 function piesResumen(){
   const L = S.parte.tomas, R = S.parte.roll || {};
@@ -4858,14 +4876,15 @@ function piesResumen(){
   let suma = 0, G = 0, NG = 0, ultimo = null;
   L.forEach((t, i) => { const p = piesDeToma(i); suma += p; if (t.ok) G += p; else NG += p;
     const d = parseFloat(t.dial); if (!isNaN(d) && (ultimo === null || d > ultimo)) ultimo = d; });
-  const T = ultimo !== null ? Math.max(0, Math.round(ultimo - dial0)) : Math.round(suma);
-  const W = Math.max(0, T - Math.round(G) - Math.round(NG));
+  const T = ultimo !== null ? Math.max(0, red(ultimo - dial0)) : red(suma);
+  const W = Math.max(0, red(T - red(G) - red(NG)));
   const carga = parseFloat(R.carga);
-  return {G: Math.round(G), NG: Math.round(NG), W, T,
-          SE: isNaN(carga) ? null : Math.max(0, Math.round(carga - T)), ultimo};
+  return {G: red(G), NG: red(NG), W, T,
+          SE: isNaN(carga) ? null : Math.max(0, red(carga - T)), ultimo};
 }
-function durFilm(pies, R){
+function durFilm(medida, R){
   const fps = parseFloat((R || {}).fps) || 24;
+  const pies = ((R || {}).unidad === "m") ? medida / 0.3048 : medida;
   return durTexto(pies * (FPP[(R || {}).perf || "4"] || 16) / fps);
 }
 
@@ -4876,7 +4895,9 @@ function wireParte(){
   });
   R2_CAMPOS.forEach(k => {
     const el = $("r2_" + k); if (!el) return;
-    el.oninput = () => { S.parte.roll[k] = el.value;
+    el.oninput = () => {
+      if (k === "unidad") return cambiaUnidad(el.value);
+      S.parte.roll[k] = el.value;
       if (k === "carga" || k === "dial0" || k === "perf") resumenParte(); };
   });
 }
@@ -4886,18 +4907,22 @@ function fillParte(){
   if (!R.dop && P.dop) R.dop = P.dop;
   R_CAMPOS.forEach(k => { const el = $("r_" + k); if (el) el.value = R[k] || ""; });
   if (!R.tipo) R.tipo = "digital";
+  if (!R.unidad) R.unidad = "ft";
   if (!R.perf) R.perf = "4";
   if (!R.rev) R.rev = "Normal";
   if (!R.copia) R.copia = "Best light";
   R2_CAMPOS.forEach(k => { const el = $("r2_" + k); if (el) el.value = R[k] || ""; });
   pintaTipo();
-  const bodies = [...new Set(S.formats.map(f => f.body).concat(FORMATS.map(f => f.m + " " + f.c)))];
-  const fmts   = [...new Set(S.formats.map(f => f.fmt).concat(FORMATS.map(f => f.f)))];
+  const film = esFilm();
+  const CAT = FORMATS.filter(f => film ? f.s === "pelicula" : f.s !== "pelicula");
+  const bodies = [...new Set((film ? [] : S.formats.map(f => f.body)).concat(CAT.map(f => f.m + " " + f.c)))];
+  const fmts   = [...new Set((film ? [] : S.formats.map(f => f.fmt)).concat(CAT.map(f => f.f)))];
   const series = [...new Set([S.lens.serial].concat(S.parte.tomas.map(t => t.serial)).filter(Boolean))];
   const dl = (id, arr) => { const e = $(id); if (e) e.innerHTML = arr.map(v => `<option value="${esc(v)}">`).join(""); };
   dl("dlBodies", bodies); dl("dlFmts", fmts); dl("dlSeries", series);
-  if (!R.body && S.formats.length) { R.body = S.formats[0].body; $("r_body").value = R.body; }
-  if (!R.fmt  && S.formats.length) { R.fmt  = S.formats[0].fmt;  $("r_fmt").value  = R.fmt;  }
+  dl("dlCarga", (R.unidad === "m") ? ["30","61","122","305","610"] : ["100","200","400","1000","2000"]);
+  if (!film && !R.body && S.formats.length) { R.body = S.formats[0].body; $("r_body").value = R.body; }
+  if (!film && !R.fmt  && S.formats.length) { R.fmt  = S.formats[0].fmt;  $("r_fmt").value  = R.fmt;  }
 }
 
 function campoToma(i, k, etiqueta, lista, ancho){
@@ -4913,7 +4938,7 @@ function renderTomas(){
   $("listaTomas").innerHTML = L.length ? L.map((t, i) => {
     const pft = esFilm() ? piesDeToma(i) : 0;
     const meta = [t.mos ? "MOS" : "", t.desc, t.clip, t.serial, t.focal ? t.focal + " mm" : "", t.t ? "T" + t.t : "", t.filt,
-                  t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " ft" : ""]
+                  t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
     const campos = T_CAMPOS.map(([k, et, , extra]) =>
       campoToma(i, k, et, extra === "dlSeries" ? "dlSeries" : null, extra === "w")).join("");
@@ -5005,8 +5030,8 @@ function resumenParte(){
   $("p_ok").textContent = ok;
   const el = $("p_dur"), lb = $("p_durl");
   if (esFilm()){ const pf = piesResumen();
-    if (el) el.textContent = pf.T + " ft";
-    if (lb) lb.textContent = pf.SE === null ? traduce("pies expuestos") : traduce("quedan") + " " + pf.SE + " ft";
+    if (el) el.textContent = pf.T + " " + uTxt();
+    if (lb) lb.textContent = pf.SE === null ? traduce("expuesto") : traduce("quedan") + " " + pf.SE + " " + uTxt();
   } else {
     if (el) el.textContent = durTexto(dur);
     if (lb) lb.textContent = traduce("duración");
@@ -5038,7 +5063,7 @@ function renderParte(){
     const pft = film ? piesDeToma(i) : 0;
     const finales = film
       ? `<td class="mo">${esc(x.dial || "—")}</td>
-      <td class="mo">${pft ? pft + " ft" : "—"}</td>`
+      <td class="mo">${pft ? pft + " " + uTxt() : "—"}</td>`
       : `<td class="mo">${esc(x.alt || "—")}${tr ? `<span class="sn">${esc(tr)}</span>` : ""}</td>
       <td class="mo">${esc(x.tc || "—")}</td>
       <td class="mo">${esc(x.dur ? x.dur + " s" : "—")}</td>`;
@@ -5091,9 +5116,9 @@ function renderParte(){
   <h4>3 · Cámara y rollo<i>lo que no cambia toma a toma</i></h4>
   <div class="fl">${F("Cuerpo", R.body)}${F("Formato de captura", R.fmt)}${film ? `
     ${F("Emulsión", R.emul)}${F("Lote / batch", R.lote)}
-    ${F("Nº de magazine", R.mag)}${F("Carga (pies)", R.carga)}
+    ${F("Nº de magazine", R.mag)}${F("Carga", R.carga ? R.carga + " " + uTxt() : "")}
     ${F("Paso", pasoTexto(R.perf))}${F("Cargado por", R.loader)}
-    ${F("Contador al empezar (pies)", R.dial0 || "0")}` : `
+    ${F("Contador al empezar", (R.dial0 || "0") + " " + uTxt())}` : `
     ${F("Codec / emulsión", R.codec)}${F("Soporte", R.media)}`}
     ${F("Fotogramas por segundo", R.fps)}${F("EI / ISO", R.ei)}
     ${F("Obturador", R.shutter)}${film ? "" : F("Temperatura de color", R.wb)}
@@ -5103,7 +5128,7 @@ function renderParte(){
   <h4>4 · Laboratorio<i>qué hacer con este rollo</i></h4>
   <div class="fl">${F("Laboratorio", R.lab)}${F("Revelado", R.rev || "Normal")}
     ${F("Positivado / escaneo", R.copia || "Best light")}
-    ${F("Fin del rollo (pies)", pf && pf.ultimo !== null ? pf.ultimo : "")}
+    ${F("Fin del rollo", pf && pf.ultimo !== null ? pf.ultimo + " " + uTxt() : "")}
     ${F("Instrucciones", R.labnotas)}</div>` : ""}
 
   <h4>${film ? "5" : "4"} · Tomas<i>◯ marca la toma buena · la segunda línea recoge lo demás</i></h4>
@@ -5111,7 +5136,7 @@ function renderParte(){
     <col style="width:3%"><col style="width:19%"><col style="width:20%"><col style="width:5%">
     <col style="width:10%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
     <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th>
-    <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Contador</th><th>Pies</th></tr></thead>
+    <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Contador</th><th>Metraje</th></tr></thead>
     <tbody>${filas || `<tr><td colspan="11" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`
   : `<table class="rep"><colgroup><col style="width:3%"><col style="width:5%"><col style="width:4%">
     <col style="width:3%"><col style="width:12.5%"><col style="width:9%"><col style="width:15.5%"><col style="width:4.5%">
@@ -5123,11 +5148,11 @@ function renderParte(){
 
   <h4>${film ? "6" : "5"} · Resumen del rollo</h4>
   ${film ? `<div class="sum">
-    <div><b>${pf.G}</b><span>G · buenas (imprimir)</span></div>
-    <div><b>${pf.NG}</b><span>NG · no buenas</span></div>
-    <div><b>${pf.W}</b><span>W · desperdicio</span></div>
-    <div><b>${pf.T}</b><span>T · pies expuestos</span></div>
-    <div><b>${pf.SE === null ? "—" : pf.SE}</b><span>SE · cola sin exponer</span></div>
+    <div><b>${pf.G} ${uTxt()}</b><span>G · buenas (imprimir)</span></div>
+    <div><b>${pf.NG} ${uTxt()}</b><span>NG · no buenas</span></div>
+    <div><b>${pf.W} ${uTxt()}</b><span>W · desperdicio</span></div>
+    <div><b>${pf.T} ${uTxt()}</b><span>T · expuesto</span></div>
+    <div><b>${pf.SE === null ? "—" : pf.SE + " " + uTxt()}</b><span>SE · cola sin exponer</span></div>
   </div>
   <div class="sum">
     <div><b>${t.sc}</b><span>escenas</span></div>
@@ -5175,8 +5200,8 @@ function parteCSV(){
     "codec","soporte","escena","toma","buena","descripcion","optica_serie","focal_mm","diafragma_t",
     "filtro","distancia_foco","altura_optica","tilt","roll_grados","temperatura_color","fps",
     "obturador","ei_iso","lut","resolucion","timecode","duracion_s","notas",
-    "tipo","archivo_clip","mos","contador_pies","pies_toma","laboratorio","magazine","emulsion",
-    "lote","carga_pies","paso","cargado_por","contador_inicial","revelado","positivado_escaneo",
+    "tipo","archivo_clip","mos","contador","metraje_toma","laboratorio","magazine","emulsion",
+    "lote","carga","unidad_medida","paso","cargado_por","contador_inicial","revelado","positivado_escaneo",
     "instrucciones_lab"].concat(pr).concat(props);
   const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
   const filas = S.parte.tomas.map((x, i) => [P.proyecto, P.fecha, P.jornada, R.cam, R.roll, R.body,
@@ -5184,7 +5209,7 @@ function parteCSV(){
     x.filt, x.foco, x.alt, x.tilt, x.roll, x.wb, x.fps, x.shutter, x.ei, x.lut, x.res, x.tc,
     x.dur, x.nota,
     R.tipo || "digital", x.clip, x.mos ? "si" : "no", x.dial, esFilm() ? (piesDeToma(i) || "") : "",
-    R.lab, R.mag, R.emul, R.lote, R.carga, esFilm() ? pasoTexto(R.perf) : "", R.loader,
+    R.lab, R.mag, R.emul, R.lote, R.carga, esFilm() ? (R.unidad || "ft") : "", esFilm() ? pasoTexto(R.perf) : "", R.loader,
     R.dial0, R.rev, R.copia, R.labnotas].concat(pr.map(n => (R.extra || {})[n] || ""))
     .concat(props.map(n => (x.extra || {})[n] || "")).map(q).join(","));
   descargar("﻿" + [cab.join(","), ...filas].join("\r\n"),
@@ -5211,24 +5236,25 @@ function descargar(texto, nombre, tipo){
 const EN = {
 "Sin tomas todavía. Pulsa «+ Toma».":"No takes yet. Press «+ Take».",
 "Película":"Film","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
-"Emulsión":"Film stock","Lote / batch":"Batch","Carga (pies)":"Load (feet)",
+"Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
+"Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Paso":"Gauge · perfs","Cargado por":"Loaded by",
-"Contador al empezar (pies)":"Counter at start (feet)",
+"Contador al empezar":"Counter at start",
 "Revelado":"Processing","Positivado / escaneo":"Print / scan",
 "Forzado +1":"Push +1","Forzado +2":"Push +2","Retenido −1":"Pull −1","Retenido −2":"Pull −2",
 "Etalonado (timed)":"Timed print","Escaneo 2K":"2K scan","Escaneo 4K":"4K scan","Escaneo 4K HDR":"4K HDR scan",
 "Instrucciones al laboratorio":"Lab instructions","Instrucciones":"Instructions",
 "revelar aparte del resto":"process apart from the rest",
-"Archivo / clip":"File / clip","Contador (pies)":"Counter (feet)","Pies":"Feet",
+"Archivo / clip":"File / clip","Metraje":"Footage",
 "Archivo":"File","Contador":"Counter",
 "G · buenas (imprimir)":"G · good (print)","NG · no buenas":"NG · no good",
-"W · desperdicio":"W · waste","T · pies expuestos":"T · feet exposed",
+"W · desperdicio":"W · waste","T · expuesto":"T · exposed",
 "SE · cola sin exponer":"SE · short end","duración estimada":"estimated runtime",
-"pies expuestos":"feet exposed","quedan":"left:",
+"expuesto":"exposed","quedan":"left:",
 "Parte de cámara · película":"Camera report · film",
 "4 · Laboratorio":"4 · Laboratory","qué hacer con este rollo":"what to do with this roll",
 "5 · Tomas":"5 · Takes","6 · Resumen del rollo":"6 · Roll summary",
-"Fin del rollo (pies)":"Roll out at (feet)",
+"Fin del rollo":"Roll out at",
 "Deshacer":"Undo","guardado":"saved","cobertura":"coverage",
 "Hay trabajo sin terminar guardado en este dispositivo":"There is unfinished work saved on this device",
 "¿Seguir donde lo dejaste?":"Carry on where you left off?","quitar":"remove","marcar":"mark","nuevo":"new","Empezar de cero":"Start over",
