@@ -1270,6 +1270,7 @@ html.solo-parte .portada{display:none}
       <div id="nb_listado"></div>
       <div class="hint" id="mv_post_msg"></div>
     </div>
+    <div class="hint" id="nb_msg2"></div>
   </div>
   <div class="card">
     <h2>Buscar grids ya guardados</h2>
@@ -3770,6 +3771,10 @@ function nbPonCola(c){ try { localStorage.setItem(NB_COLA, JSON.stringify(c)); }
 function nbMsg(t, clase){
   const m = $("nb_msg"); if (!m) return;
   m.className = "hint" + (clase ? " " + clase : ""); m.textContent = t;
+  /* el mismo aviso, en el sitio que se ve cuando aun no estas dentro */
+  const m2 = $("nb_msg2"), tr = $("nb_trabajo");
+  if (m2){ m2.className = m.className;
+           m2.textContent = (tr && tr.hidden) ? t : ""; }
 }
 function nbPinta(){
   const hayConf = !!(NB.url && NB.key), hayTok = !!NB.token, hayCasa = !!NB.casa;
@@ -3805,13 +3810,24 @@ function nubeGuardaConf(){
   if (!/^https?:\/\//.test(NB.url)) return nbMsg(traduce("La URL debe empezar por https://"), "bad");
   nbGuarda(); nbPinta();
 }
+function nbValida(){
+  const c = $("nb_correo").value.trim().toLowerCase(), p = $("nb_pass").value;
+  if (!c) return traduce("Escribe tu correo.");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) return traduce("Ese correo no parece completo. Revísalo.");
+  if (!p) return traduce("Escribe tu contraseña.");
+  if (p.length < 6) return traduce("La contraseña necesita al menos 6 caracteres.");
+  return "";
+}
 async function nubeAlta(){
+  const mal = nbValida(); if (mal) return nbMsg(mal, "bad");
+  nbMsg(traduce("Creando la cuenta…"), "");
   try {
     const d = await nbPide("/auth/v1/signup",
       {email: $("nb_correo").value.trim().toLowerCase(), password: $("nb_pass").value}, false);
     if (!d || !d.access_token)
       return nbMsg(traduce("Cuenta creada. Confirma el correo y luego pulsa Entrar."), "good");
     nbTomaSesion(d);
+    nbMsg(traduce("Cuenta creada. Ya estás dentro."), "good");
   } catch(e){ nbMsg(nbError(e), "bad"); }
 }
 /* los errores de la nube, dichos con palabras que ayudan */
@@ -3823,13 +3839,22 @@ function nbError(e){
     return traduce("Correo o contraseña no coinciden. Si aún no tienes cuenta, pulsa «Crear cuenta».");
   if (/already registered|already been registered/i.test(m))
     return traduce("Ese correo ya tiene cuenta: pulsa «Entrar» con tu contraseña.");
+  if (/unable to validate email|invalid format|is invalid/i.test(m))
+    return traduce("Ese correo no parece completo. Revísalo.");
+  if (/at least 6 characters|password should be/i.test(m))
+    return traduce("La contraseña necesita al menos 6 caracteres.");
+  if (/rate limit|too many/i.test(m))
+    return traduce("Demasiados intentos seguidos. Espera un minuto y vuelve a probar.");
   return m;
 }
 async function nubeEntrar(){
+  const mal = nbValida(); if (mal) return nbMsg(mal, "bad");
+  nbMsg(traduce("Entrando…"), "");
   try {
     const d = await nbPide("/auth/v1/token?grant_type=password",
       {email: $("nb_correo").value.trim().toLowerCase(), password: $("nb_pass").value}, false);
     nbTomaSesion(d);
+    nbMsg(traduce("Ya estás dentro."), "good");
   } catch(e){ nbMsg(nbError(e), "bad"); }
 }
 function nbTomaSesion(d){
@@ -5152,6 +5177,15 @@ const EN = {
 "al día":"up to date","sin red":"no signal","cargar":"load",
 "Falta configurar la conexión.":"The connection is not set up yet.",
 "La URL debe empezar por https://":"The URL must start with https://",
+"Escribe tu correo.":"Type your email.",
+"Ese correo no parece completo. Revísalo.":"That email does not look complete. Check it.",
+"Escribe tu contraseña.":"Type your password.",
+"La contraseña necesita al menos 6 caracteres.":"The password needs at least 6 characters.",
+"Creando la cuenta…":"Creating the account…",
+"Entrando…":"Signing in…",
+"Cuenta creada. Ya estás dentro.":"Account created. You are in.",
+"Ya estás dentro.":"You are in.",
+"Demasiados intentos seguidos. Espera un minuto y vuelve a probar.":"Too many attempts in a row. Wait a minute and try again.",
 "Cuenta creada. Confirma el correo y luego pulsa Entrar.":"Account created. Confirm your email, then press Sign in.",
 "Sesión cerrada. Lo que tengas sin subir sigue guardado en este dispositivo.":
  "Signed out. Anything not yet uploaded is still saved on this device.",
