@@ -1481,6 +1481,7 @@ html.solo-parte .portada{display:none}
   <div class="note"><b>Esta página es el manual.</b> Qué hace cada pestaña y qué tiene que cumplir un grid para que cualquier casa de VFX lo dé por bueno. Léela entera una vez; en rodaje se consulta en segundos.</div>
 
   <div class="card">
+    <div class="hint" id="verapp"></div>
     <h2>El recorrido por la app</h2>
     <p><b>Producción.</b> Proyecto, jornada, fecha y responsables. Se rellena una vez por jornada y viaja con todo lo que se capture: sin estos datos nada se puede archivar ni reclamar después.</p>
     <p><b>Casa.</b> Para casas de renta: inventario con estado de calibración, entregas y albaranes. La entrega genera un enlace solo con esas ópticas y sus grids medidos; post lo descarga sin cuenta.</p>
@@ -6310,6 +6311,12 @@ document.querySelectorAll("input").forEach(e => {
   e.setAttribute("readonly", "");
   e.addEventListener("focus", () => e.removeAttribute("readonly"), {once: true});
 });
+/* version visible en la Guia: para saber que corre cada aparato */
+(async () => { try {
+  const el = document.getElementById("verapp"); if (!el) return;
+  const ks = await caches.keys();
+  el.textContent = (ks.find(k => k.indexOf("wallio") === 0) || "").replace("wallio-", "WALLIO ");
+} catch(e){} })();
 /* desplegable propio: iPhone/iPad no ensenan las listas nativas — este se ve igual en todas partes */
 (function(){
   const caja = document.createElement("div"); caja.id = "combo"; caja.hidden = true;
