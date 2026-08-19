@@ -1250,12 +1250,13 @@ html.solo-parte .portada{display:none}
 
     <div id="nb_casa" hidden>
       <div class="grid">
-        <div class="f"><label>Código de la casa de renta</label><input id="nb_codigo" spellcheck="false" placeholder="lo da la casa"></div>
-        <div class="f"><label>O crea una casa nueva</label><input id="nb_casanueva" placeholder="EFD Studios"></div>
-      </div>
-      <div class="btnrow" style="margin-top:10px">
-        <button class="primary" onclick="nubeUnir()">Unirme con el código</button>
-        <button class="ghost" onclick="nubeCrearCasa()">Crear la casa</button>
+        <div class="f"><label>Trabajo con mi propio equipo</label>
+          <input id="nb_casanueva" placeholder="EFD Studios">
+          <input id="nb_codigonuevo" spellcheck="false" placeholder="código para tu gente · mínimo 8" style="margin-top:8px">
+          <button class="primary" style="margin-top:8px;width:100%" onclick="nubeCrearCasa()">Crear mi espacio</button></div>
+        <div class="f"><label>Me han dado un código</label>
+          <input id="nb_codigo" spellcheck="false" placeholder="el código que te pasaron">
+          <button class="ghost" style="margin-top:8px;width:100%" onclick="nubeUnir()">Entrar con ese código</button></div>
       </div>
     </div>
 
@@ -3776,18 +3777,26 @@ function nbMsg(t, clase){
   if (m2){ m2.className = m.className;
            m2.textContent = (tr && tr.hidden) ? t : ""; }
 }
+function nbCodigoSugerido(){
+  const AB = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const a = new Uint8Array(10); crypto.getRandomValues(a);
+  const c = [...a].map(x => AB[x % AB.length]).join("");
+  return c.slice(0,4) + "-" + c.slice(4,8) + "-" + c.slice(8);
+}
 function nbPinta(){
   const hayConf = !!(NB.url && NB.key), hayTok = !!NB.token, hayCasa = !!NB.casa;
   $("nb_conf").hidden    = hayConf;
   $("nb_sesion").hidden  = !hayConf || hayTok;
   $("nb_casa").hidden    = !hayTok || hayCasa;
+  if (!$("nb_casa").hidden){ const cn = $("nb_codigonuevo");
+    if (cn && !cn.value) cn.value = nbCodigoSugerido(); }
   $("nb_trabajo").hidden = !hayCasa;
   const pt = $("nb_estado").querySelector(".pt"), tx = $("nb_txt");
   const cola = nbCola().length;
   let clase = "", txt = traduce("sin configurar");
   if (!hayConf) { txt = traduce("sin configurar"); }
   else if (!hayTok) { txt = traduce("falta entrar con tu cuenta"); }
-  else if (!hayCasa) { txt = traduce("falta unirte a una casa de renta"); }
+  else if (!hayCasa) { txt = traduce("falta elegir tu espacio de trabajo"); }
   else if (cola) { clase = "esp"; txt = NB.casaNombre + " · " + cola + " " + traduce("por subir"); }
   else { clase = "on"; txt = NB.casaNombre + " · " + traduce("al día") + " · " + NB.correo; }
   if (!navigator.onLine && hayCasa){ clase = "esp"; txt += " · " + traduce("sin red"); }
@@ -3898,14 +3907,14 @@ async function nubeUnir(){
   } catch(e){ nbMsg(e.message, "bad"); }
 }
 async function nubeCrearCasa(){
-  const nom = $("nb_casanueva").value.trim(), cod = $("nb_codigo").value.trim();
-  if (!nom) return nbMsg(traduce("Ponle nombre a la casa."), "bad");
+  const nom = $("nb_casanueva").value.trim(), cod = $("nb_codigonuevo").value.trim();
+  if (!nom) return nbMsg(traduce("Ponle nombre a tu espacio."), "bad");
   if (cod.length < 8) return nbMsg(traduce("El código debe tener al menos 8 caracteres."), "bad");
   try {
     const d = await nbPide("/rest/v1/rpc/crear_casa",
       {p_nombre: nom, p_codigo: cod, p_quien: $("nb_nombre").value.trim() || NB.nombre});
     NB.casa = d[0].id_casa; NB.casaNombre = d[0].nombre_casa; nbGuarda(); nbPinta();
-    nbMsg(traduce("Casa creada. Reparte el código a tu equipo; no se puede recuperar, apúntalo."), "good");
+    nbMsg(traduce("Espacio creado. Reparte el código a tu gente; apúntalo: no se puede recuperar."), "good");
   } catch(e){ nbMsg(e.message, "bad"); }
 }
 /* ---- subir: si no hay red, se queda en la cola y sube sola después ---- */
@@ -5173,7 +5182,13 @@ const EN = {
  "The code only signs you up once. From then on your account is what counts.",
 "Subir esta ficha":"Upload this record","Ver las de la casa":"See the house's records",
 "Salir":"Sign out","sin configurar":"not set up","falta entrar con tu cuenta":"sign in with your account",
-"falta unirte a una casa de renta":"join a rental house","por subir":"to upload",
+"falta elegir tu espacio de trabajo":"choose your workspace",
+"Trabajo con mi propio equipo":"I work with my own gear",
+"Me han dado un código":"I was given a code",
+"Crear mi espacio":"Create my space",
+"Entrar con ese código":"Enter with that code",
+"código para tu gente · mínimo 8":"a code for your crew · 8 minimum",
+"el código que te pasaron":"the code they gave you","por subir":"to upload",
 "al día":"up to date","sin red":"no signal","cargar":"load",
 "Falta configurar la conexión.":"The connection is not set up yet.",
 "La URL debe empezar por https://":"The URL must start with https://",
@@ -5190,10 +5205,10 @@ const EN = {
 "Sesión cerrada. Lo que tengas sin subir sigue guardado en este dispositivo.":
  "Signed out. Anything not yet uploaded is still saved on this device.",
 "código no válido":"that code is not valid","Ya estás dentro de":"You are now in",
-"Ponle nombre a la casa.":"Give the house a name.",
+"Ponle nombre a tu espacio.":"Give your space a name.",
 "El código debe tener al menos 8 caracteres.":"The code must be at least 8 characters.",
-"Casa creada. Reparte el código a tu equipo; no se puede recuperar, apúntalo.":
- "House created. Hand the code to your crew; it cannot be recovered, so write it down.",
+"Espacio creado. Reparte el código a tu gente; apúntalo: no se puede recuperar.":
+ "Space created. Hand the code to your crew; write it down — it cannot be recovered.",
 "Sin red. Queda apuntada y subirá sola en cuanto haya cobertura.":
  "No signal. It is queued and will go up on its own as soon as there is coverage.",
 "Alguien está guardando a la vez. Prueba otra vez en unos segundos.":
