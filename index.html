@@ -361,7 +361,8 @@ html.pfilm #listaTomas .f[data-k="wb"],html.pfilm #listaTomas .f[data-k="lut"]{d
 html:not(.pfilm) #listaTomas .f[data-k="dial"],html:not(.pfilm) #listaTomas .f[data-k="pies"]{display:none}
 html:not(.pfilm) #filmRollo,html:not(.pfilm) #cardLab{display:none}
 #combo{position:absolute;z-index:9999;background:var(--panel);border:1px solid var(--line);
-  max-height:42vh;overflow:auto;box-shadow:0 14px 34px rgba(0,0,0,.55);-webkit-overflow-scrolling:touch}
+  max-height:42vh;overflow:auto;box-shadow:0 14px 34px rgba(0,0,0,.55);-webkit-overflow-scrolling:touch;
+  touch-action:pan-y;overscroll-behavior:contain}
 #combo .op{padding:11px 13px;font:500 13px/1.25 var(--mono);color:var(--tx);cursor:pointer;border-bottom:1px solid var(--line)}
 #combo .op:last-child{border-bottom:none}
 #combo .op:active{background:var(--tx);color:var(--bg)}
@@ -458,7 +459,7 @@ html:not(.pfilm) #filmRollo,html:not(.pfilm) #cardLab{display:none}
 }
 /* la tira vacía no dice nada que el usuario no sepa: fuera hasta que haya proyecto */
 .tira.vacia{display:none}
-@page{size:A4;margin:11mm 12mm}
+@page{size:A4;margin:6mm 7mm}
 
 .tg{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-top:1px solid var(--line);flex-wrap:wrap}
 .tg img{width:104px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:#000;cursor:zoom-in}
@@ -6377,7 +6378,7 @@ document.querySelectorAll("input").forEach(e => {
     caja.style.top = (r.bottom + scrollY + 2) + "px";
     caja.style.minWidth = r.width + "px";
     caja.hidden = false; activo = inp;
-    [...caja.children].forEach(d => d.onpointerdown = ev => { ev.preventDefault();
+    [...caja.children].forEach(d => d.onclick = () => {
       inp.value = d.textContent;
       inp.dispatchEvent(new Event("input", {bubbles: true}));
       inp.dispatchEvent(new Event("change", {bubbles: true}));
@@ -6395,7 +6396,7 @@ document.querySelectorAll("input").forEach(e => {
     if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t); });
   document.addEventListener("pointerdown", e => {
     if (!caja.contains(e.target) && e.target !== activo) cierra(); });
-  window.addEventListener("scroll", cierra, true);
+  window.addEventListener("scroll", e => { if (!caja.contains(e.target)) cierra(); }, true);
 })();
 if (NB.rol) $("nb_rol").value = NB.rol;
 nbPinta();
