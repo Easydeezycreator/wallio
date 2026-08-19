@@ -322,6 +322,40 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 #parte .sig{margin-top:8px;page-break-inside:avoid}
 #parte .sig .box{height:30px}
 #parte .decl{padding:7px 12px;font-size:8.9pt;line-height:1.42}
+/* ---- rediseño del parte impreso: papel con aire, doble filete, numeros en caja ---- */
+#parte{font-size:10.2pt;color:#101418}
+#parte .head{border-bottom:none;padding-bottom:13px;position:relative;margin-bottom:2px}
+#parte .head:after{content:"";position:absolute;left:0;right:0;bottom:0;height:4.5px;
+ border-top:2.6px solid #101418;border-bottom:.6pt solid #101418}
+#parte .wm{font-size:19pt}
+#parte .dt{font-size:16pt;margin-top:8px;letter-spacing:-.01em}
+#parte .std{font-size:8.8pt;margin-top:2px;color:#8a92a0}
+#parte .ctrl{border:1pt solid #101418;min-width:238px}
+#parte .ctrl .cr{padding:3.6px 8px}
+#parte h4{border-bottom:.6pt solid #101418;font-size:8.8pt;letter-spacing:.24em;
+ padding-bottom:0;margin:15px 0 7px;align-items:stretch;justify-content:flex-start;gap:10px}
+#parte h4 .nn{display:inline-block;background:#101418;color:#fff;
+ font:700 8.6pt/1 "SF Mono",Menlo,monospace;letter-spacing:0;padding:4px 7.5px 5px;align-self:flex-start}
+#parte .fl>div{padding:8px 16px 7px 0}
+#parte .fl .k{font-size:6.8pt;letter-spacing:.14em;color:#98a0ac}
+#parte .fl .v{font-size:10.6pt;border-bottom:.5pt solid #e0e4ea;padding-bottom:4px;margin-top:3.5px}
+#parte .rep th{color:#101418;border-bottom:1.6px solid #101418;padding-bottom:4.5px}
+#parte .rep td{padding:4.6px 6px}
+#parte .rep tr.buena td{background:#f2f7f3}
+#parte .rep tr.buena td:first-child{box-shadow:inset 2.2px 0 0 #1e6f4f}
+#parte .rep .cir{color:#1e6f4f;font-size:9pt}
+#parte .rep tr.cont td{box-shadow:none;background:#fff}
+#parte .sum{border:none;border-top:2.2px solid #101418;border-bottom:.6pt solid #101418;margin-top:7px}
+#parte .sum > div{padding:8px 13px;border-right:.5pt solid #e0e4ea}
+#parte .sum > div:last-child{border-right:none}
+#parte .sum b{font-size:18.5pt;letter-spacing:-.02em}
+#parte .sum span{font-size:6.7pt;letter-spacing:.13em;color:#8a92a0}
+#parte .sum.pies > div:first-child b{color:#1e6f4f}
+#parte .sum + .sum{border-top:none;margin-top:0}
+#parte .decl{border:none;border-left:2.6px solid #101418;background:#f7f8fa;padding:10px 15px;margin-top:9px}
+#parte .sig{gap:18px;margin-top:13px}
+#parte .sig .box{height:52px;border:.5pt solid #c9cfd8}
+#parte .ffoot{margin-top:13px;border-top:.5pt solid #c9cfd8}
 .doc .rep th{font-size:6.4pt;letter-spacing:.09em}
 .doc .rep thead{display:table-header-group}
 .doc .rep td{padding:3.2px 5px;vertical-align:top}
@@ -459,7 +493,7 @@ html:not(.pfilm) #filmRollo,html:not(.pfilm) #cardLab{display:none}
 }
 /* la tira vacía no dice nada que el usuario no sepa: fuera hasta que haya proyecto */
 .tira.vacia{display:none}
-@page{size:A4;margin:6mm 7mm}
+@page{size:A4;margin:13mm 15mm}
 
 .tg{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-top:1px solid var(--line);flex-wrap:wrap}
 .tg img{width:104px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:#000;cursor:zoom-in}
@@ -5105,16 +5139,16 @@ function renderParte(){
     </div>
   </div>
 
-  <h4>1 · Producción</h4>
+  <h4><span class="nn">1</span>Producción</h4>
   <div class="fl">${F("Proyecto", P.proyecto)}${F("Producción / cliente", P.productora)}
     ${F("Unidad", P.unidad)}${F("Localización", P.localizacion)}
     ${F("Casa de renta", P.casa)}</div>
 
-  <h4>2 · Responsables</h4>
+  <h4><span class="nn">2</span>Responsables</h4>
   <div class="fl">${F("Director de fotografía", R.dop)}${F("Foquista / parte", R.ac || P.por)}
     ${F("Auxiliar · 2º AC", R.ac2)}${film ? F("Cargado por", R.loader) : F("Técnico de cámara / DIT", P.dit)}</div>
 
-  <h4>3 · Cámara y rollo</h4>
+  <h4><span class="nn">3</span>Cámara y rollo</h4>
   <div class="fl">${F("Cuerpo", R.body)}${F("Formato de captura", R.fmt)}${film ? `
     ${F("Emulsión", R.emul)}${F("Lote / batch", R.lote)}
     ${F("Nº de magazine", R.mag)}${F("Carga", R.carga ? R.carga + " " + uTxt() : "")}
@@ -5126,13 +5160,13 @@ function renderParte(){
     ${film ? "" : F("LUT / look", R.lut)}${F("Filtros fijos", R.filt)}
     ${(S.parte.camposRollo || []).map(n => F(n, (R.extra || {})[n])).join("")}</div>${film ? `
 
-  <h4>4 · Laboratorio</h4>
+  <h4><span class="nn">4</span>Laboratorio</h4>
   <div class="fl">${F("Laboratorio", R.lab)}${F("Revelado", R.rev || "Normal")}
     ${F("Positivado / escaneo", R.copia || "Best light")}
     ${F("Fin del rollo", pf && pf.ultimo !== null ? pf.ultimo + " " + uTxt() : "")}
     ${F("Instrucciones", R.labnotas)}</div>` : ""}
 
-  <h4>${film ? "5" : "4"} · Tomas</h4>
+  <h4><span class="nn">${film ? "5" : "4"}</span>Tomas</h4>
   ${film ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:6%"><col style="width:4.5%">
     <col style="width:3%"><col style="width:19%"><col style="width:20%"><col style="width:5%">
     <col style="width:10%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
@@ -5147,8 +5181,8 @@ function renderParte(){
     <th>Dur.</th></tr></thead>
     <tbody>${filas || `<tr><td colspan="13" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`}
 
-  <h4>${film ? "6" : "5"} · Resumen del rollo</h4>
-  ${film ? `<div class="sum">
+  <h4><span class="nn">${film ? "6" : "5"}</span>Resumen del rollo</h4>
+  ${film ? `<div class="sum pies">
     <div><b>${pf.G} ${uTxt()}</b><span>G · buenas (imprimir)</span></div>
     <div><b>${pf.NG} ${uTxt()}</b><span>NG · no buenas</span></div>
     <div><b>${pf.W} ${uTxt()}</b><span>W · desperdicio</span></div>
