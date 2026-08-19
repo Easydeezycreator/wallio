@@ -1030,6 +1030,7 @@ html.solo-parte .portada{display:none}
     </div>
     <div class="hint" id="l_resumen"></div>
     <div class="hint" id="l_stock" hidden></div>
+    <div class="hint" id="l_juego" hidden></div>
   </div>
   <div class="card">
     <h2>Foto del número de serie</h2>
@@ -1820,6 +1821,7 @@ function syncLens(){
   if (typeof pintaFotoSerial === "function") pintaFotoSerial();
   if (typeof autoMinimo === "function") autoMinimo();
   if (typeof stockDeLaOptica === "function") stockDeLaOptica();
+  if (typeof juegoDelStock === "function") juegoDelStock();
 }
 /* coloca una óptica en la interfaz venga del catálogo o no */
 function setLens(L){
@@ -2078,6 +2080,46 @@ async function stockMira(serial){
       traduce("enlace para el DIT") + "</button>" +
     '<button class="ghost" onclick="anadeLente()">' + traduce("Añadir otra óptica") + "</button></div>";
 }
+/* el juego entero (campo Set), listado desde el stock: una línea por
+   óptica con su semáforo, por focal — para comprobar de un vistazo que
+   el juego compartido es el que hace falta */
+let L_JUEGO_T = null;
+function juegoDelStock(){
+  const caja = $("l_juego"); if (!caja) return;
+  const juego = ((S.lens && S.lens.set) || "").trim();
+  if (!juego || !NB.url || !NB.key || !NB.casa){ caja.hidden = true; return; }
+  clearTimeout(L_JUEGO_T);
+  L_JUEGO_T = setTimeout(function(){ juegoMira(juego); }, 600);
+}
+async function juegoMira(juego){
+  const caja = $("l_juego"); if (!caja) return;
+  caja.hidden = false; caja.className = "hint";
+  caja.textContent = traduce("Buscando el juego en el stock…");
+  let lista = [];
+  try {
+    const todo = (await nbPide("/rest/v1/rpc/listar_fichas", {p_casa: NB.casa})) || [];
+    const del = todo.filter(function(x){ return wlNorm(x.juego || "") === wlNorm(juego); });
+    if (!del.length){
+      caja.textContent = traduce("De este juego no hay ninguna óptica en el stock todavía.");
+      return;
+    }
+    lista = (await nbPide("/rest/v1/rpc/buscar_fichas",
+              {p_casa: NB.casa, p_claves: del.map(function(x){ return x.clave; })})) || [];
+  } catch(e){ caja.textContent = traduce("El stock no contesta ahora mismo."); return; }
+  const pedidas = areasPedidas();
+  lista.sort(function(a, b){ return (parseFloat(a.focal) || 0) - (parseFloat(b.focal) || 0); });
+  caja.innerHTML = "<b>" + traduce("El juego en el stock:") + " " + esc(juego) + " · " +
+      lista.length + " " + traduce("ópticas") + "</b>" +
+    lista.map(function(f){
+      const v = veredicto(f, pedidas);
+      return '<div class="sem"><div class="luz ' + v.luz + '"></div><div class="c">' +
+        '<div class="n"><b>' + esc(f.fabricante + " " + f.familia + " " + f.focal + " mm") +
+        "</b> · " + esc(f.serial) + "</div>" +
+        '<div class="acc"><button class="ghost" onclick="traeFicha(\'' + esc(f.clave) + '\')">' +
+        traduce("usar en este proyecto") + "</button></div></div></div>";
+    }).join("");
+}
+
 /* guardar la óptica nueva en el stock desde la propia pestaña: el mismo
    camino que «Subir esta ficha» (cola sin red, fusión de choques), y al
    terminar se vuelve a mirar el stock para que la caja diga la verdad */
@@ -3736,6 +3778,7 @@ function nbPinta(){
   if (!navigator.onLine && hayCasa){ clase = "esp"; txt += " · " + traduce("sin red"); }
   pt.className = "pt " + clase; tx.textContent = txt;
   if (typeof stockDeLaOptica === "function") stockDeLaOptica();
+  if (typeof juegoDelStock === "function") juegoDelStock();
 }
 async function nbPide(ruta, cuerpo, conSesion){
   if (!NB.url || !NB.key) throw new Error(traduce("Falta configurar la conexión."));
@@ -5261,6 +5304,10 @@ const EN = {
 "Enlace copiado para el DIT, caduca el":"Link copied for the DIT, expires on",
 "Guardar en el stock":"Save to the stock","Añadir otra óptica":"Add another lens",
 "Guardando en el stock…":"Saving to the stock…",
+"Buscando el juego en el stock…":"Searching the stock for the set…",
+"De este juego no hay ninguna óptica en el stock todavía.":
+ "No lens of this set is in the stock yet.",
+"El juego en el stock:":"The set in the stock:","ópticas":"lenses",
 "¿Otra óptica? Las capturas de esta solo quedan si la guardaste en el stock. La producción, la cámara y las distancias se conservan.":
  "Another lens? This one's captures only remain if you saved it to the stock. Production, camera and distances are kept.",
 "ópticas buscadas":"lenses searched",
@@ -5803,6 +5850,7 @@ function cambiaIdioma(){
   aplicaIdioma();
   if (typeof focosAlIdioma === "function") focosAlIdioma();
   if (typeof stockDeLaOptica === "function") stockDeLaOptica();
+  if (typeof juegoDelStock === "function") juegoDelStock();
 }
 /* el «Mínimo» de fábrica habla el idioma en uso; las tomas viajan con el nombre */
 function focosAlIdioma(){

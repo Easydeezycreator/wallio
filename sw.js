@@ -6,7 +6,7 @@
    próxima vez: así nunca esperas a la red, pero tampoco te quedas anclado
    a una versión vieja.                                                     */
 
-const VERSION = "wallio-v26";
+const VERSION = "wallio-v27";
 const BASICOS = [
   "./",
   "./index.html",
