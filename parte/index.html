@@ -16,6 +16,7 @@
  --bg:#0b0d10; --panel:#12151a; --band:#000; --line:#242a33; --line2:#171c23;
  --tx:#e8ebf0; --tx2:#8b95a5; --tx3:#5c6675;
  --ok:#3f9e73; --warn:#b8891f; --err:#c4544b; --sel:#e8ebf0;
+ --camA:#e5484d; --camB:#3b82f6; --camC:#f5c518; --camD:#22b060;
  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --tap:46px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -439,6 +440,26 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
  text-overflow:ellipsis;white-space:nowrap}
 .toma .th button{min-height:30px;min-width:52px;flex:0 0 auto;font-size:9.5px;padding:0 9px}
 .toma .th button.si{background:var(--ok);border-color:var(--ok);color:#04160e}
+/* ---- v48: multicámara A/B/C (rojo / azul / amarillo, dictado) ---- */
+.camSel button{min-width:46px;font-weight:800;letter-spacing:.08em}
+.camSel button[data-cam="A"]{color:var(--camA);border-color:var(--camA)}
+.camSel button[data-cam="B"]{color:var(--camB);border-color:var(--camB)}
+.camSel button[data-cam="C"]{color:var(--camC);border-color:var(--camC)}
+.camSel button.on[data-cam="A"]{background:var(--camA);color:#fff}
+.camSel button.on[data-cam="B"]{background:var(--camB);color:#fff}
+.camSel button.on[data-cam="C"]{background:var(--camC);color:#171200}
+.camSel button[data-cam="D"]{color:var(--camD);border-color:var(--camD)}
+.camSel button.on[data-cam="D"]{background:var(--camD);color:#04160e}
+#listaTomas.mc .toma.camA{border-left:3px solid var(--camA)}
+#listaTomas.mc .toma.camB{border-left:3px solid var(--camB)}
+#listaTomas.mc .toma.camC{border-left:3px solid var(--camC)}
+#listaTomas.mc .toma.camD{border-left:3px solid var(--camD)}
+.camchip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  min-width:22px;height:22px;border-radius:6px;font:800 12px/1 var(--mono);margin-right:2px}
+.camchip.camA{background:var(--camA);color:#fff}
+.camchip.camB{background:var(--camB);color:#fff}
+.camchip.camC{background:var(--camC);color:#171200}
+.camchip.camD{background:var(--camD);color:#04160e}
 html.pfilm .f:has(> #r_media),html.pfilm .f:has(> #r_codec),
 html.pfilm .f:has(> #r_wb),html.pfilm .f:has(> #r_lut){display:none}
 html.pfilm #listaTomas .f[data-k="clip"],html.pfilm #listaTomas .f[data-k="tc"],
@@ -547,6 +568,23 @@ html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){displ
 }
 /* la tira vacía no dice nada que el usuario no sepa: fuera hasta que haya proyecto */
 .tira.vacia{display:none}
+/* ---- v48: multicam con color en el impreso ---- */
+.camtag{display:inline-block;font:800 9.5pt/1 var(--sans);letter-spacing:.14em;
+  padding:3px 8px;border:1.4pt solid #454d59;border-radius:6px;margin:6px 0 4px}
+.camtag.camA{color:#b3261e;border-color:#b3261e}
+.camtag.camB{color:#1a5fb4;border-color:#1a5fb4}
+.camtag.camC{color:#8a6d00;border-color:#8a6d00}
+.camtag.camD{color:#15803d;border-color:#15803d}
+.camblock{border-left:2.2pt solid #adb4bf;padding-left:9px;margin:0 0 8px}
+.camblock.camA{border-left-color:#b3261e}
+.camblock.camB{border-left-color:#1a5fb4}
+.camblock.camC{border-left-color:#8a6d00}
+.camblock.camD{border-left-color:#15803d}
+.rep td.camtd{font-weight:800;font-family:var(--sans)}
+tr.camA td.camtd{color:#b3261e}
+tr.camB td.camtd{color:#1a5fb4}
+tr.camC td.camtd{color:#8a6d00}
+tr.camD td.camtd{color:#15803d}
 @page{size:A4;margin:18mm 20mm}
 
 .tg{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-top:1px solid var(--line);flex-wrap:wrap}
@@ -1255,6 +1293,12 @@ html.solo-parte .portada{display:none}
       <button id="tp_dig" class="primary" onclick="ponTipo('digital')">Digital</button>
       <button id="tp_film" class="ghost" onclick="ponTipo('film')">Película</button>
     </div>
+    <div class="btnrow camSel" id="camSelRollo">
+      <button data-cam="A" class="on" onclick="cambiaCam('A')">A</button>
+      <button data-cam="B" onclick="cambiaCam('B')">B</button>
+      <button data-cam="C" onclick="cambiaCam('C')">C</button>
+      <button data-cam="D" onclick="cambiaCam('D')">D</button>
+    </div>
     <div class="grid">
       <div class="f"><label>Cámara</label><input id="r_cam" placeholder="A" autocomplete="off"></div>
       <div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div>
@@ -1291,6 +1335,12 @@ html.solo-parte .portada{display:none}
   <div class="card">
     <h2>Tomas</h2>
     <div id="listaTomas"></div>
+    <div class="btnrow camSel" id="camSelTomas">
+      <button data-cam="A" class="on" onclick="cambiaCam('A')">A</button>
+      <button data-cam="B" onclick="cambiaCam('B')">B</button>
+      <button data-cam="C" onclick="cambiaCam('C')">C</button>
+      <button data-cam="D" onclick="cambiaCam('D')">D</button>
+    </div>
     <div class="btnrow">
       <button class="primary" onclick="nuevaToma(false)">+ Toma</button>
       <button onclick="nuevaToma(true)">+ Escena</button>
@@ -4659,6 +4709,7 @@ function cargaParte(file){
     guarda();
     if (d.prod) S.prod = Object.assign({}, S.prod, d.prod);
     S.parte = {roll: d.roll || {}, tomas: d.tomas || [],
+               camActiva: d.camActiva || "A", camsGuardadas: d.camsGuardadas || {},
                campos: d.campos || [], camposRollo: d.camposRollo || []};
     fillProd(); fillProdParte(); fillParte(); renderTomas();
     renderCampos(); renderRollExtra(); updateChip(); autoguarda();
@@ -4936,6 +4987,43 @@ function tomaVacia(){
 const R_CAMPOS = ["cam","roll","body","fmt","media","codec","fps","ei","shutter","wb","lut","filt"];
 const R2_CAMPOS = ["lab","mag","emul","lote","carga","unidad","perf","loader","dial0","rev","copia","labnotas"];
 const FPP = {"4":16, "3":64/3, "2":32, "16":40, "65":12.8};
+/* ---- v48: multicámara. La cámara ACTIVA vive en S.parte.roll (todo el código
+   de siempre sigue funcionando igual); las otras esperan con su configuración
+   completa en S.parte.camsGuardadas. Cada toma queda marcada en t.camLetra.
+   Con UNA sola cámara en uso el parte queda EXACTAMENTE como siempre. ---- */
+const CAM_LETRAS = ["A", "B", "C", "D"];
+function camActiva(){ return (S.parte && S.parte.camActiva) || "A"; }
+function configDe(letra){
+  if (letra === camActiva()) return S.parte.roll || {};
+  return ((S.parte && S.parte.camsGuardadas) || {})[letra] || {};
+}
+function camarasEnUso(){
+  const set = new Set((S.parte.tomas || []).map(t => t.camLetra || "A"));
+  return CAM_LETRAS.filter(l => set.has(l));
+}
+function esMulticam(){ return camarasEnUso().length > 1; }
+function cambiaCam(letra){
+  if (CAM_LETRAS.indexOf(letra) < 0 || letra === camActiva()){ pintaCams(); return; }
+  guarda();
+  S.parte.camsGuardadas = S.parte.camsGuardadas || {};
+  S.parte.camsGuardadas[camActiva()] = S.parte.roll;
+  const previa = S.parte.roll || {};
+  let sig = S.parte.camsGuardadas[letra];
+  if (!sig) sig = { tipo: previa.tipo || "digital", unidad: previa.unidad || "ft" };
+  delete S.parte.camsGuardadas[letra];
+  S.parte.roll = sig;
+  S.parte.camActiva = letra;
+  const c = String(S.parte.roll.cam || "").trim().toUpperCase();
+  if (!c || CAM_LETRAS.indexOf(c) >= 0) S.parte.roll.cam = letra;
+  ponTipo(S.parte.roll.tipo || "digital");
+  fillParte(); renderRollExtra(); renderTomas(); pintaCams();
+}
+function pintaCams(){
+  document.querySelectorAll(".camSel").forEach(caja => {
+    caja.querySelectorAll("button").forEach(b =>
+      b.classList.toggle("on", b.getAttribute("data-cam") === camActiva()));
+  });
+}
 function esFilm(){ return ((S.parte.roll || {}).tipo || "digital") === "film"; }
 function pasoTexto(p){ return {"4":"35 mm · 4 perf","3":"35 mm · 3 perf","2":"35 mm · 2 perf",
   "16":"16 mm","65":"65 mm · 5 perf"}[p || "4"]; }
@@ -4983,18 +5071,23 @@ function pintaTipo(){
 }
 function piesDeToma(i){
   const L = S.parte.tomas, t = L[i] || {};
+  const letra = t.camLetra || "A";               /* v48: cada cámara lleva su contador */
   const p = parseFloat(t.pies);
   if ((t.pies || "") !== "" && !isNaN(p)) return p;
   const d = parseFloat(t.dial); if (isNaN(d)) return 0;
-  let prev = parseFloat((S.parte.roll || {}).dial0) || 0;
-  for (let j = i - 1; j >= 0; j--){ const dj = parseFloat(L[j].dial); if (!isNaN(dj)){ prev = dj; break; } }
+  let prev = parseFloat(configDe(letra).dial0) || 0;
+  for (let j = i - 1; j >= 0; j--){
+    if ((L[j].camLetra || "A") !== letra) continue;
+    const dj = parseFloat(L[j].dial); if (!isNaN(dj)){ prev = dj; break; } }
   return Math.max(0, red(d - prev));
 }
-function piesResumen(){
-  const L = S.parte.tomas, R = S.parte.roll || {};
+function piesResumen(letra){
+  letra = letra || camActiva();                   /* v48: resumen POR cámara */
+  const L = S.parte.tomas, R = configDe(letra);
   const dial0 = parseFloat(R.dial0) || 0;
   let suma = 0, G = 0, NG = 0, ultimo = null;
-  L.forEach((t, i) => { const p = piesDeToma(i); suma += p; if (t.ok) G += p; else NG += p;
+  L.forEach((t, i) => { if ((t.camLetra || "A") !== letra) return;
+    const p = piesDeToma(i); suma += p; if (t.ok) G += p; else NG += p;
     const d = parseFloat(t.dial); if (!isNaN(d) && (ultimo === null || d > ultimo)) ultimo = d; });
   const T = ultimo !== null ? Math.max(0, red(ultimo - dial0)) : red(suma);
   const W = Math.max(0, red(T - red(G) - red(NG)));
@@ -5077,9 +5170,9 @@ function renderTomas(){
         <input value="${esc((t.extra || {})[n] || "")}"
           oninput="if(!S.parte.tomas[${i}].extra)S.parte.tomas[${i}].extra={};S.parte.tomas[${i}].extra['${esc(n)}']=this.value"
           onchange="renderTomas()" autocomplete="off"></div>`).join("");
-    return `<div class="toma">
+    return `<div class="toma cam${t.camLetra || "A"}">
       <div class="th">
-        <div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
+        ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}</div>
         <button class="${t.mos ? "si" : ""}" onclick="guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
         <button class="${t.ok ? "si" : ""}" onclick="guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
@@ -5087,7 +5180,8 @@ function renderTomas(){
       </div>
       <div class="row">${campos}${propios}</div></div>`;
   }).join("") : '<div class="empty">Sin tomas todavía. Pulsa «+ Toma».</div>';
-  resumenParte(); fillParte(); updateChip();
+  $("listaTomas").classList.toggle("mc", esMulticam());
+  resumenParte(); fillParte(); updateChip(); pintaCams();
 }
 function renderRollExtra(){
   const c = $("rollExtra"); if (!c) return;
@@ -5131,8 +5225,11 @@ function renderCampos(){
 }
 function nuevaToma(nuevaEscena){
   guarda();
-  const L = S.parte.tomas, u = L[L.length - 1];
+  const L = S.parte.tomas;
+  let u = null;
+  for (let j = L.length - 1; j >= 0; j--){ if ((L[j].camLetra || "A") === camActiva()){ u = L[j]; break; } }
   const t = u ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
+  t.camLetra = camActiva();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
   t.clip = ""; t.dial = ""; t.pies = ""; t.mos = false;
   if (nuevaEscena){ t.sc = ""; t.tk = "1"; }
@@ -5184,13 +5281,16 @@ function parteId(){
 function renderParte(){
   const P = S.prod, R = S.parte.roll, L = S.parte.tomas, t = resumenParte();
   const film = esFilm(), pf = film ? piesResumen() : null;
+  const mc = esMulticam(), usadas = mc ? camarasEnUso() : [camActiva()];
+  const uT = c => ((c || {}).unidad === "m") ? "m" : "ft";
   const hoy = new Date().toISOString().slice(0, 10);
-  const ver = codigoDe(JSON.stringify({r: R, t: L, p: P}));
+  const ver = codigoDe(JSON.stringify({r: R, c: S.parte.camsGuardadas || {}, t: L, p: P}));
   const F = (k, v) => `<div><div class="k">${k}</div><div class="v">${esc(v || "—")}</div></div>`;
   const conGrid = norm(S.lens.serial) && Object.keys(S.takes).length;
 
   const par = (et, v) => v ? `<b>${esc(et)}</b> ${esc(v)}` : "";
   const filas = L.map((x, i) => {
+    const xl = x.camLetra || "A";
     const ficha = conGrid && norm(x.serial) === norm(S.lens.serial);
     const tr = [x.tilt ? "tilt " + x.tilt : "", x.roll ? "roll " + x.roll : ""].filter(Boolean).join(" · ");
     const extra = Object.entries(x.extra || {}).map(([k, v]) => par(k, v)).filter(Boolean);
@@ -5205,8 +5305,9 @@ function renderParte(){
       : `<td class="mo">${esc(x.alt || "—")}${tr ? `<span class="sn">${esc(tr)}</span>` : ""}</td>
       <td class="mo">${esc(x.tc || "—")}</td>
       <td class="mo">${esc(x.dur ? x.dur + " s" : "—")}</td>`;
-    return `<tr class="${x.ok ? "buena" : ""}">
-      <td class="n">${String(i+1).padStart(2,"0")}</td>
+    return `<tr class="${x.ok ? "buena" : ""} cam${xl}">
+      <td class="n">${String(i+1).padStart(2,"0")}</td>${mc ? `
+      <td class="camtd">${xl}</td>` : ""}
       <td class="sl">${esc(x.sc || "—")}</td>
       <td class="sl">${esc(x.tk || "—")}</td>
       <td><span class="cir">${x.ok ? "◯" : ""}</span></td>
@@ -5219,7 +5320,7 @@ function renderParte(){
       <td class="mo fo">${esc(x.foco || "—")}</td>
       ${finales}</tr>` +
       (cont ? `<tr class="cont ${x.ok ? "buena" : ""}"><td></td>
-        <td colspan="${film ? 10 : 12}">${cont}</td></tr>` : "");
+        <td colspan="${(film ? 10 : 12) + (mc ? 1 : 0)}">${cont}</td></tr>` : "");
   }).join("");
 
   $("parte").innerHTML = `
@@ -5233,7 +5334,7 @@ function renderParte(){
     <div class="ctrl">
       <div class="ch">Control de documento</div>
       <div class="cr"><b>Nº de parte</b><span>${esc(parteId())}</span></div>
-      <div class="cr"><b>Cámara / rollo</b><span>${esc((R.cam || "—") + " · " + (R.roll || "—"))}</span></div>${film && R.lab ? `
+      <div class="cr"><b>Cámara / rollo</b><span>${esc(mc ? usadas.map(l => l + " · " + (configDe(l).roll || "—")).join("  /  ") : (R.cam || "—") + " · " + (R.roll || "—"))}</span></div>${film && R.lab ? `
       <div class="cr"><b>Laboratorio</b><span>${esc(R.lab)}</span></div>` : ""}
       <div class="cr"><b>Fecha</b><span>${esc(P.fecha || hoy)}</span></div>
       <div class="cr"><b>Nº de jornada</b><span>${esc(P.jornada || "—")}</span></div>
@@ -5252,16 +5353,20 @@ function renderParte(){
     ${F("Auxiliar · 2º AC", P.ac2 ?? R.ac2)}${F("VTR", P.vtr)}${film ? F("Cargado por", R.loader) : F("Técnico de cámara / DIT", P.dit)}</div>
 
   <h4><span class="nn">3</span>Cámara y rollo</h4>
-  <div class="fl">${F("Cuerpo", R.body)}${F("Formato de captura", R.fmt)}${film ? `
-    ${F("Emulsión", R.emul)}${F("Lote / batch", R.lote)}
-    ${F("Nº de magazine", R.mag)}${F("Carga", R.carga ? R.carga + " " + uTxt() : "")}
-    ${F("Paso", pasoTexto(R.perf))}
-    ${F("Contador al empezar", (R.dial0 || "0") + " " + uTxt())}` : `
-    ${F("Codec / emulsión", R.codec)}${F("Soporte", R.media)}`}
-    ${F("Fotogramas por segundo", R.fps)}${F("EI / ISO", R.ei)}
-    ${F("Obturador", R.shutter)}${film ? "" : F("Temperatura de color", R.wb)}
-    ${film ? "" : F("LUT / look", R.lut)}${F("Filtros fijos", R.filt)}
-    ${(S.parte.camposRollo || []).map(n => F(n, (R.extra || {})[n])).join("")}</div>${film ? `
+  ${(mc ? usadas : [null]).map(le => { const C = le ? configDe(le) : R;
+    const cf = (C.tipo || "digital") === "film";
+    const dentro = `${mc ? F("Cámara", C.cam || le) + F("Rollo / magazine", C.roll) : ""}${F("Cuerpo", C.body)}${F("Formato de captura", C.fmt)}${cf ? `
+    ${F("Emulsión", C.emul)}${F("Lote / batch", C.lote)}
+    ${F("Nº de magazine", C.mag)}${F("Carga", C.carga ? C.carga + " " + uT(C) : "")}
+    ${F("Paso", pasoTexto(C.perf))}
+    ${F("Contador al empezar", (C.dial0 || "0") + " " + uT(C))}` : `
+    ${F("Codec / emulsión", C.codec)}${F("Soporte", C.media)}`}
+    ${F("Fotogramas por segundo", C.fps)}${F("EI / ISO", C.ei)}
+    ${F("Obturador", C.shutter)}${cf ? "" : F("Temperatura de color", C.wb)}
+    ${cf ? "" : F("LUT / look", C.lut)}${F("Filtros fijos", C.filt)}
+    ${(S.parte.camposRollo || []).map(n => F(n, (C.extra || {})[n])).join("")}`;
+    return mc ? `<div class="camblock cam${le}"><span class="camtag cam${le}">CAM ${le}</span>
+  <div class="fl">${dentro}</div></div>` : `<div class="fl">${dentro}</div>`; }).join("")}${film ? `
 
   <h4><span class="nn">4</span>Laboratorio</h4>
   <div class="fl">${F("Laboratorio", R.lab)}${F("Revelado", R.rev || "Normal")}
@@ -5270,28 +5375,35 @@ function renderParte(){
     ${F("Instrucciones", R.labnotas)}</div>` : ""}
 
   <h4><span class="nn">${film ? "5" : "4"}</span>Tomas</h4>
-  ${film ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:6%"><col style="width:4.5%">
-    <col style="width:3%"><col style="width:19%"><col style="width:20%"><col style="width:5%">
+  ${film ? `<table class="rep"><colgroup><col style="width:3%">${mc ? `<col style="width:3.4%">` : ""}<col style="width:6%"><col style="width:4.5%">
+    <col style="width:3%"><col style="width:${mc ? "15.6" : "19"}%"><col style="width:20%"><col style="width:5%">
     <col style="width:10%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
-    <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th>
+    <thead><tr><th>#</th>${mc ? "<th>CAM</th>" : ""}<th>Escena</th><th>Toma</th><th></th><th>Descripción</th>
     <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Contador</th><th>Metraje</th></tr></thead>
-    <tbody>${filas || `<tr><td colspan="11" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`
-  : `<table class="rep"><colgroup><col style="width:3%"><col style="width:5%"><col style="width:4%">
-    <col style="width:3%"><col style="width:14.5%"><col style="width:9%"><col style="width:13.5%"><col style="width:4.5%">
+    <tbody>${filas || `<tr><td colspan="${mc ? 12 : 11}" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`
+  : `<table class="rep"><colgroup><col style="width:3%">${mc ? `<col style="width:3.2%">` : ""}<col style="width:5%"><col style="width:4%">
+    <col style="width:3%"><col style="width:${mc ? "11.3" : "14.5"}%"><col style="width:9%"><col style="width:13.5%"><col style="width:4.5%">
     <col style="width:7%"><col style="width:7.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:5.5%"></colgroup>
-    <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th><th>Archivo</th>
+    <thead><tr><th>#</th>${mc ? "<th>CAM</th>" : ""}<th>Escena</th><th>Toma</th><th></th><th>Descripción</th><th>Archivo</th>
     <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Altura</th><th>Timecode</th>
     <th>Dur.</th></tr></thead>
-    <tbody>${filas || `<tr><td colspan="13" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`}
+    <tbody>${filas || `<tr><td colspan="${mc ? 14 : 13}" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`}
 
   <h4><span class="nn">${film ? "6" : "5"}</span>Resumen del rollo</h4>
-  ${film ? `<div class="sum pies">
+  ${film ? (mc ? usadas.map(le => { const pl = piesResumen(le), uu = uT(configDe(le));
+    return `<span class="camtag cam${le}">CAM ${le}</span><div class="sum pies">
+    <div><b>${pl.G} ${uu}</b><span>G · buenas (imprimir)</span></div>
+    <div><b>${pl.NG} ${uu}</b><span>NG · no buenas</span></div>
+    <div><b>${pl.W} ${uu}</b><span>W · desperdicio</span></div>
+    <div><b>${pl.T} ${uu}</b><span>T · expuesto</span></div>
+    <div><b>${pl.SE === null ? "—" : pl.SE + " " + uu}</b><span>SE · cola sin exponer</span></div>
+  </div>`; }).join("") : `<div class="sum pies">
     <div><b>${pf.G} ${uTxt()}</b><span>G · buenas (imprimir)</span></div>
     <div><b>${pf.NG} ${uTxt()}</b><span>NG · no buenas</span></div>
     <div><b>${pf.W} ${uTxt()}</b><span>W · desperdicio</span></div>
     <div><b>${pf.T} ${uTxt()}</b><span>T · expuesto</span></div>
     <div><b>${pf.SE === null ? "—" : pf.SE + " " + uTxt()}</b><span>SE · cola sin exponer</span></div>
-  </div>
+  </div>`) + `
   <div class="sum">
     <div><b>${t.sc}</b><span>escenas</span></div>
     <div><b>${t.tk}</b><span>tomas</span></div>
@@ -5343,19 +5455,22 @@ function parteCSV(){
     "lote","carga","unidad_medida","paso","cargado_por","contador_inicial","revelado","positivado_escaneo",
     "instrucciones_lab"].concat(pr).concat(props);
   const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
-  const filas = S.parte.tomas.map((x, i) => [P.proyecto, P.fecha, P.jornada, R.cam, R.roll, R.body,
-    R.fmt, R.codec, R.media, x.sc, x.tk, x.ok ? "si" : "no", x.desc, x.serial, x.focal, x.t,
+  const filas = S.parte.tomas.map((x, i) => { /* v48: cada fila con SU cámara */
+    const C = configDe(x.camLetra || "A"), cf = (C.tipo || "digital") === "film";
+    return [P.proyecto, P.fecha, P.jornada, C.cam || x.camLetra || "A", C.roll, C.body,
+    C.fmt, C.codec, C.media, x.sc, x.tk, x.ok ? "si" : "no", x.desc, x.serial, x.focal, x.t,
     x.filt, x.foco, x.alt, x.tilt, x.roll, x.wb, x.fps, x.shutter, x.ei, x.lut, x.res, x.tc,
     x.dur, x.nota,
-    R.tipo || "digital", x.clip, x.mos ? "si" : "no", x.dial, esFilm() ? (piesDeToma(i) || "") : "",
-    R.lab, R.mag, R.emul, R.lote, R.carga, esFilm() ? (R.unidad || "ft") : "", esFilm() ? pasoTexto(R.perf) : "", R.loader,
-    R.dial0, R.rev, R.copia, R.labnotas].concat(pr.map(n => (R.extra || {})[n] || ""))
-    .concat(props.map(n => (x.extra || {})[n] || "")).map(q).join(","));
+    C.tipo || "digital", x.clip, x.mos ? "si" : "no", x.dial, cf ? (piesDeToma(i) || "") : "",
+    C.lab, C.mag, C.emul, C.lote, C.carga, cf ? (C.unidad || "ft") : "", cf ? pasoTexto(C.perf) : "", C.loader,
+    C.dial0, C.rev, C.copia, C.labnotas].concat(pr.map(n => (C.extra || {})[n] || ""))
+    .concat(props.map(n => (x.extra || {})[n] || "")).map(q).join(","); });
   descargar("﻿" + [cab.join(","), ...filas].join("\r\n"),
             "WALLIO_parte_" + (R.roll || "rollo") + ".csv", "text/csv");
 }
 function guardarParte(){
-  const data = {format:"wlg-03-parte", version:2, prod:S.prod, roll:S.parte.roll,
+  const data = {format:"wlg-03-parte", version:3, prod:S.prod, roll:S.parte.roll,
+                camActiva:camActiva(), camsGuardadas:S.parte.camsGuardadas || {},
                 campos:S.parte.campos || [], camposRollo:S.parte.camposRollo || [],
                 tomas:S.parte.tomas,
                 emitido:new Date().toISOString().slice(0,10)};
