@@ -108,6 +108,19 @@ button.danger{color:var(--err);border-color:rgba(196,84,75,.4)}
 .btnrow button{flex:1 1 108px}
 .btnrow button{flex:1;border:none;border-right:1px solid var(--line)}
 .btnrow button:last-child{border-right:none}
+/* v53: botones «añadir»/archivo pequeños y discretos dentro de su tarjeta */
+.btnrow.addmini{border:none;justify-content:flex-end;margin-top:6px}
+.btnrow.addmini button{flex:0 0 auto;min-height:0;font-size:9.5px;padding:6px 10px;
+  border:1px dashed var(--line);border-right:1px dashed var(--line);color:var(--tx2);
+  background:transparent;letter-spacing:.06em;margin-left:6px}
+.btnrow.addmini button:active{color:var(--tx)}
+/* v53: compartir arriba a la derecha, amarillo suave */
+#btnCompartir{color:#e8cc6a;border-color:rgba(217,181,69,.6);background:rgba(227,192,92,.13)}
+#pcPanel{position:fixed;top:60px;right:11px;z-index:9998;background:var(--panel);
+  border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:9px;
+  min-width:272px;max-width:88vw;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+#pcPanel button{min-height:38px}
+#pcPanel .hint{margin:0}
 
 .note{border-left:2px solid var(--tx);padding:1px 0 1px 10px;margin:9px 11px 0;
  font:11.5px/1.45 var(--mono);color:var(--tx2)}
@@ -1097,11 +1110,21 @@ html.solo-parte .portada{display:none}
   <div class="sp"></div>
   <span id="estadoGuardado" class="sv"></span>
   <button id="btnNueva" class="lang" onclick="aplicaActualizacion()" hidden style="color:#7fd6a2;border-color:rgba(127,214,162,.5)">Actualizar</button>
+  <button id="btnCompartir" class="lang" onclick="pcPanel()">Compartir</button>
   <button id="btnUndo" class="lang undo" onclick="deshacer()" hidden>Deshacer</button>
   <button id="btnLang" class="lang" onclick="cambiaIdioma()">EN</button>
   <div class="st"><b id="chipCov">—</b>cobertura</div>
   <span id="chipVis"></span>
 </header>
+<div id="pcPanel" hidden>
+  <button class="primary" onclick="pcCompartir()">Compartir este parte</button>
+  <div class="f"><label>Access project</label>
+    <input id="pc_proyecto" placeholder="Name of the project" autocomplete="off"
+      onkeydown="if(event.key==='Enter')pcEntrar()"></div>
+  <button onclick="pcEntrar()">Entrar</button>
+  <button class="ghost" onclick="pcSalir()">Salir</button>
+  <div class="hint" id="pc_estado">—</div>
+</div>
 
 <main>
 <div id="avisoBorrador" class="rescate" hidden style="margin:11px 11px 0">
@@ -1329,7 +1352,7 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Contador al empezar</label><input id="r2_dial0" inputmode="numeric" placeholder="0" autocomplete="off"></div>
     </div>
     <div id="rollExtra"></div>
-    <div class="btnrow"><button onclick="addCampoRollo()">+ Añadir campo del rollo</button></div>
+    <div class="btnrow addmini"><button onclick="addCampoRollo()">+ Añadir campo del rollo</button></div>
   </div>
 
   <div class="card">
@@ -1346,31 +1369,11 @@ html.solo-parte .portada{display:none}
       <button onclick="nuevaToma(true)">+ Escena</button>
       <button class="ghost" onclick="borrarToma(-1)">Borrar última</button>
     </div>
-  </div>
-
-  <div class="card">
-    <h2>Parte compartido</h2>
-    <div class="btnrow">
-      <button class="primary" onclick="pcCompartir()">Compartir este parte</button>
-      <button onclick="pcAccess()">Access project</button>
-      <button class="ghost" onclick="pcSalir()">Salir</button>
-    </div>
-    <div class="grid" id="pc_caja" hidden>
-      <div class="f"><label>Access project</label>
-        <input id="pc_proyecto" placeholder="Name of the project" autocomplete="off"
-          onkeydown="if(event.key==='Enter')pcEntrar()"></div>
-    </div>
-    <div class="btnrow" id="pc_cajabtn" hidden>
-      <button class="primary" onclick="pcEntrar()">Entrar</button>
-    </div>
-    <div class="hint" id="pc_estado">—</div>
-  </div>
-
-  <div class="card">
-    <h2>Campos adicionales</h2>
     <div id="listaCampos"></div>
-    <div class="btnrow"><button onclick="addCampo()">+ Añadir campo</button></div>
+    <div class="btnrow addmini"><button onclick="addCampo()">+ Añadir campo</button></div>
   </div>
+
+
 
   <div class="card" id="cardLab">
     <h2>Laboratorio</h2>
@@ -1397,11 +1400,14 @@ html.solo-parte .portada{display:none}
       <button class="primary" onclick="hacerParte()">Parte en PDF</button>
       <button onclick="hacerParte(camActiva())">PDF · solo mi cámara</button>
       <button onclick="parteCSV()">CSV</button>
+    </div>
+    <div class="btnrow">
+      <button onclick="ptSiguienteRollo()">Empezar el rollo siguiente</button>
+      <button onclick="jornadaSiguiente()">Empezar la jornada siguiente</button>
+    </div>
+    <div class="btnrow addmini">
       <button onclick="guardarParte()">Guardar parte</button>
-      <button class="ghost" onclick="document.getElementById('partIn').click()">Abrir un parte guardado</button>
-      <button class="ghost" onclick="ptArchiva(true)">Guardar en este dispositivo</button>
-      <button class="ghost" onclick="ptSiguienteRollo()">Empezar el rollo siguiente</button>
-      <button class="ghost" onclick="jornadaSiguiente()">Empezar la jornada siguiente</button>
+      <button onclick="document.getElementById('partIn').click()">Abrir un parte guardado</button>
     </div>
     <input type="file" id="partIn" accept=".json,application/json" style="display:none">
     <div class="hint" id="pt_msg"></div>
@@ -4894,8 +4900,11 @@ function jornadaSiguiente(){
   S.prod.fecha = hoyLocal();
   const R = Object.assign({}, S.parte.roll || {});
   if ((R.roll || "").trim()) R.roll = siguienteRollo(R.roll);
+  let camsSig = {};
+  try { camsSig = JSON.parse(JSON.stringify(S.parte.camsGuardadas || {})); } catch(e){}
   S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
-             camposRollo: (S.parte.camposRollo || []).slice()};
+             camposRollo: (S.parte.camposRollo || []).slice(),
+             camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig};
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
   fillParte(); renderTomas();
@@ -5021,8 +5030,11 @@ function ptSiguienteRollo(){
   ptArchiva(false);
   const R = Object.assign({}, S.parte.roll || {});
   R.roll = siguienteRollo(R.roll);
+  let camsSig = {};
+  try { camsSig = JSON.parse(JSON.stringify(S.parte.camsGuardadas || {})); } catch(e){}
   S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
-             camposRollo: (S.parte.camposRollo || []).slice()};
+             camposRollo: (S.parte.camposRollo || []).slice(),
+             camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig};
   fillParte(); renderTomas();
   if (typeof renderCampos === "function") renderCampos();
   if (typeof renderRollExtra === "function") renderRollExtra();
@@ -5580,7 +5592,7 @@ function descargar(texto, nombre, tipo){
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
 "Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only",
-"Compartir este parte":"Share this report","Entrar":"Enter","Compartido":"Sharing",
+"Compartir este parte":"Share this report","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share",
 "Escribe primero el Proyecto en Producción.":"Fill in the Project in Production first.",
 "Escribe el nombre del proyecto.":"Type the project name.",
 "No hay ningún parte compartido de ese proyecto (¿alguien pulsó ya Compartir?).":"There is no shared report for that project (did anyone tap Share yet?).",
@@ -6683,12 +6695,18 @@ function pcQuien(){
   if (n){ PC.quien = n; pcGuarda(); }
   return PC.quien || "";
 }
-function pcAccess(){
-  const c1 = $("pc_caja"), c2 = $("pc_cajabtn");
-  if (c1) c1.hidden = false;
-  if (c2) c2.hidden = false;
-  const e = $("pc_proyecto"); if (e){ e.removeAttribute("readonly"); e.focus(); }
+function pcPanel(){
+  const p = $("pcPanel"); if (!p) return;
+  p.hidden = !p.hidden;
+  if (!p.hidden){ const e = $("pc_proyecto"); if (e) e.removeAttribute("readonly"); }
 }
+document.addEventListener("pointerdown", ev => {
+  const p = $("pcPanel"); if (!p || p.hidden) return;
+  if (p.contains(ev.target)) return;
+  const b = $("btnCompartir");
+  if (b && (ev.target === b || b.contains(ev.target))) return;
+  p.hidden = true;
+});
 async function pcCompartir(){
   const nombre = (S.prod.proyecto || "").trim();
   if (!nombre) return pcEstado(traduce("Escribe primero el Proyecto en Producción."));
@@ -6801,6 +6819,8 @@ function pcAplica(d, primera){
   autoguarda();
 }
 function pcEstado(txt){
+  const b = $("btnCompartir");
+  if (b) b.textContent = PC.parte ? traduce("Compartido") : traduce("Compartir");
   const el = $("pc_estado"); if (!el) return;
   if (txt !== undefined){ el.textContent = txt; return; }
   if (!PC.parte){ el.textContent = "—"; return; }
@@ -6912,7 +6932,9 @@ document.addEventListener("focusin", e => {
 if (NB.rol) $("nb_rol").value = NB.rol;
 nbPinta();
 aplicaIdioma();
-recuperaBorrador();
+/* v53: el trabajo vuelve SOLO al abrir — sin barra ni botones. La barra de
+   rescate queda solo de respaldo por si algún día la restauración fallara. */
+if (hayBorrador()) retomaBorrador();
 if (NB.token && NB.casa) setTimeout(nbVaciaCola, 1200);
 
 /* ---------------- funcionar sin cobertura ----------------
