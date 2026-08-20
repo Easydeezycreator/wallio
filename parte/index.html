@@ -1129,11 +1129,10 @@ html.solo-parte .portada{display:none}
   <span id="chipVis"></span>
 </header>
 <div id="pcPanel" hidden>
-  <button class="primary" onclick="pcCompartir()">Compartir este parte</button>
-  <div class="f"><label>Access project</label>
+  <div class="f"><label>Introduce el nombre del proyecto</label>
     <input id="pc_proyecto" placeholder="Name of the project" autocomplete="off"
       onkeydown="if(event.key==='Enter')pcEntrar()"></div>
-  <button onclick="pcEntrar()">Entrar</button>
+  <button class="primary" onclick="pcEntrar()">Entrar</button>
   <button class="ghost" onclick="pcSalir()">Salir</button>
   <div class="hint" id="pc_estado">—</div>
 </div>
@@ -5599,7 +5598,7 @@ function descargar(texto, nombre, tipo){
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
 "Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only",
-"Compartir este parte":"Share this report","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share",
+"Compartir este parte":"Share this report","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Introduce el nombre del proyecto":"Enter the project name",
 "Escribe primero el Proyecto en Producción.":"Fill in the Project in Production first.",
 "Escribe el nombre del proyecto.":"Type the project name.",
 "No hay ningún parte compartido de ese proyecto (¿alguien pulsó ya Compartir?).":"There is no shared report for that project (did anyone tap Share yet?).",
@@ -6701,7 +6700,12 @@ function pcQuien(){
 function pcPanel(){
   const p = $("pcPanel"); if (!p) return;
   p.hidden = !p.hidden;
-  if (!p.hidden){ const e = $("pc_proyecto"); if (e) e.removeAttribute("readonly"); }
+  if (!p.hidden){
+    const e = $("pc_proyecto");
+    if (e){ e.removeAttribute("readonly");
+      if (!e.value.trim()) e.value = (S.prod.proyecto || "").trim();
+      setTimeout(() => e.focus(), 60); }
+  }
 }
 document.addEventListener("pointerdown", ev => {
   const p = $("pcPanel"); if (!p || p.hidden) return;
@@ -6713,36 +6717,41 @@ document.addEventListener("pointerdown", ev => {
 async function pcCompartir(){
   const nombre = (S.prod.proyecto || "").trim();
   if (!nombre) return pcEstado(traduce("Escribe primero el Proyecto en Producción."));
-  const fecha = (S.prod.fecha || "").trim() || pcHoy();
-  await pcAbrir(nombre, fecha, true);
+  await pcAbrir(nombre);
 }
 async function pcEntrar(){
   const el = $("pc_proyecto");
   const nombre = ((el && el.value) || "").trim();
   if (!nombre) return pcEstado(traduce("Escribe el nombre del proyecto."));
-  await pcAbrir(nombre, null, false);
+  if (!(S.prod.proyecto || "").trim()){
+    S.prod.proyecto = nombre;
+    if (typeof fillProd === "function") fillProd();
+    if (typeof fillProdParte === "function") fillProdParte();
+  }
+  await pcAbrir(nombre);
 }
-async function pcAbrir(nombre, fecha, creando){
+async function pcAbrir(nombre){
+  /* v58: UN solo camino — se entra si el parte ya existe (hoy, ayer o la fecha
+     de Producción) y si no existe SE CREA al momento. Nadie tiene que
+     «compartir primero». */
   pcEstado("…");
   const quien = pcQuien();
   try {
     let id = null, et = nombre;
-    if (creando){
-      PC.clave = pcClaveDe(nombre, fecha);
+    const fechas = [pcHoy(), pcAyer()];
+    const fp = (S.prod.fecha || "").trim();
+    if (fp && fechas.indexOf(fp) < 0) fechas.push(fp);
+    let d = null, usada = "";
+    for (const f of fechas){
+      try { d = await nbPide("/rest/v1/rpc/parte_entra_simple", { p_codigo: pcClaveDe(nombre, f) }, false);
+            usada = f; break; }
+      catch(e2){ d = null; }
+    }
+    if (d){ id = d.id; et = d.etiqueta || nombre; PC.clave = pcClaveDe(nombre, usada); }
+    else {
+      PC.clave = pcClaveDe(nombre, pcHoy());
       id = await nbPide("/rest/v1/rpc/parte_crea_simple",
         { p_codigo: PC.clave, p_etiqueta: nombre, p_quien: quien }, false);
-    } else {
-      const fechas = [pcHoy(), pcAyer()];
-      const fp = (S.prod.fecha || "").trim();
-      if (fp && fechas.indexOf(fp) < 0) fechas.push(fp);
-      let d = null, usada = "";
-      for (const f of fechas){
-        try { d = await nbPide("/rest/v1/rpc/parte_entra_simple", { p_codigo: pcClaveDe(nombre, f) }, false);
-              usada = f; break; }
-        catch(e2){ d = null; }
-      }
-      if (!d) throw new Error(traduce("No hay ningún parte compartido de ese proyecto (¿alguien pulsó ya Compartir?)."));
-      id = d.id; et = d.etiqueta || nombre; PC.clave = pcClaveDe(nombre, usada);
     }
     guarda();
     PC.parte = id; PC.etiqueta = et; PC.desde = ""; PC.vistos = {};
