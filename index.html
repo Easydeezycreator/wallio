@@ -4940,8 +4940,10 @@ function ptId(){
           slug(R.roll || "sin-rollo")].join("|");
 }
 function ptPaquete(){
-  return {format: "wlg-03-parte", version: 2, prod: S.prod,
+  return {format: "wlg-03-parte", version: 3, prod: S.prod,
           roll: (S.parte && S.parte.roll) || {},
+          camActiva: (S.parte && S.parte.camActiva) || "A",
+          camsGuardadas: (S.parte && S.parte.camsGuardadas) || {},
           campos: (S.parte && S.parte.campos) || [],
           camposRollo: (S.parte && S.parte.camposRollo) || [],
           tomas: (S.parte && S.parte.tomas) || []};
@@ -4999,14 +5001,19 @@ function ptAbre(id){
   const d = x.d || {};
   if (d.prod) S.prod = Object.assign({}, S.prod, d.prod);
   S.parte = {roll: d.roll || {}, tomas: d.tomas || [],
+             camActiva: d.camActiva || "A", camsGuardadas: d.camsGuardadas || {},
              campos: d.campos || [], camposRollo: d.camposRollo || []};
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
   fillParte(); renderTomas();
   if (typeof renderCampos === "function") renderCampos();
   if (typeof renderRollExtra === "function") renderRollExtra();
+  if (typeof pintaTipo === "function") pintaTipo();
+  if (typeof pintaCams === "function") pintaCams();
   updateChip(); pintaTira(); autoguarda(); ptLista();
   ptMsg(traduce("Abierto: ") + (x.proyecto || "—") + " · " + (x.roll || "—"), "good");
+  /* v61: abrir un parte guardado = verlo en PDF al momento */
+  if ((S.parte.tomas || []).length && ((S.parte.roll || {}).roll || "").trim()) hacerParte();
   window.scrollTo(0, 0);
 }
 function ptExporta(id){
