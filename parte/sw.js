@@ -6,7 +6,7 @@
    (eso daba ERR_FAILED con el sitio perfectamente vivo), y aplana las
    respuestas redirigidas, que el navegador rechaza en navegaciones. */
 
-const VERSION = "wallio-parte-v50";
+const VERSION = "wallio-parte-v51";
 const FAMILIA = "wallio-parte-v";
 const AJENA = "";
 const BASICOS = [
@@ -51,16 +51,18 @@ self.addEventListener("fetch", e => {
   if (url.origin !== self.location.origin) return;
 
   if (req.mode === "navigate"){
+    /* v64: RED PRIMERO — con internet siempre llega la versión nueva al momento
+       (se acabó el doble refresco); sin cobertura, la caché responde igual. */
     e.respondWith((async () => {
-      const guardado = await caches.match("./index.html").catch(() => null);
-      const red = (async () => {
-        try {
-          const r = await fetch(req);
-          if (r && r.ok) caches.open(VERSION).then(c => c.put("./index.html", r.clone())).catch(() => {});
-          return await aplana(r);
-        } catch(_){ return null; }
-      })();
-      const res = guardado || await red || null;
+      let res = null;
+      try {
+        const r = await fetch(req);
+        if (r && r.ok){
+          caches.open(VERSION).then(c => c.put("./index.html", r.clone())).catch(() => {});
+          res = await aplana(r);
+        }
+      } catch(_){ res = null; }
+      if (!res) res = await caches.match("./index.html").catch(() => null);
       if (res) return res;
       return new Response("<!doctype html><meta charset=utf-8><meta http-equiv=refresh content=\'2\'>" +
         "<body style=\'font:16px -apple-system,system-ui;padding:2em\'>WALLIO no pudo abrir. Reintentando…",
