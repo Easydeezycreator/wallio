@@ -4862,7 +4862,7 @@ function pintaTira(){
   const t = $("tiraParte"); if (!t) return;
   const P = S.prod, R = (S.parte && S.parte.roll) || {};
   const proy = (P.proyecto || "").trim();
-  const n = ((S.parte && S.parte.tomas) || []).length;
+  const n = cuentaTomas(camActiva()).tk;   /* v54: la tira es de TU cámara */
   const det = [
     P.jornada ? traduce("jornada ") + P.jornada : "",
     P.fecha || "",
@@ -5243,9 +5243,12 @@ function renderTomas(){
   if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
   const L = S.parte.tomas;
   const dlE = $("dlEscenas");
-  if (dlE) dlE.innerHTML = Array.from(new Set(L.map(x => (x.sc || "").trim()).filter(Boolean)))
+  if (dlE) dlE.innerHTML = Array.from(new Set(L.filter(x => (x.camLetra || "A") === camActiva())
+    .map(x => (x.sc || "").trim()).filter(Boolean)))
     .map(s => "<option>" + esc(s) + "</option>").join("");
-  $("listaTomas").innerHTML = L.length ? L.map((t, i) => {
+  const enLista = L.filter(x => (x.camLetra || "A") === camActiva()).length;  /* v54: solo la activa */
+  $("listaTomas").innerHTML = enLista ? L.map((t, i) => {
+    if ((t.camLetra || "A") !== camActiva()) return "";
     const pft = esFilm() ? piesDeToma(i) : 0;
     const meta = [t.mos ? "MOS" : "", t.desc, t.clip, t.serial, t.focal ? t.focal + " mm" : "", t.t ? "T" + t.t : "", t.filt,
                   t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
@@ -5319,6 +5322,7 @@ function nuevaToma(nuevaEscena){
   for (let j = L.length - 1; j >= 0; j--){ if ((L[j].camLetra || "A") === camActiva()){ u = L[j]; break; } }
   const t = u ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
   t.camLetra = camActiva();
+  if (typeof pcReclama === "function") pcReclama();
   t.ts = Date.now();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
   t.clip = ""; t.dial = ""; t.pies = ""; t.mos = false;
@@ -5339,19 +5343,28 @@ function nuevaToma(nuevaEscena){
 function borrarToma(i){
   guarda();
   const L = S.parte.tomas; if (!L.length) return;
-  if (i < 0) i = L.length - 1;
-  L.splice(i, 1); renderTomas();
+  if (i < 0){ for (let j = L.length - 1; j >= 0; j--){
+    if ((L[j].camLetra || "A") === camActiva()){ i = j; break; } } }
+  if (i < 0) return;
+  L.splice(i, 1);
+  if (typeof pcReclama === "function") pcReclama();
+  renderTomas();
 }
 function durTexto(seg){
   seg = Math.round(seg || 0);
   return Math.floor(seg / 60) + "′" + String(seg % 60).padStart(2, "0") + "″";
 }
-function resumenParte(){
-  const L = S.parte.tomas;
+function cuentaTomas(letra){   /* v54: cuentas por cámara ("*" = todas) */
+  const L = S.parte.tomas.filter(t => letra === "*" || (t.camLetra || "A") === letra);
   const sc = new Set(L.map(t => (t.sc || "").trim()).filter(Boolean)).size;
   const ok = L.filter(t => t.ok).length;
   const dur = L.reduce((a, t) => a + (parseFloat(t.dur) || 0), 0);
-  $("p_sc").textContent = sc; $("p_tk").textContent = L.length;
+  return { sc, tk: L.length, ok, dur };
+}
+function resumenParte(){
+  const c = cuentaTomas(camActiva());
+  const sc = c.sc, ok = c.ok, dur = c.dur;
+  $("p_sc").textContent = sc; $("p_tk").textContent = c.tk;
   $("p_ok").textContent = ok;
   const el = $("p_dur"), lb = $("p_durl");
   if (esFilm()){ const pf = piesResumen();
@@ -5361,7 +5374,7 @@ function resumenParte(){
     if (el) el.textContent = durTexto(dur);
     if (lb) lb.textContent = traduce("duración");
   }
-  return {sc, tk: L.length, ok, dur};
+  return c;
 }
 function parteId(){
   const c = v => (v || "").replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ0-9]/g, "").toUpperCase().slice(0,3) || "XXX";
@@ -6677,14 +6690,25 @@ document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
    y ve las demás refrescarse solas cada 8 s; tu letra activa manda en tu
    aparato y nadie te la pisa. */
 const PC_CONF = "wallio.compartido.v1";
-let PC = { parte: "", clave: "", etiqueta: "", desde: "", quien: "" };
+let PC = { parte: "", clave: "", etiqueta: "", desde: "", quien: "", miLetra: "" };
 try { PC = Object.assign(PC, JSON.parse(localStorage.getItem(PC_CONF) || "{}")); } catch(e){}
 PC.timer = null; PC.ocupado = false; PC.pendiente = false; PC.vistos = {};
 PC.firmaMia = ""; PC.firmaProd = "";
 function pcGuarda(){ try { localStorage.setItem(PC_CONF, JSON.stringify(
-  { parte: PC.parte, clave: PC.clave, etiqueta: PC.etiqueta, desde: PC.desde, quien: PC.quien })); } catch(e){} }
+  { parte: PC.parte, clave: PC.clave, etiqueta: PC.etiqueta, desde: PC.desde,
+    quien: PC.quien, miLetra: PC.miLetra })); } catch(e){} }
 function pcTomasDe(l){ return S.parte.tomas.filter(t => (t.camLetra || "A") === l); }
-function pcMio(){ return { config: S.parte.roll, tomas: pcTomasDe(camActiva()) }; }
+function pcMiLetra(){ return PC.miLetra || camActiva(); }
+function pcReclama(){   /* v54: la cámara que TOCAS es la que subes; mirar no reclama */
+  if (!PC.parte) return;
+  if (PC.miLetra !== camActiva()){ PC.miLetra = camActiva(); PC.firmaMia = ""; pcGuarda(); }
+}
+document.addEventListener("input", ev => {
+  const el = ev.target; if (!el || el.tagName !== "INPUT" || !el.closest) return;
+  const card = el.closest(".card");
+  if (el.closest("#listaTomas") || (card && card.querySelector("#tipoRollo"))) pcReclama();
+}, true);
+function pcMio(){ const l = pcMiLetra(); return { config: configDe(l), tomas: pcTomasDe(l) }; }
 function pcHoy(){ return new Date().toISOString().slice(0, 10); }
 function pcAyer(){ return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
 function pcClaveDe(nombre, fecha){ return nombre.trim() + "·" + fecha; }
@@ -6743,13 +6767,13 @@ async function pcAbrir(nombre, fecha, creando){
     }
     guarda();
     PC.parte = id; PC.etiqueta = et; PC.desde = ""; PC.vistos = {};
-    PC.firmaMia = ""; PC.firmaProd = "";
+    PC.firmaMia = ""; PC.firmaProd = ""; PC.miLetra = camActiva();
     pcGuarda();
     await pcTick(true);
     pcArranca();
   } catch(e){ PC.clave = ""; pcEstado((e && e.message) || traduce("sin conexión")); }
 }
-function pcSalir(){ pcPara(); PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; pcGuarda(); pcEstado(); }
+function pcSalir(){ pcPara(); PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; PC.miLetra = ""; pcGuarda(); pcEstado(); }
 function pcArranca(){ pcPara(); PC.timer = setInterval(() => pcTick(false), 8000); }
 function pcPara(){ if (PC.timer){ clearInterval(PC.timer); PC.timer = null; } }
 function pcEscribiendo(){
@@ -6771,14 +6795,14 @@ async function pcTick(primera){
       if (d0){ pcAplica(d0, true); PC.desde = d0.ahora || ""; }
       const mio = JSON.stringify(pcMio());
       await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-        p_letra: camActiva(), p_datos: JSON.parse(mio), p_quien: pcQuien(),
+        p_letra: pcMiLetra(), p_datos: JSON.parse(mio), p_quien: pcQuien(),
         p_prod: (prodServidorVacio && Object.keys(S.prod || {}).length) ? S.prod : null }, false);
       PC.firmaMia = mio; PC.firmaProd = JSON.stringify(S.prod);
     } else {
       const mio = JSON.stringify(pcMio()), prod = JSON.stringify(S.prod);
       if (mio !== PC.firmaMia || prod !== PC.firmaProd){
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-          p_letra: camActiva(), p_datos: mio !== PC.firmaMia ? JSON.parse(mio) : null,
+          p_letra: pcMiLetra(), p_datos: mio !== PC.firmaMia ? JSON.parse(mio) : null,
           p_quien: pcQuien(), p_prod: prod !== PC.firmaProd ? JSON.parse(prod) : null }, false);
         PC.firmaMia = mio; PC.firmaProd = prod;
       }
@@ -6793,14 +6817,14 @@ async function pcTick(primera){
 function pcAplica(d, primera){
   let cambio = false;
   const cams = (d && d.camaras) || {};
-  const miLetra = camActiva();
-  const miaVacia = !pcTomasDe(miLetra).length && !((S.parte.roll || {}).body) && !((S.parte.roll || {}).roll);
+  const miLetra = pcMiLetra();
+  const miaVacia = !pcTomasDe(miLetra).length && !(configDe(miLetra).body) && !(configDe(miLetra).roll);
   Object.keys(cams).forEach(l => {
     PC.vistos[l] = { por: cams[l].por, cuando: cams[l].actualizado };
     const esMia = l === miLetra;
     if (esMia && !(primera && miaVacia)) return;      /* tu cámara manda en tu aparato */
     const datos = cams[l].datos || {};
-    if (esMia) S.parte.roll = datos.config || S.parte.roll;
+    if (l === camActiva()) S.parte.roll = datos.config || S.parte.roll;
     else { S.parte.camsGuardadas = S.parte.camsGuardadas || {}; S.parte.camsGuardadas[l] = datos.config || {}; }
     const nuevas = (datos.tomas || []).map(t => Object.assign({}, t, { camLetra: l }));
     S.parte.tomas = S.parte.tomas.filter(t => (t.camLetra || "A") !== l).concat(nuevas);
@@ -6826,9 +6850,9 @@ function pcEstado(txt){
   if (!PC.parte){ el.textContent = "—"; return; }
   const tro = CAM_LETRAS.map(l => {
     const v = PC.vistos[l];
-    if (!v && l !== camActiva()) return "";
+    if (!v && l !== pcMiLetra()) return "";
     const h = v && v.cuando ? new Date(v.cuando).toTimeString().slice(0, 5) : "";
-    const quien = l === camActiva() ? traduce("tú") : ((v && v.por) || "");
+    const quien = l === pcMiLetra() ? traduce("tú") : ((v && v.por) || "");
     return "CAM " + l + (quien ? " · " + quien : "") + (h ? " · " + h : "");
   }).filter(Boolean).join("   ");
   el.textContent = traduce("Compartido") + " · «" + PC.etiqueta + "»" + (tro ? "  —  " + tro : "");

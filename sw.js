@@ -6,7 +6,7 @@
    (eso daba ERR_FAILED con el sitio perfectamente vivo), y aplana las
    respuestas redirigidas, que el navegador rechaza en navegaciones. */
 
-const VERSION = "wallio-v53";
+const VERSION = "wallio-v54";
 const FAMILIA = "wallio-v";
 const AJENA = "";
 const BASICOS = [
