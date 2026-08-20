@@ -5328,6 +5328,7 @@ function nuevaToma(nuevaEscena){
   const t = u ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
   t.camLetra = camActiva();
   if (typeof pcReclama === "function") pcReclama();
+  if (typeof pcAutoProgramar === "function") pcAutoProgramar();
   t.ts = Date.now();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
   t.clip = ""; t.dial = ""; t.pies = ""; t.mos = false;
@@ -6697,13 +6698,13 @@ document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
    y ve las demás refrescarse solas cada 8 s; tu letra activa manda en tu
    aparato y nadie te la pisa. */
 const PC_CONF = "wallio.compartido.v1";
-let PC = { parte: "", clave: "", etiqueta: "", desde: "", quien: "", miLetra: "" };
+let PC = { parte: "", clave: "", etiqueta: "", desde: "", quien: "", miLetra: "", sinAuto: "" };
 try { PC = Object.assign(PC, JSON.parse(localStorage.getItem(PC_CONF) || "{}")); } catch(e){}
 PC.timer = null; PC.ocupado = false; PC.pendiente = false; PC.vistos = {};
 PC.firmaMia = ""; PC.firmaProd = "";
 function pcGuarda(){ try { localStorage.setItem(PC_CONF, JSON.stringify(
   { parte: PC.parte, clave: PC.clave, etiqueta: PC.etiqueta, desde: PC.desde,
-    quien: PC.quien, miLetra: PC.miLetra })); } catch(e){} }
+    quien: PC.quien, miLetra: PC.miLetra, sinAuto: PC.sinAuto })); } catch(e){} }
 function pcTomasDe(l){ return S.parte.tomas.filter(t => (t.camLetra || "A") === l); }
 function pcMiLetra(){ return PC.miLetra || ""; }   /* v65: sin reclamar, eres espectador */
 function pcReclama(){   /* v54: la cámara que TOCAS es la que subes; mirar no reclama */
@@ -6757,14 +6758,15 @@ async function pcEntrar(){
     if (typeof fillProd === "function") fillProd();
     if (typeof fillProdParte === "function") fillProdParte();
   }
+  PC.sinAuto = "";
   await pcAbrir(nombre);
 }
-async function pcAbrir(nombre){
+async function pcAbrir(nombre, silencioso){
   /* v58: UN solo camino — se entra si el parte ya existe (hoy, ayer o la fecha
      de Producción) y si no existe SE CREA al momento. Nadie tiene que
      «compartir primero». */
   pcEstado("…");
-  const quien = pcQuien();
+  const quien = silencioso ? (PC.quien || (S.prod.ac2 || S.prod.ac || "").trim()) : pcQuien();
   try {
     let id = null, et = nombre, creado = false;
     const fechas = [pcHoy(), pcAyer()];
@@ -6794,8 +6796,21 @@ async function pcAbrir(nombre){
     pcArranca();
   } catch(e){ PC.clave = ""; pcEstado((e && e.message) || traduce("sin conexión")); }
 }
-function pcSalir(){ pcPara(); PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; PC.miLetra = ""; pcGuarda(); pcEstado(); }
+function pcSalir(){ pcPara();
+  PC.sinAuto = (S.prod.proyecto || "").trim();   /* v66: saliste a propósito — no re-conectar solo a ESTE */
+  PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; PC.miLetra = ""; pcGuarda(); pcEstado(); }
 function pcArranca(){ pcPara(); PC.timer = setInterval(() => pcTick(false), 8000); }
+/* v66: el proyecto se comparte SOLO. El primero que le pone nombre lo crea en
+   la nube (dueño) sin tocar nada; los demás teclean el nombre y entran.
+   «Salir» desconecta y respeta que no quieras compartir ESE proyecto. */
+let pcAutoTimer = null;
+function pcAutoProgramar(){ clearTimeout(pcAutoTimer); pcAutoTimer = setTimeout(pcAuto, 2500); }
+async function pcAuto(){
+  const nombre = (S.prod.proyecto || "").trim();
+  if (!nombre || PC.parte || PC.ocupado || !navigator.onLine) return;
+  if ((PC.sinAuto || "") === nombre) return;
+  try { await pcAbrir(nombre, true); } catch(e){}
+}
 function pcPara(){ if (PC.timer){ clearInterval(PC.timer); PC.timer = null; } }
 function pcEscribiendo(){
   const a = document.activeElement;
@@ -6929,6 +6944,11 @@ tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjust
 updateChip(); show("prod");
 if (!(S.prod.proyecto || "").trim()){ const dd = $("pp_bloque"); if (dd) dd.open = true; }
 if (PC.parte && PC.clave){ setTimeout(() => pcTick(false), 2500); pcArranca(); }
+else pcAutoProgramar();
+["p_proyecto", "pp_proyecto"].forEach(function(id){
+  const el = $(id); if (el) el.addEventListener("change", pcAutoProgramar);
+});
+window.addEventListener("online", pcAutoProgramar);
 pcEstado();
 cuentaVisita(); bzDrena();
 pintaFotoSerial();
