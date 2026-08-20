@@ -1122,6 +1122,7 @@ html.solo-parte .portada{display:none}
   <div class="sp"></div>
   <span id="estadoGuardado" class="sv"></span>
   <button id="btnNueva" class="lang" onclick="aplicaActualizacion()" hidden style="color:#7fd6a2;border-color:rgba(127,214,162,.5)">Actualizar</button>
+  <button id="btnProyNuevo" class="lang" onclick="proyectoNuevo()">Proyecto nuevo</button>
   <button id="btnCompartir" class="lang" onclick="pcPanel()">Compartir</button>
   <button id="btnLang" class="lang" onclick="cambiaIdioma()">EN</button>
   <div class="st"><b id="chipCov">—</b>cobertura</div>
@@ -4867,6 +4868,28 @@ function abreProdParte(){
    hoy, el número de jornada sube uno y el rollo sigue la numeración.
    Solo se vacían las tomas. Proyecto, productora, unidad, localización,
    casa, DIT y los ajustes de cámara viajan a la jornada nueva.        */
+/* v62: PROYECTO NUEVO — solo en la app del camera report. Guarda lo de ahora
+   en el aparato y arranca un proyecto de cero (producción, cámaras y tomas). */
+function proyectoNuevo(){
+  if (!confirm(traduce("Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?"))) return;
+  guarda();
+  ptArchiva(false);
+  if (typeof pcSalir === "function" && PC.parte) pcSalir();
+  PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
+  S.prod = { };
+  PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
+  S.parte = { roll: { tipo: "digital" }, tomas: [], campos: [], camposRollo: [],
+              camActiva: "A", camsGuardadas: {} };
+  if (typeof fillProd === "function") fillProd();
+  if (typeof fillProdParte === "function") fillProdParte();
+  fillParte(); renderTomas(); renderRollExtra();
+  if (typeof renderCampos === "function") renderCampos();
+  if (typeof pintaTipo === "function") pintaTipo();
+  if (typeof pintaCams === "function") pintaCams();
+  updateChip(); pintaTira(); autoguarda(); ptLista();
+  const dd = $("pp_bloque"); if (dd) dd.open = true;
+  const p = $("pp_proyecto"); if (p) setTimeout(function(){ p.focus(); }, 120);
+}
 function jornadaSiguiente(){
   if (!confirm(traduce("Se guarda el parte de esta jornada y se empieza la siguiente: la fecha pasa a hoy, el número de jornada sube uno y el rollo sigue la numeración. Las tomas se vacían; todo lo demás se conserva.")))
     return;
@@ -5604,7 +5627,7 @@ function descargar(texto, nombre, tipo){
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
 "Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only",
-"Compartir este parte":"Share this report","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Introduce el nombre del proyecto":"Enter the project name",
+"Compartir este parte":"Share this report","Proyecto nuevo":"New project","Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?":"The current report is saved on this device and a brand NEW project starts from scratch. Sure?","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Introduce el nombre del proyecto":"Enter the project name",
 "Escribe primero el Proyecto en Producción.":"Fill in the Project in Production first.",
 "Escribe el nombre del proyecto.":"Type the project name.",
 "No hay ningún parte compartido de ese proyecto (¿alguien pulsó ya Compartir?).":"There is no shared report for that project (did anyone tap Share yet?).",
