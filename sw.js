@@ -1,12 +1,14 @@
-/* WALLIO · service worker
+/* WALLIO · service worker (plataforma)
    Para qué sirve: que la app abra en un plató sin cobertura.
-   Estrategia: la app es un único archivo, así que se guarda entero en cache
-   la primera vez y a partir de ahí se sirve desde ahí, incluso sin red.
-   Cuando hay red se pide una copia nueva por detrás y se guarda para la
-   próxima vez: así nunca esperas a la red, pero tampoco te quedas anclado
-   a una versión vieja.                                                     */
+   Estrategia: cache primero y red por detrás. BLINDADO (v52): este worker
+   limpia SOLO su propia familia de cachés (wallio-v*) — antes la plataforma
+   y el parte se borraban la caché el uno al otro —, jamás responde vacío
+   (eso daba ERR_FAILED con el sitio perfectamente vivo), y aplana las
+   respuestas redirigidas, que el navegador rechaza en navegaciones. */
 
-const VERSION = "wallio-v51";
+const VERSION = "wallio-v52";
+const FAMILIA = "wallio-v";
+const AJENA = "";
 const BASICOS = [
   "./",
   "./index.html",
@@ -27,44 +29,61 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
-      .then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k))))
+      .then(ks => Promise.all(ks
+        .filter(k => k !== VERSION && k.indexOf(FAMILIA) === 0 && !(AJENA && k.indexOf(AJENA) === 0))
+        .map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
 
+async function aplana(r){
+  /* una respuesta redirigida no se puede entregar a una navegación: se copia */
+  if (!r || !r.redirected) return r;
+  const cuerpo = await r.clone().blob();
+  return new Response(cuerpo, { status: 200,
+    headers: { "Content-Type": r.headers.get("Content-Type") || "text/html; charset=utf-8" } });
+}
+
 self.addEventListener("fetch", e => {
   const req = e.request;
-  if (req.method !== "GET") return;                       // subir a la nube no se cachea nunca
+  if (req.method !== "GET") return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;        // Supabase y demás, directo a la red
+  if (url.origin !== self.location.origin) return;
 
-  // Navegación (abrir la app): primero lo guardado, y se refresca por detrás.
   if (req.mode === "navigate"){
-    e.respondWith(
-      caches.match("./index.html").then(guardado => {
-        const red = fetch(req).then(r => {
-          if (r && r.ok) caches.open(VERSION).then(c => c.put("./index.html", r.clone()));
-          return r;
-        }).catch(() => guardado);
-        return guardado || red;
-      })
-    );
+    e.respondWith((async () => {
+      const guardado = await caches.match("./index.html").catch(() => null);
+      const red = (async () => {
+        try {
+          const r = await fetch(req);
+          if (r && r.ok) caches.open(VERSION).then(c => c.put("./index.html", r.clone())).catch(() => {});
+          return await aplana(r);
+        } catch(_){ return null; }
+      })();
+      const res = guardado || await red || null;
+      if (res) return res;
+      return new Response("<!doctype html><meta charset=utf-8><meta http-equiv=refresh content=\'2\'>" +
+        "<body style=\'font:16px -apple-system,system-ui;padding:2em\'>WALLIO no pudo abrir. Reintentando…",
+        { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } });
+    })());
     return;
   }
 
-  e.respondWith(
-    caches.match(req).then(guardado => {
-      const red = fetch(req).then(r => {
-        if (r && r.ok && r.type === "basic")
-          caches.open(VERSION).then(c => c.put(req, r.clone()));
+  e.respondWith((async () => {
+    const guardado = await caches.match(req).catch(() => null);
+    const red = (async () => {
+      try {
+        const r = await fetch(req);
+        if (r && r.ok && r.type === "basic") caches.open(VERSION).then(c => c.put(req, r.clone())).catch(() => {});
         return r;
-      }).catch(() => guardado);
-      return guardado || red;
-    })
-  );
+      } catch(_){ return null; }
+    })();
+    const res = guardado || await red || null;
+    if (res) return res;
+    return new Response("", { status: 504 });
+  })());
 });
 
-/* la app puede pedir que se actualice ya, sin esperar a cerrar la pestaña */
 self.addEventListener("message", e => {
   if (e.data === "actualiza") self.skipWaiting();
 });

@@ -1350,12 +1350,18 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <h2>Parte compartido</h2>
-    <div class="grid">
-      <div class="f"><label>Nombre del parte del día</label><input id="pc_etiqueta" placeholder="NIGHT HARVEST · día 3" autocomplete="off"></div>
-    </div>
     <div class="btnrow">
-      <button class="primary" onclick="pcConectar()">Conectar</button>
+      <button class="primary" onclick="pcCompartir()">Compartir este parte</button>
+      <button onclick="pcAccess()">Access project</button>
       <button class="ghost" onclick="pcSalir()">Salir</button>
+    </div>
+    <div class="grid" id="pc_caja" hidden>
+      <div class="f"><label>Access project</label>
+        <input id="pc_proyecto" placeholder="Name of the project" autocomplete="off"
+          onkeydown="if(event.key==='Enter')pcEntrar()"></div>
+    </div>
+    <div class="btnrow" id="pc_cajabtn" hidden>
+      <button class="primary" onclick="pcEntrar()">Entrar</button>
     </div>
     <div class="hint" id="pc_estado">—</div>
   </div>
@@ -1658,9 +1664,9 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <h2>Parte compartido</h2>
-    <p>Varios auxiliares pueden trabajar el mismo parte: cada uno entra con su cuenta de la Nube en el mismo espacio, escribe el mismo nombre de parte y pulsa Conectar.</p>
+    <p>Compartir es así de simple: el primero rellena el Proyecto en Producción y pulsa «Compartir este parte». Los demás pulsan «Access project», teclean el nombre del proyecto y entran. Sin cuentas ni códigos.</p>
     <p>Cada auxiliar trabaja su cámara (A, B, C o D) y las demás se refrescan solas cada pocos segundos. Tu cámara activa manda en tu aparato: nadie te la pisa.</p>
-    <p>Si dos trabajan la misma letra a la vez, vale lo último que se subió. Salir deja de compartir pero no borra nada de tu aparato.</p>
+    <p>El parte compartido es el de la jornada: cada día se comparte el suyo. Si dos trabajan la misma letra a la vez, vale lo último subido. «Salir» deja de compartir sin borrar nada de tu aparato.</p>
   </div>
 
   <div class="card">
@@ -5573,7 +5579,14 @@ function descargar(texto, nombre, tipo){
 
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
-"Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only","Nombre del parte del día":"Today's report name",
+"Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only",
+"Compartir este parte":"Share this report","Entrar":"Enter","Compartido":"Sharing",
+"Escribe primero el Proyecto en Producción.":"Fill in the Project in Production first.",
+"Escribe el nombre del proyecto.":"Type the project name.",
+"No hay ningún parte compartido de ese proyecto (¿alguien pulsó ya Compartir?).":"There is no shared report for that project (did anyone tap Share yet?).",
+"Tu nombre (para que se vea quién lleva cada cámara):":"Your name (so everyone can see who runs each camera):",
+"Compartir es así de simple: el primero rellena el Proyecto en Producción y pulsa «Compartir este parte». Los demás pulsan «Access project», teclean el nombre del proyecto y entran. Sin cuentas ni códigos.":"Sharing is this simple: the first person fills in the Project in Production and taps \u00abShare this report\u00bb. Everyone else taps \u00abAccess project\u00bb, types the project name and they are in. No accounts, no codes.",
+"El parte compartido es el de la jornada: cada día se comparte el suyo. Si dos trabajan la misma letra a la vez, vale lo último subido. «Salir» deja de compartir sin borrar nada de tu aparato.":"The shared report belongs to the shooting day: each day gets its own. If two people work the same letter at once, the last upload wins. \u00abLeave\u00bb stops sharing without deleting anything from your device.","Nombre del parte del día":"Today's report name",
 "Conectar":"Connect","NIGHT HARVEST · día 3":"NIGHT HARVEST · day 3",
 "Entra en tu espacio de la Nube para compartir.":"Sign in to your Cloud space first to share.",
 "Conectado":"Connected","tú":"you","sin conexión":"offline",
@@ -6644,40 +6657,81 @@ function descartaBorrador(){
 document.addEventListener("input", autoguarda, true);
 document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
 
-/* ================= v49: PARTE COMPARTIDO =================
-   Varios auxiliares, un solo reporte: cada uno trabaja SU cámara (A–D) y ve
-   las demás refrescarse solas cada 8 s. «Conectar» crea o une por nombre
-   dentro del espacio de la Nube. Tu letra activa manda en tu aparato: el
-   servidor nunca te la pisa (solo al conectar con la tuya vacía). */
+/* ================= v52: PARTE COMPARTIDO SIMPLE =================
+   El primero rellena el Proyecto y pulsa «Compartir este parte». Los demás
+   pulsan «Access project», teclean el NOMBRE DEL PROYECTO y dentro. Sin
+   cuentas ni códigos: la llave es proyecto+jornada (los rodajes nocturnos
+   entran probando también la jornada de ayer). Cada uno trabaja SU cámara
+   y ve las demás refrescarse solas cada 8 s; tu letra activa manda en tu
+   aparato y nadie te la pisa. */
 const PC_CONF = "wallio.compartido.v1";
-let PC = { parte: "", etiqueta: "", desde: "" };
+let PC = { parte: "", clave: "", etiqueta: "", desde: "", quien: "" };
 try { PC = Object.assign(PC, JSON.parse(localStorage.getItem(PC_CONF) || "{}")); } catch(e){}
 PC.timer = null; PC.ocupado = false; PC.pendiente = false; PC.vistos = {};
 PC.firmaMia = ""; PC.firmaProd = "";
-function pcGuarda(){ try { localStorage.setItem(PC_CONF,
-  JSON.stringify({ parte: PC.parte, etiqueta: PC.etiqueta, desde: PC.desde })); } catch(e){} }
+function pcGuarda(){ try { localStorage.setItem(PC_CONF, JSON.stringify(
+  { parte: PC.parte, clave: PC.clave, etiqueta: PC.etiqueta, desde: PC.desde, quien: PC.quien })); } catch(e){} }
 function pcTomasDe(l){ return S.parte.tomas.filter(t => (t.camLetra || "A") === l); }
 function pcMio(){ return { config: S.parte.roll, tomas: pcTomasDe(camActiva()) }; }
-async function pcConectar(){
-  if (!NB.token || !NB.casa) return pcEstado(traduce("Entra en tu espacio de la Nube para compartir."));
-  const el = $("pc_etiqueta");
-  const et = ((el && el.value) || "").trim() ||
-    ((S.prod.proyecto || "").trim() ? S.prod.proyecto + " · " + (S.prod.fecha || new Date().toISOString().slice(0, 10))
-                                    : new Date().toISOString().slice(0, 10));
-  if (el) el.value = et;
+function pcHoy(){ return new Date().toISOString().slice(0, 10); }
+function pcAyer(){ return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
+function pcClaveDe(nombre, fecha){ return nombre.trim() + "·" + fecha; }
+function pcQuien(){
+  if (PC.quien) return PC.quien;
+  const n = ((S.prod.ac2 || S.prod.ac || "").trim()) ||
+            ((prompt(traduce("Tu nombre (para que se vea quién lleva cada cámara):")) || "").trim());
+  if (n){ PC.quien = n; pcGuarda(); }
+  return PC.quien || "";
+}
+function pcAccess(){
+  const c1 = $("pc_caja"), c2 = $("pc_cajabtn");
+  if (c1) c1.hidden = false;
+  if (c2) c2.hidden = false;
+  const e = $("pc_proyecto"); if (e){ e.removeAttribute("readonly"); e.focus(); }
+}
+async function pcCompartir(){
+  const nombre = (S.prod.proyecto || "").trim();
+  if (!nombre) return pcEstado(traduce("Escribe primero el Proyecto en Producción."));
+  const fecha = (S.prod.fecha || "").trim() || pcHoy();
+  await pcAbrir(nombre, fecha, true);
+}
+async function pcEntrar(){
+  const el = $("pc_proyecto");
+  const nombre = ((el && el.value) || "").trim();
+  if (!nombre) return pcEstado(traduce("Escribe el nombre del proyecto."));
+  await pcAbrir(nombre, null, false);
+}
+async function pcAbrir(nombre, fecha, creando){
   pcEstado("…");
+  const quien = pcQuien();
   try {
-    const id = await nbPide("/rest/v1/rpc/parte_abrir",
-      { p_casa: NB.casa, p_etiqueta: et, p_quien: NB.nombre || NB.correo || "" });
+    let id = null, et = nombre;
+    if (creando){
+      PC.clave = pcClaveDe(nombre, fecha);
+      id = await nbPide("/rest/v1/rpc/parte_crea_simple",
+        { p_codigo: PC.clave, p_etiqueta: nombre, p_quien: quien }, false);
+    } else {
+      const fechas = [pcHoy(), pcAyer()];
+      const fp = (S.prod.fecha || "").trim();
+      if (fp && fechas.indexOf(fp) < 0) fechas.push(fp);
+      let d = null, usada = "";
+      for (const f of fechas){
+        try { d = await nbPide("/rest/v1/rpc/parte_entra_simple", { p_codigo: pcClaveDe(nombre, f) }, false);
+              usada = f; break; }
+        catch(e2){ d = null; }
+      }
+      if (!d) throw new Error(traduce("No hay ningún parte compartido de ese proyecto (¿alguien pulsó ya Compartir?)."));
+      id = d.id; et = d.etiqueta || nombre; PC.clave = pcClaveDe(nombre, usada);
+    }
     guarda();
     PC.parte = id; PC.etiqueta = et; PC.desde = ""; PC.vistos = {};
     PC.firmaMia = ""; PC.firmaProd = "";
     pcGuarda();
     await pcTick(true);
     pcArranca();
-  } catch(e){ pcEstado((e && e.message) || traduce("sin conexión")); }
+  } catch(e){ PC.clave = ""; pcEstado((e && e.message) || traduce("sin conexión")); }
 }
-function pcSalir(){ pcPara(); PC.parte = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; pcGuarda(); pcEstado(); }
+function pcSalir(){ pcPara(); PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; pcGuarda(); pcEstado(); }
 function pcArranca(){ pcPara(); PC.timer = setInterval(() => pcTick(false), 8000); }
 function pcPara(){ if (PC.timer){ clearInterval(PC.timer); PC.timer = null; } }
 function pcEscribiendo(){
@@ -6685,7 +6739,7 @@ function pcEscribiendo(){
   return !!(a && a.tagName === "INPUT" && a.closest && a.closest("#v-parte"));
 }
 async function pcTick(primera){
-  if (!PC.parte || PC.ocupado || !NB.token || !navigator.onLine) return;
+  if (!PC.parte || !PC.clave || PC.ocupado || !navigator.onLine) return;
   PC.ocupado = true;
   try {
     if (PC.pendiente && !pcEscribiendo()){
@@ -6693,25 +6747,25 @@ async function pcTick(primera){
       renderTomas(); fillParte(); fillProdParte();
     }
     if (primera){
-      /* al conectar: primero se mira lo que hay, luego se sube lo propio */
-      const d0 = await nbPide("/rest/v1/rpc/parte_baja", { p_parte: PC.parte, p_desde: null });
+      const d0 = await nbPide("/rest/v1/rpc/parte_baja_codigo",
+        { p_parte: PC.parte, p_codigo: PC.clave, p_desde: null }, false);
       const prodServidorVacio = !d0 || !d0.prod || !Object.keys(d0.prod).length;
       if (d0){ pcAplica(d0, true); PC.desde = d0.ahora || ""; }
       const mio = JSON.stringify(pcMio());
-      await nbPide("/rest/v1/rpc/parte_sube", { p_parte: PC.parte, p_letra: camActiva(),
-        p_datos: JSON.parse(mio), p_quien: NB.nombre || NB.correo || "",
-        p_prod: (prodServidorVacio && Object.keys(S.prod || {}).length) ? S.prod : null });
+      await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
+        p_letra: camActiva(), p_datos: JSON.parse(mio), p_quien: pcQuien(),
+        p_prod: (prodServidorVacio && Object.keys(S.prod || {}).length) ? S.prod : null }, false);
       PC.firmaMia = mio; PC.firmaProd = JSON.stringify(S.prod);
     } else {
       const mio = JSON.stringify(pcMio()), prod = JSON.stringify(S.prod);
       if (mio !== PC.firmaMia || prod !== PC.firmaProd){
-        await nbPide("/rest/v1/rpc/parte_sube", { p_parte: PC.parte, p_letra: camActiva(),
-          p_datos: mio !== PC.firmaMia ? JSON.parse(mio) : null,
-          p_quien: NB.nombre || NB.correo || "",
-          p_prod: prod !== PC.firmaProd ? JSON.parse(prod) : null });
+        await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
+          p_letra: camActiva(), p_datos: mio !== PC.firmaMia ? JSON.parse(mio) : null,
+          p_quien: pcQuien(), p_prod: prod !== PC.firmaProd ? JSON.parse(prod) : null }, false);
         PC.firmaMia = mio; PC.firmaProd = prod;
       }
-      const d = await nbPide("/rest/v1/rpc/parte_baja", { p_parte: PC.parte, p_desde: PC.desde || null });
+      const d = await nbPide("/rest/v1/rpc/parte_baja_codigo",
+        { p_parte: PC.parte, p_codigo: PC.clave, p_desde: PC.desde || null }, false);
       if (d){ pcAplica(d, false); PC.desde = d.ahora || PC.desde; }
     }
     pcGuarda(); pcEstado();
@@ -6757,7 +6811,7 @@ function pcEstado(txt){
     const quien = l === camActiva() ? traduce("tú") : ((v && v.por) || "");
     return "CAM " + l + (quien ? " · " + quien : "") + (h ? " · " + h : "");
   }).filter(Boolean).join("   ");
-  el.textContent = traduce("Conectado") + " · «" + PC.etiqueta + "»" + (tro ? "  —  " + tro : "");
+  el.textContent = traduce("Compartido") + " · «" + PC.etiqueta + "»" + (tro ? "  —  " + tro : "");
 }
 
 /* ---------------- arranque ---------------- */
@@ -6770,8 +6824,7 @@ enlazaProdParte(); enlazaLoaderProd(); fillProdParte(); pintaTira(); ptLista(); 
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
 if (!(S.prod.proyecto || "").trim()){ const dd = $("pp_bloque"); if (dd) dd.open = true; }
-if (PC.parte){ const pe = $("pc_etiqueta"); if (pe) pe.value = PC.etiqueta;
-  setTimeout(() => pcTick(false), 2500); pcArranca(); }
+if (PC.parte && PC.clave){ setTimeout(() => pcTick(false), 2500); pcArranca(); }
 pcEstado();
 cuentaVisita(); bzDrena();
 pintaFotoSerial();
