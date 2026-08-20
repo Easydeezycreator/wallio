@@ -6955,6 +6955,18 @@ function pcAplica(d, primera){
     S.parte.tomas = S.parte.tomas.filter(t => (t.camLetra || "A") !== l).concat(nuevas);
     cambio = true;
   });
+  /* v68: lo que SOLO existe en tu aparato SE APORTA — si la nube no trae una
+     cámara y tú la tienes con contenido, pasa a ser tuya y sube en este mismo
+     latido. Cura también a los dueños conectados desde antes del cambio. */
+  CAM_LETRAS.forEach(function(l){
+    if (pcEsMia(l)) return;
+    const srv = cams[l] && cams[l].datos;
+    const srvAlgo = !!(srv && ((srv.config && (String(srv.config.body || "").trim() ||
+      String(srv.config.roll || "").trim())) || (srv.tomas || []).length));
+    const locAlgo = !!(String(configDe(l).body || "").trim() ||
+      String(configDe(l).roll || "").trim() || pcTomasDe(l).length);
+    if (locAlgo && !srvAlgo){ PC.mias[l] = true; PC.firmas[l] = ""; pcGuarda(); }
+  });
   if (d && d.prod && Object.keys(d.prod).length){
     if (primera && !pcMisLetras().length){
       /* v65: al ENTRAR a un proyecto existente, la producción de la nube MANDA —
