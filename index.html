@@ -608,6 +608,14 @@ h4.salto{page-break-before:always;break-before:page}
 .fl > div{page-break-inside:avoid;break-inside:avoid}
 .rep tr{page-break-inside:avoid;break-inside:avoid}
 .rep tr.cont{page-break-before:avoid}
+/* v67: iPad/iPhone imprimen con otras métricas de letra — cada celda parte el
+   texto dentro de su columna en vez de montarse encima de la vecina */
+.rep{table-layout:fixed;width:100%}
+.rep td,.rep th{overflow-wrap:break-word;word-break:break-word}
+.head{flex-wrap:wrap}
+.ctrl{max-width:100%}
+.fl > div{min-width:0}
+.fl .v{overflow-wrap:break-word;word-break:break-word}
 .sum{page-break-inside:avoid;break-inside:avoid}
 tr.camD td.camtd{color:#15803d}
 @page{size:A4;margin:18mm 20mm}
@@ -4912,7 +4920,8 @@ function proyectoNuevo(){
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
   S.prod = { };
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
-  S.parte = { roll: { tipo: "digital" }, tomas: [], campos: [], camposRollo: [],
+  S.parte = { roll: { tipo: "digital", wb: "5600 K", fps: "25", shutter: "180°" },
+              tomas: [], campos: [], camposRollo: [],
               camActiva: "A", camsGuardadas: {} };
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
@@ -5132,7 +5141,8 @@ function cambiaCam(letra){
   const previa = S.parte.roll || {};
   const sig = (S.parte.camsGuardadas[letra] && Object.keys(S.parte.camsGuardadas[letra]).length)
     ? copiaCam(S.parte.camsGuardadas[letra])
-    : { tipo: previa.tipo || "digital", unidad: previa.unidad || "ft" };
+    : { tipo: previa.tipo || "digital", unidad: previa.unidad || "ft",
+        wb: "5600 K", fps: "25", shutter: "180°" };
   S.parte.roll = sig;
   S.parte.camActiva = letra;
   const c = String(S.parte.roll.cam || "").trim().toUpperCase();
@@ -6746,25 +6756,28 @@ document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
    y ve las demás refrescarse solas cada 8 s; tu letra activa manda en tu
    aparato y nadie te la pisa. */
 const PC_CONF = "wallio.compartido.v1";
-let PC = { parte: "", clave: "", etiqueta: "", desde: "", quien: "", miLetra: "", sinAuto: "" };
+let PC = { parte: "", clave: "", etiqueta: "", desde: "", quien: "", miLetra: "", sinAuto: "", mias: {}, firmas: {} };
 try { PC = Object.assign(PC, JSON.parse(localStorage.getItem(PC_CONF) || "{}")); } catch(e){}
 PC.timer = null; PC.ocupado = false; PC.pendiente = false; PC.vistos = {};
+PC.mias = PC.mias || {}; PC.firmas = {};
+if (PC.miLetra && !Object.keys(PC.mias).length) PC.mias[PC.miLetra] = true;   /* v67: migración */
 PC.firmaMia = ""; PC.firmaProd = "";
 function pcGuarda(){ try { localStorage.setItem(PC_CONF, JSON.stringify(
   { parte: PC.parte, clave: PC.clave, etiqueta: PC.etiqueta, desde: PC.desde,
-    quien: PC.quien, miLetra: PC.miLetra, sinAuto: PC.sinAuto })); } catch(e){} }
+    quien: PC.quien, sinAuto: PC.sinAuto, mias: PC.mias })); } catch(e){} }
 function pcTomasDe(l){ return S.parte.tomas.filter(t => (t.camLetra || "A") === l); }
-function pcMiLetra(){ return PC.miLetra || ""; }   /* v65: sin reclamar, eres espectador */
-function pcReclama(){   /* v54: la cámara que TOCAS es la que subes; mirar no reclama */
+function pcEsMia(l){ return !!(PC.mias && PC.mias[l]); }
+function pcMisLetras(){ return Object.keys(PC.mias || {}); }
+function pcReclama(){   /* v67: la cámara que TOCAS pasa a ser tuya; puedes llevar varias */
   if (!PC.parte) return;
-  if (PC.miLetra !== camActiva()){ PC.miLetra = camActiva(); PC.firmaMia = ""; pcGuarda(); }
+  if (!pcEsMia(camActiva())){ PC.mias[camActiva()] = true; PC.firmas[camActiva()] = ""; pcGuarda(); }
 }
 document.addEventListener("input", ev => {
   const el = ev.target; if (!el || el.tagName !== "INPUT" || !el.closest) return;
   const card = el.closest(".card");
   if (el.closest("#listaTomas") || (card && card.querySelector("#tipoRollo"))) pcReclama();
 }, true);
-function pcMio(){ const l = pcMiLetra(); return { config: configDe(l), tomas: pcTomasDe(l) }; }
+function pcMioDe(l){ return { config: configDe(l), tomas: pcTomasDe(l) }; }
 function pcHoy(){ return new Date().toISOString().slice(0, 10); }
 function pcAyer(){ return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
 function pcClaveDe(nombre, fecha){ return nombre.trim() + "·" + fecha; }
@@ -6835,10 +6848,17 @@ async function pcAbrir(nombre, silencioso){
     }
     guarda();
     PC.parte = id; PC.etiqueta = et; PC.desde = ""; PC.vistos = {};
-    PC.firmaMia = ""; PC.firmaProd = "";
-    /* v65: si el proyecto YA existía, entras de espectador (la nube manda);
-       tu cámara se reclama sola en cuanto TOCAS algo (pcReclama) */
-    PC.miLetra = creado ? camActiva() : "";
+    PC.firmaProd = ""; PC.firmas = {}; PC.mias = {};
+    /* v67: el CREADOR es dueño de todas sus cámaras con contenido — suben TODAS;
+       el que ENTRA es espectador y reclama la cámara que toque */
+    if (creado){
+      CAM_LETRAS.forEach(function(l){
+        const c = configDe(l);
+        if (String(c.body || "").trim() || String(c.roll || "").trim() || pcTomasDe(l).length)
+          PC.mias[l] = true;
+      });
+      if (!pcMisLetras().length) PC.mias[camActiva()] = true;
+    }
     pcGuarda();
     await pcTick(true);
     pcArranca();
@@ -6846,7 +6866,7 @@ async function pcAbrir(nombre, silencioso){
 }
 function pcSalir(){ pcPara();
   PC.sinAuto = (S.prod.proyecto || "").trim();   /* v66: saliste a propósito — no re-conectar solo a ESTE */
-  PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; PC.miLetra = ""; pcGuarda(); pcEstado(); }
+  PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; PC.mias = {}; PC.firmas = {}; pcGuarda(); pcEstado(); }
 function pcArranca(){ pcPara(); PC.timer = setInterval(() => pcTick(false), 8000); }
 /* v66: el proyecto se comparte SOLO. El primero que le pone nombre lo crea en
    la nube (dueño) sin tocar nada; los demás teclean el nombre y entran.
@@ -6877,26 +6897,38 @@ async function pcTick(primera){
         { p_parte: PC.parte, p_codigo: PC.clave, p_desde: null }, false);
       const prodSrv = JSON.stringify((d0 && d0.prod) || {});
       if (d0){ pcAplica(d0, true); PC.desde = d0.ahora || ""; }
-      const mio = pcMiLetra() ? JSON.stringify(pcMio()) : "";
       const prodLoc = JSON.stringify(S.prod || {});
-      const prodSube = (prodLoc !== prodSrv && Object.keys(S.prod || {}).length) ? S.prod : null;
-      if (mio || prodSube){
+      let prodSube = (prodLoc !== prodSrv && Object.keys(S.prod || {}).length) ? S.prod : null;
+      for (const l of pcMisLetras()){
+        const json = JSON.stringify(pcMioDe(l));
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-          p_letra: pcMiLetra() || "A", p_datos: mio ? JSON.parse(mio) : null, p_quien: pcQuien(),
+          p_letra: l, p_datos: JSON.parse(json), p_quien: pcQuien(),
           p_prod: prodSube }, false);
+        PC.firmas[l] = json; prodSube = null;
       }
-      PC.firmaMia = mio; PC.firmaProd = prodLoc;
-    } else {
-      const mio = pcMiLetra() ? JSON.stringify(pcMio()) : "";
-      const prod = JSON.stringify(S.prod);
-      const cambioDatos = !!pcMiLetra() && mio !== PC.firmaMia;
-      const cambioProd = prod !== PC.firmaProd;
-      if (cambioDatos || cambioProd){
+      if (prodSube){
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-          p_letra: pcMiLetra() || "A", p_datos: cambioDatos ? JSON.parse(mio) : null,
-          p_quien: pcQuien(), p_prod: cambioProd ? JSON.parse(prod) : null }, false);
-        PC.firmaMia = mio; PC.firmaProd = prod;
+          p_letra: "A", p_datos: null, p_quien: pcQuien(), p_prod: prodSube }, false);
       }
+      PC.firmaProd = prodLoc;
+    } else {
+      const prod = JSON.stringify(S.prod);
+      let prodPend = prod !== PC.firmaProd ? JSON.parse(prod) : null;
+      for (const l of pcMisLetras()){
+        const json = JSON.stringify(pcMioDe(l));
+        const conDatos = json !== PC.firmas[l];
+        if (!conDatos && !prodPend) continue;
+        await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
+          p_letra: l, p_datos: conDatos ? JSON.parse(json) : null,
+          p_quien: pcQuien(), p_prod: prodPend }, false);
+        if (conDatos) PC.firmas[l] = json;
+        prodPend = null;
+      }
+      if (prodPend){
+        await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
+          p_letra: "A", p_datos: null, p_quien: pcQuien(), p_prod: prodPend }, false);
+      }
+      PC.firmaProd = prod;
       const d = await nbPide("/rest/v1/rpc/parte_baja_codigo",
         { p_parte: PC.parte, p_codigo: PC.clave, p_desde: PC.desde || null }, false);
       if (d){ pcAplica(d, false); PC.desde = d.ahora || PC.desde; }
@@ -6908,11 +6940,10 @@ async function pcTick(primera){
 function pcAplica(d, primera){
   let cambio = false;
   const cams = (d && d.camaras) || {};
-  const miLetra = pcMiLetra();
-  const miaVacia = !miLetra || (!pcTomasDe(miLetra).length && !(configDe(miLetra).body) && !(configDe(miLetra).roll));
   Object.keys(cams).forEach(l => {
     PC.vistos[l] = { por: cams[l].por, cuando: cams[l].actualizado };
-    const esMia = !!miLetra && l === miLetra;
+    const esMia = pcEsMia(l);
+    const miaVacia = !pcTomasDe(l).length && !(configDe(l).body) && !(configDe(l).roll);
     if (esMia && !(primera && miaVacia)) return;      /* tu cámara manda en tu aparato */
     const datos = cams[l].datos || {};
     const cNueva = datos.config;
@@ -6925,7 +6956,7 @@ function pcAplica(d, primera){
     cambio = true;
   });
   if (d && d.prod && Object.keys(d.prod).length){
-    if (primera && !PC.miLetra){
+    if (primera && !pcMisLetras().length){
       /* v65: al ENTRAR a un proyecto existente, la producción de la nube MANDA —
          campo a campo: el valor del servidor CON contenido sustituye al tuyo;
          un campo vacío del servidor jamás borra nada */
@@ -6973,9 +7004,9 @@ function pcEstado(txt){
   }
   const tro = CAM_LETRAS.map(l => {
     const v = PC.vistos[l];
-    if (!v && l !== pcMiLetra()) return "";
+    if (!v && !pcEsMia(l)) return "";
     const h = v && v.cuando ? new Date(v.cuando).toTimeString().slice(0, 5) : "";
-    const quien = l === pcMiLetra() ? traduce("tú") : ((v && v.por) || "");
+    const quien = pcEsMia(l) ? traduce("tú") : ((v && v.por) || "");
     return "CAM " + l + (quien ? " · " + quien : "") + (h ? " · " + h : "");
   }).filter(Boolean).join("   ");
   el.textContent = traduce("Compartido") + " · «" + PC.etiqueta + "»" + (tro ? "  —  " + tro : "");
@@ -7024,6 +7055,16 @@ document.addEventListener("focusin", e => {
   if (!t.value) return;
   setTimeout(() => { try { if (document.activeElement === t) t.select(); } catch(_){} }, 0);
 });
+/* v67: lo preescrito VALE — los valores técnicos estándar entran como dato
+   real y editable; solo si nunca hubo nada (undefined). Un borrado suyo ("")
+   se respeta siempre. */
+(function(){
+  const R0 = S.parte.roll = S.parte.roll || {};
+  if (R0.wb === undefined) R0.wb = "5600 K";
+  if (R0.fps === undefined) R0.fps = "25";
+  if (R0.shutter === undefined) R0.shutter = "180°";
+  if (typeof fillParte === "function") fillParte();
+})();
 /* version visible en la Guia: para saber que corre cada aparato */
 (async () => { try {
   const el = document.getElementById("verapp"); if (!el) return;
