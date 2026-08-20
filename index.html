@@ -6924,7 +6924,15 @@ function pcEstado(txt){
   if (b) b.textContent = PC.parte ? traduce("Compartido") : traduce("Compartir");
   const el = $("pc_estado"); if (!el) return;
   if (txt !== undefined){ el.textContent = txt; return; }
-  if (!PC.parte){ el.textContent = "—"; return; }
+  if (!PC.parte){
+    el.textContent = "—";
+    try { caches.keys().then(ks => {
+      const k = ks.find(x => x.indexOf("wallio") === 0);
+      if (k && el.textContent === "—")
+        el.textContent = "— · " + k.replace("wallio-parte-", "parte ").replace("wallio-", "");
+    }).catch(() => {}); } catch(e2){}
+    return;
+  }
   const tro = CAM_LETRAS.map(l => {
     const v = PC.vistos[l];
     if (!v && l !== pcMiLetra()) return "";
