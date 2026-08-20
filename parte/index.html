@@ -5032,12 +5032,16 @@ function esMulticam(){ return camarasEnUso().length > 1; }
 function cambiaCam(letra){
   if (CAM_LETRAS.indexOf(letra) < 0 || letra === camActiva()){ pintaCams(); return; }
   guarda();
+  /* v51: BLINDAJE — se guarda y se carga por COPIA (nunca por referencia), y la
+     copia guardada NO se borra al cargar: si algo se interrumpe a mitad del
+     cambio, la configuración de cada cámara sigue estando a salvo */
+  const copiaCam = o => { try { return JSON.parse(JSON.stringify(o || {})); } catch(e){ return {}; } };
   S.parte.camsGuardadas = S.parte.camsGuardadas || {};
-  S.parte.camsGuardadas[camActiva()] = S.parte.roll;
+  S.parte.camsGuardadas[camActiva()] = copiaCam(S.parte.roll);
   const previa = S.parte.roll || {};
-  let sig = S.parte.camsGuardadas[letra];
-  if (!sig) sig = { tipo: previa.tipo || "digital", unidad: previa.unidad || "ft" };
-  delete S.parte.camsGuardadas[letra];
+  const sig = (S.parte.camsGuardadas[letra] && Object.keys(S.parte.camsGuardadas[letra]).length)
+    ? copiaCam(S.parte.camsGuardadas[letra])
+    : { tipo: previa.tipo || "digital", unidad: previa.unidad || "ft" };
   S.parte.roll = sig;
   S.parte.camActiva = letra;
   const c = String(S.parte.roll.cam || "").trim().toUpperCase();
