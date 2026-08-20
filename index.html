@@ -446,6 +446,8 @@ html.pfilm #listaTomas .f[data-k="dur"],html.pfilm #listaTomas .f[data-k="res"],
 html.pfilm #listaTomas .f[data-k="wb"],html.pfilm #listaTomas .f[data-k="lut"]{display:none}
 html:not(.pfilm) #listaTomas .f[data-k="dial"],html:not(.pfilm) #listaTomas .f[data-k="pies"]{display:none}
 html:not(.pfilm) #filmRollo,html:not(.pfilm) #cardLab{display:none}
+html.pfilm .f:has(> #p_dit),html.pfilm .f:has(> #pp_dit){display:none}
+html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){display:none}
 #combo{position:absolute;z-index:9999;background:var(--panel);border:1px solid var(--line);
   max-height:42vh;overflow:auto;box-shadow:0 14px 34px rgba(0,0,0,.55);-webkit-overflow-scrolling:touch;
   touch-action:pan-y;overscroll-behavior:contain}
@@ -1097,6 +1099,7 @@ html.solo-parte .portada{display:none}
       </select></div>
       <div class="f"><label>Casa de renta / propietario</label><input id="p_casa" autocomplete="off"></div>
       <div class="f"><label>Técnico de cámara / DIT</label><input id="p_dit" autocomplete="off"></div>
+      <div class="f"><label>Cargado por</label><input id="p_loader" autocomplete="off"></div>
       <div class="f"><label>Supervisor de VFX</label><input id="p_vfx" autocomplete="off"></div>
       <div class="f"><label>Contacto</label><input id="p_contacto" inputmode="email" autocomplete="off"></div>
     </div>
@@ -1241,6 +1244,7 @@ html.solo-parte .portada{display:none}
         <div class="f"><label>Auxiliar · 2º AC</label><input id="pp_ac2" autocomplete="off"></div>
         <div class="f"><label>VTR</label><input id="pp_vtr" autocomplete="off"></div>
         <div class="f"><label>Técnico de cámara / DIT</label><input id="pp_dit" autocomplete="off"></div>
+        <div class="f"><label>Cargado por</label><input id="pp_loader" autocomplete="off"></div>
       </div>
     </div>
   </details>
@@ -4625,6 +4629,31 @@ function enlazaProdParte(){
     el.addEventListener("change", pon);
   });
 }
+/* en película el equipo no lleva DIT: el campo pasa a «Cargado por» (loader),
+   que es EL MISMO dato que el de la tarjeta del rollo — se escriba donde se
+   escriba. El CSS de html.pfilm enseña un campo u otro automáticamente. */
+function enlazaLoaderProd(){
+  ["p_loader", "pp_loader"].forEach(function(id){
+    const el = $(id); if (!el) return;
+    const pon = function(){
+      S.parte.roll.loader = el.value;
+      ["p_loader", "pp_loader", "r2_loader"].forEach(function(o){
+        const e2 = $(o); if (e2 && e2 !== el && e2.value !== el.value) e2.value = el.value;
+      });
+    };
+    el.addEventListener("input", pon);
+    el.addEventListener("change", pon);
+  });
+  const r2 = $("r2_loader");
+  if (r2){
+    const espejo = function(){
+      ["p_loader", "pp_loader"].forEach(function(o){
+        const e2 = $(o); if (e2 && e2.value !== r2.value) e2.value = r2.value; });
+    };
+    r2.addEventListener("input", espejo);
+    r2.addEventListener("change", espejo);
+  }
+}
 /* los responsables viven ahora en Producción; un borrador viejo los traía en el
    rollo → se migran una vez (el borrado con "" se respeta) */
 function migraResponsables(){
@@ -4639,6 +4668,10 @@ function fillProdParte(){
   PROD_PARTE.forEach(function(k){
     const el = $("pp_" + k);
     if (el && S.prod[k] !== undefined) el.value = S.prod[k];
+  });
+  const lo = (S.parte.roll || {}).loader || "";
+  ["p_loader", "pp_loader"].forEach(function(id){
+    const el = $(id); if (el) el.value = lo;
   });
   avisoParte();
 }
@@ -5140,7 +5173,15 @@ function nuevaToma(nuevaEscena){
   else t.tk = String((parseInt(t.tk, 10) || 0) + 1);
   L.push(t); renderTomas();
   setTimeout(() => { const e = document.querySelectorAll("#listaTomas .toma");
-                     if (e.length) e[e.length-1].scrollIntoView({block:"center", behavior:"smooth"}); }, 40);
+                     if (!e.length) return;
+                     e[e.length-1].scrollIntoView({block:"center", behavior:"smooth"});
+                     /* escena nueva: el foco va directo al campo Escena vacío,
+                        para que se note que aquí se escribe CUÁL es (la toma ya
+                        ha vuelto sola a 1) */
+                     if (nuevaEscena){
+                       const sc = e[e.length-1].querySelector('.f[data-k="sc"] input');
+                       if (sc){ sc.removeAttribute("readonly"); sc.focus(); }
+                     } }, 40);
 }
 function borrarToma(i){
   guarda();
@@ -6435,7 +6476,7 @@ if (LANG === "en" && S.focos.join("|") === "Mínimo|2.40 m|INF") S.focos[0] = "M
 S.focosFab = S.focos.slice();      // lo de fábrica se aparta solo al tocarlo
 fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas(); chartCheck();
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
-enlazaProdParte(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
+enlazaProdParte(); enlazaLoaderProd(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
 if (!(S.prod.proyecto || "").trim()){ const dd = $("pp_bloque"); if (dd) dd.open = true; }
