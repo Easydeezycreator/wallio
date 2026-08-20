@@ -603,7 +603,8 @@ tr.camA td.camtd{color:#b3261e}
 tr.camB td.camtd{color:#1a5fb4}
 tr.camC td.camtd{color:#8a6d00}
 /* v57: cada cámara en su hoja y nada partido entre hojas */
-h4.salto{page-break-before:always;break-before:page}
+.camsec{page-break-inside:avoid;break-inside:avoid}
+h4.salto{page-break-before:auto}
 .camblock{page-break-inside:avoid;break-inside:avoid}
 .fl > div{page-break-inside:avoid;break-inside:avoid}
 .rep tr{page-break-inside:avoid;break-inside:avoid}
@@ -611,11 +612,19 @@ h4.salto{page-break-before:always;break-before:page}
 /* v67: iPad/iPhone imprimen con otras métricas de letra — cada celda parte el
    texto dentro de su columna en vez de montarse encima de la vecina */
 .rep{table-layout:fixed;width:100%}
-.rep td,.rep th{overflow-wrap:break-word;word-break:break-word}
+.rep td{overflow-wrap:break-word;word-break:break-word}
+.doc .rep th{white-space:nowrap;overflow:hidden;word-break:normal;
+  letter-spacing:.03em;padding-left:2px;padding-right:2px}
+.doc .rep td.sl{white-space:normal;overflow-wrap:break-word;word-break:break-word}
 .head{flex-wrap:wrap}
 .ctrl{max-width:100%}
 .fl > div{min-width:0}
 .fl .v{overflow-wrap:break-word;word-break:break-word}
+/* v69: los subrayados de cada fila COINCIDEN — nada de escalera: cada celda
+   ancla su valor (y su línea) a la misma base de la fila */
+.doc .fl{align-items:stretch}
+.doc .fl>div{display:flex;flex-direction:column}
+.doc .fl .v{margin-top:auto}
 .sum{page-break-inside:avoid;break-inside:avoid}
 tr.camD td.camtd{color:#15803d}
 @page{size:A4;margin:18mm 20mm}
@@ -4920,7 +4929,7 @@ function proyectoNuevo(){
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
   S.prod = { };
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
-  S.parte = { roll: { tipo: "digital", wb: "5600 K", fps: "25", shutter: "180°" },
+  S.parte = { roll: { tipo: "digital", wb: "5600 K · +0", fps: "25", shutter: "180°" },
               tomas: [], campos: [], camposRollo: [],
               camActiva: "A", camsGuardadas: {} };
   if (typeof fillProd === "function") fillProd();
@@ -4989,9 +4998,12 @@ function ptArchiva(aviso){
     return null;
   }
   const l = ptLee(), id = ptId();
+  const enUso = camarasEnUso();
   const fila = {id: id, t: Date.now(), proyecto: P.proyecto || "",
                 fecha: P.fecha || "", jornada: P.jornada || "",
                 roll: (S.parte.roll || {}).roll || "", cam: (S.parte.roll || {}).cam || "",
+                cams: enUso.length > 1 ? enUso.map(function(l){
+                  return l + " · " + (configDe(l).roll || "—"); }).join("  /  ") : "",
                 n: (S.parte.tomas || []).length, d: ptPaquete()};
   const i = l.findIndex(function(x){ return x.id === id; });
   if (i >= 0) l[i] = fila; else l.push(fila);
@@ -5018,7 +5030,7 @@ function ptLista(){
     return '<div class="pt"><div class="n"><b>' + esc(x.proyecto || "—") +
       (x.id === ahora ? ' <em>· ' + traduce("el de ahora") + "</em>" : "") + "</b>" +
       "<span>" + [x.fecha, x.jornada ? traduce("jornada ") + x.jornada : "",
-                  [x.cam, x.roll].filter(Boolean).join(" · "),
+                  x.cams || [x.cam, x.roll].filter(Boolean).join(" · "),
                   x.n + " " + traduce("tomas")].filter(Boolean).join("  ·  ") + "</span></div>" +
       '<button onclick="ptAbre(\'' + esc(x.id) + '\')">' + traduce("abrir") + "</button>" +
       '<button onclick="ptExporta(\'' + esc(x.id) + '\')">' + traduce("archivo") + "</button>" +
@@ -5142,7 +5154,7 @@ function cambiaCam(letra){
   const sig = (S.parte.camsGuardadas[letra] && Object.keys(S.parte.camsGuardadas[letra]).length)
     ? copiaCam(S.parte.camsGuardadas[letra])
     : { tipo: previa.tipo || "digital", unidad: previa.unidad || "ft",
-        wb: "5600 K", fps: "25", shutter: "180°" };
+        wb: "5600 K · +0", fps: "25", shutter: "180°" };
   S.parte.roll = sig;
   S.parte.camActiva = letra;
   const c = String(S.parte.roll.cam || "").trim().toUpperCase();
@@ -5189,6 +5201,7 @@ function ponTipo(t){ guarda(); S.parte.roll.tipo = t;
     .concat(film ? S.formats.map(f => f.fmt) : []));
   if (R.body && otrosB.has(R.body)) R.body = "";
   if (R.fmt && otrosF.has(R.fmt)) R.fmt = "";
+  if (typeof materializaDefectos === "function") materializaDefectos();
   pintaTipo(); renderTomas(); }
 function otraCamara(){
   guarda(); S.parte.roll.body = "";
@@ -5373,6 +5386,7 @@ function nuevaToma(nuevaEscena){
   t.camLetra = camActiva();
   if (typeof pcReclama === "function") pcReclama();
   if (typeof pcAutoProgramar === "function") pcAutoProgramar();
+  if (typeof materializaDefectos === "function") materializaDefectos();
   t.ts = Date.now();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
   t.clip = ""; t.dial = ""; t.pies = ""; t.mos = false;
@@ -5405,6 +5419,37 @@ function durTexto(seg){
   return Math.floor(seg / 60) + "′" + String(seg % 60).padStart(2, "0") + "″";
 }
 function focalTxt(v){ v = String(v == null ? "" : v).trim(); return v ? v.replace(/\s*mm\s*$/i, "") + " mm" : ""; }
+/* v69: LO PREDETERMINADO VALE — para toda cámara EN USO (con cuerpo, rollo o
+   tomas), los recuadros de fábrica que él no tocó pasan a ser DATO REAL del
+   proyecto: se ven en el campo, viajan a los demás y salen en el parte y el
+   PDF. Su borrado ("") se respeta SIEMPRE. No se inventan identidad (cámara/
+   rollo) ni instrucciones de laboratorio. */
+function materializaDefectos(){
+  const D = { body: "ARRI ALEXA 35", fmt: "Open Gate 4.6K", media: "Codex Compact 2 TB · 04",
+    codec: "ARRIRAW 4.6K OG", fps: "25", ei: "800", shutter: "180°", wb: "5600 K · +0",
+    lut: "ARRI 709 · show LUT v3", filt: "Black Pro-Mist 1/4" };
+  const F = { body: "ARRICAM LT", fmt: "Super 35 3-perf", fps: "25", ei: "800", shutter: "180°",
+    filt: "Black Pro-Mist 1/4", lab: "Fotofilm Madrid", mag: "M3",
+    emul: "KODAK VISION3 500T 5219", lote: "0231 042", dial0: "0",
+    rev: "Normal", copia: "Best light" };
+  let cambio = false;
+  CAM_LETRAS.forEach(function(l){
+    const C = configDe(l); if (!C) return;
+    const enUso = String(C.body || "").trim() || String(C.roll || "").trim() || pcTomasDe(l).length;
+    if (!enUso) return;
+    const cf = (C.tipo || "digital") === "film";
+    const tabla = cf ? F : D;
+    Object.keys(tabla).forEach(function(k){
+      if (C[k] === undefined){ C[k] = tabla[k]; cambio = true; }
+    });
+    if (cf && C.carga === undefined){ C.carga = (C.unidad === "m") ? "305" : "1000"; cambio = true; }
+  });
+  if (cambio){
+    fillParte();
+    if (typeof autoguarda === "function") autoguarda();
+  }
+  return cambio;
+}
 function cuentaTomas(letra){   /* v54: cuentas por cámara ("*" = todas) */
   const L = S.parte.tomas.filter(t => letra === "*" || (t.camLetra || "A") === letra);
   const sc = new Set(L.map(t => (t.sc || "").trim()).filter(Boolean)).size;
@@ -5500,14 +5545,14 @@ function renderParte(soloLetra){
     ${cf ? "" : F("LUT / look", C.lut)}${F("Filtros fijos", C.filt)}
     ${(S.parte.camposRollo || []).map(n => F(n, (C.extra || {})[n])).join("")}`;
   const tablaDe = (cf, contenido) => cf
-    ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:6%"><col style="width:4.5%">
-    <col style="width:3%"><col style="width:19%"><col style="width:20%"><col style="width:5%">
+    ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:6.6%"><col style="width:4.5%">
+    <col style="width:3%"><col style="width:18.4%"><col style="width:20%"><col style="width:5%">
     <col style="width:10%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
     <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th>
     <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Contador</th><th>Metraje</th></tr></thead>
     <tbody>${contenido || `<tr><td colspan="11" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`
-    : `<table class="rep"><colgroup><col style="width:3%"><col style="width:5%"><col style="width:4%">
-    <col style="width:3%"><col style="width:14.5%"><col style="width:9%"><col style="width:13.5%"><col style="width:4.5%">
+    : `<table class="rep"><colgroup><col style="width:3%"><col style="width:6.4%"><col style="width:4%">
+    <col style="width:3%"><col style="width:13.1%"><col style="width:9%"><col style="width:13.5%"><col style="width:4.5%">
     <col style="width:7%"><col style="width:7.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:5.5%"></colgroup>
     <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th><th>Archivo</th>
     <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Altura</th><th>Timecode</th>
@@ -5538,13 +5583,13 @@ function renderParte(soloLetra){
       const C = configDe(le), cf = (C.tipo || "digital") === "film", uu = uT(C);
       const subLI = LI.filter(p => (p.x.camLetra || "A") === le);
       const pl = cf ? piesResumen(le) : null;
-      return `<h4${ix ? ' class="salto"' : ""}><span class="nn">${3 + ix}</span><span class="camtag cam${le}">CAM ${le}</span></h4>
+      return `<div class="camsec"><h4><span class="nn">${3 + ix}</span><span class="camtag cam${le}">CAM ${le}</span></h4>
   <div class="camblock cam${le}"><div class="fl">${dentroDe(C, cf, le)}</div></div>${cf ? `
   <div class="fl">${F("Laboratorio", C.lab)}${F("Revelado", C.rev || "Normal")}
     ${F("Positivado / escaneo", C.copia || "Best light")}
     ${F("Fin del rollo", pl && pl.ultimo !== null ? pl.ultimo + " " + uu : "")}
     ${F("Instrucciones", C.labnotas)}</div>` : ""}
-  ${tablaDe(cf, filasDe(subLI, cf, uu))}${cf ? piesHTML(pl, uu) : ""}`;
+  ${tablaDe(cf, filasDe(subLI, cf, uu))}${cf ? piesHTML(pl, uu) : ""}</div>`;
     }).join("");
   };
 
@@ -5579,7 +5624,7 @@ function renderParte(soloLetra){
 
   ${cuerpoCams()}
 
-  <h4${mc ? ' class="salto"' : ""}><span class="nn">${mc ? 3 + usadas.length : (film ? "6" : "5")}</span>Resumen del rollo</h4>
+  <h4><span class="nn">${mc ? 3 + usadas.length : (film ? "6" : "5")}</span>Resumen del rollo</h4>
   ${mc ? `<div class="sum">
     <div><b>${t.sc}</b><span>escenas</span></div>
     <div><b>${t.tk}</b><span>tomas</span></div>
@@ -7067,16 +7112,10 @@ document.addEventListener("focusin", e => {
   if (!t.value) return;
   setTimeout(() => { try { if (document.activeElement === t) t.select(); } catch(_){} }, 0);
 });
-/* v67: lo preescrito VALE — los valores técnicos estándar entran como dato
-   real y editable; solo si nunca hubo nada (undefined). Un borrado suyo ("")
-   se respeta siempre. */
-(function(){
-  const R0 = S.parte.roll = S.parte.roll || {};
-  if (R0.wb === undefined) R0.wb = "5600 K";
-  if (R0.fps === undefined) R0.fps = "25";
-  if (R0.shutter === undefined) R0.shutter = "180°";
-  if (typeof fillParte === "function") fillParte();
-})();
+materializaDefectos();
+["r_body", "r_roll", "r_cam"].forEach(function(id){
+  const el = $(id); if (el) el.addEventListener("change", function(){ materializaDefectos(); });
+});
 /* version visible en la Guia: para saber que corre cada aparato */
 (async () => { try {
   const el = document.getElementById("verapp"); if (!el) return;
