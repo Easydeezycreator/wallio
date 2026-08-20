@@ -619,6 +619,7 @@ h4.salto{page-break-before:auto}
 .doc .rep th{white-space:nowrap;overflow:hidden;word-break:normal;
   letter-spacing:.03em;padding-left:2px;padding-right:2px}
 .doc .rep td.sl{white-space:normal;overflow-wrap:break-word;word-break:break-word}
+.doc .rep td.ft,#parte .rep td.ft{white-space:normal;word-break:normal;overflow-wrap:break-word}
 .head{flex-wrap:wrap}
 .ctrl{max-width:100%}
 .fl > div{min-width:0}
@@ -1471,7 +1472,7 @@ html.solo-parte .portada{display:none}
 <datalist id="dlEi"><option>200</option><option>400</option><option>500</option><option>640</option><option>800</option><option>1280</option><option>1600</option><option>2500</option><option>3200</option></datalist>
 <datalist id="dlShutter"><option>180°</option><option>172.8°</option><option>144°</option><option>90°</option><option>45°</option><option>1/48</option><option>1/50</option><option>1/60</option><option>1/100</option><option>1/120</option></datalist>
 <datalist id="dlWb"><option>3200 K</option><option>4300 K</option><option>5600 K</option><option>6500 K</option><option>2800 K</option></datalist>
-<datalist id="dlFiltros"><option>ND .3</option><option>ND .6</option><option>ND .9</option><option>ND 1.2</option><option>ND 1.5</option><option>ND 1.8</option><option>ND 2.1</option><option>Black Pro-Mist 1/8</option><option>Black Pro-Mist 1/4</option><option>Black Pro-Mist 1/2</option><option>Black Pro-Mist 1</option><option>Glimmerglass 1/4</option><option>Polarizador</option><option>Diopter +0.5</option><option>Diopter +1</option><option>Diopter +2</option><option>Clear / UV</option></datalist>
+<datalist id="dlFiltros"><option>ND .3</option><option>ND .6</option><option>ND .9</option><option>ND 1.2</option><option>ND 1.5</option><option>ND 1.8</option><option>ND 2.1</option><option>Black Pro-Mist 1/8</option><option>Black Pro-Mist 1/4</option><option>Black Pro-Mist 1/2</option><option>Black Pro-Mist 1</option><option>Glimmerglass 1/4</option><option>Polarizador</option><option>Diopter +0.5</option><option>Diopter +1</option><option>Diopter +2</option><option>Diopter +3</option><option>Hollywood Black Magic 1/4</option><option>Soft FX 1/2</option><option>Rota-Pola</option><option>Clear / UV</option></datalist>
 
 <!-- ===================== 4 · FICHA ===================== -->
 <section id="v-ficha">
@@ -5389,6 +5390,10 @@ function durTexto(seg){
   return Math.floor(seg / 60) + "′" + String(seg % 60).padStart(2, "0") + "″";
 }
 function focalTxt(v){ v = String(v == null ? "" : v).trim(); return v ? v.replace(/\s*mm\s*$/i, "") + " mm" : ""; }
+/* v72: varios filtros/lentillas en la misma toma -> uno por linea, sin partir palabras */
+function filtroHTML(v){ v = String(v == null ? "" : v).trim();
+  if (!v) return "\u2014";
+  return v.split(/\s*\u00b7\s*|\s*,\s*|\s+\+\s+/).filter(Boolean).map(esc).join("<br>"); }
 /* v69: LO PREDETERMINADO VALE — para toda cámara EN USO (con cuerpo, rollo o
    tomas), los recuadros de fábrica que él no tocó pasan a ser DATO REAL del
    proyecto: se ven en el campo, viajan a los demás y salen en el parte y el
@@ -5497,7 +5502,7 @@ function renderParte(soloLetra){
       <td>${esc(focalTxt(x.focal) || "—")}
         <span class="sn">${esc(x.serial || "sin nº de serie")}${ficha ? " · con ficha WLG-02" : ""}</span></td>
       <td class="mo">${esc(x.t ? "T" + String(x.t).replace(/^T/i,"") : "—")}</td>
-      <td>${esc(x.filt || "—")}</td>
+      <td class="ft">${filtroHTML(x.filt)}</td>
       <td class="mo fo">${esc(x.foco || "—")}</td>
       ${finales}</tr>` +
       (cont ? `<tr class="cont ${x.ok ? "buena" : ""}"><td></td>
@@ -5516,14 +5521,14 @@ function renderParte(soloLetra){
     ${(S.parte.camposRollo || []).map(n => F(n, (C.extra || {})[n])).join("")}`;
   const tablaDe = (cf, contenido) => cf
     ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:6.6%"><col style="width:4.5%">
-    <col style="width:3%"><col style="width:18.4%"><col style="width:20%"><col style="width:5%">
-    <col style="width:10%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
+    <col style="width:3%"><col style="width:18.4%"><col style="width:17.5%"><col style="width:5%">
+    <col style="width:12.5%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
     <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th>
     <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Contador</th><th>Metraje</th></tr></thead>
     <tbody>${contenido || `<tr><td colspan="11" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`
     : `<table class="rep"><colgroup><col style="width:3%"><col style="width:6.4%"><col style="width:4%">
     <col style="width:3%"><col style="width:13.1%"><col style="width:9%"><col style="width:13.5%"><col style="width:4.5%">
-    <col style="width:7%"><col style="width:7.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:5.5%"></colgroup>
+    <col style="width:10.5%"><col style="width:7.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:5.5%"></colgroup>
     <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th><th>Archivo</th>
     <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Altura</th><th>Timecode</th>
     <th>Dur.</th></tr></thead>
