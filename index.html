@@ -620,11 +620,12 @@ h4.salto{page-break-before:auto}
 .ctrl{max-width:100%}
 .fl > div{min-width:0}
 .fl .v{overflow-wrap:break-word;word-break:break-word}
-/* v69: los subrayados de cada fila COINCIDEN — nada de escalera: cada celda
-   ancla su valor (y su línea) a la misma base de la fila */
+/* v70: los subrayados de cada fila COINCIDEN — nada de escalera: cada celda
+   ancla su valor (y su línea) a la misma base de la fila. Con la especificidad
+   del impreso (#parte) para que ninguna regla vieja lo pise. */
 .doc .fl{align-items:stretch}
-.doc .fl>div{display:flex;flex-direction:column}
-.doc .fl .v{margin-top:auto}
+.doc .fl>div,#parte .fl>div{display:flex;flex-direction:column}
+.doc .fl .v,#parte .fl .v{margin-top:auto}
 .sum{page-break-inside:avoid;break-inside:avoid}
 tr.camD td.camtd{color:#15803d}
 @page{size:A4;margin:18mm 20mm}
