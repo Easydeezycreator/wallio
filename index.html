@@ -484,6 +484,9 @@ html.pfilm #listaTomas .f[data-k="clip"],html.pfilm #listaTomas .f[data-k="tc"],
 html.pfilm #listaTomas .f[data-k="dur"],html.pfilm #listaTomas .f[data-k="res"],
 html.pfilm #listaTomas .f[data-k="wb"],html.pfilm #listaTomas .f[data-k="lut"]{display:none}
 html:not(.pfilm) #listaTomas .f[data-k="dial"],html:not(.pfilm) #listaTomas .f[data-k="pies"]{display:none}
+/* v71: en film la descripcion llena la fila 1 para que serie y focal queden juntas */
+@media(min-width:520px){html.pfilm #listaTomas .f[data-k="desc"]{grid-column:span 2}}
+@media(min-width:780px){html.pfilm #listaTomas .f[data-k="desc"]{grid-column:span 4}}
 html:not(.pfilm) #filmRollo,html:not(.pfilm) #cardLab{display:none}
 html.pfilm .f:has(> #p_dit),html.pfilm .f:has(> #pp_dit){display:none}
 html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){display:none}
