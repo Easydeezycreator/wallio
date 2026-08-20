@@ -1349,6 +1349,18 @@ html.solo-parte .portada{display:none}
   </div>
 
   <div class="card">
+    <h2>Parte compartido</h2>
+    <div class="grid">
+      <div class="f"><label>Nombre del parte del día</label><input id="pc_etiqueta" placeholder="NIGHT HARVEST · día 3" autocomplete="off"></div>
+    </div>
+    <div class="btnrow">
+      <button class="primary" onclick="pcConectar()">Conectar</button>
+      <button class="ghost" onclick="pcSalir()">Salir</button>
+    </div>
+    <div class="hint" id="pc_estado">—</div>
+  </div>
+
+  <div class="card">
     <h2>Campos adicionales</h2>
     <div id="listaCampos"></div>
     <div class="btnrow"><button onclick="addCampo()">+ Añadir campo</button></div>
@@ -1632,6 +1644,13 @@ html.solo-parte .portada{display:none}
     <p><b>Emitir.</b> Lo que se entrega sale de aquí: la ficha de calibración en PDF y el paquete para post con los enlaces de descarga de los clips de cada grid.</p>
     <p><b>Parte.</b> El parte de cámara, uno por rollo o magazine; cada toma queda unida al número de serie de la óptica. Sus datos de producción son el mismo dato que los de la primera pestaña, se escriban donde se escriban. Existe también como app propia en wallioapp.com/parte/.</p>
     <p><b>Buzón.</b> Lo que estorbe, falte o te haya salvado un día de rodaje: se lee todo.</p>
+  </div>
+
+  <div class="card">
+    <h2>Parte compartido</h2>
+    <p>Varios auxiliares pueden trabajar el mismo parte: cada uno entra con su cuenta de la Nube en el mismo espacio, escribe el mismo nombre de parte y pulsa Conectar.</p>
+    <p>Cada auxiliar trabaja su cámara (A, B, C o D) y las demás se refrescan solas cada pocos segundos. Tu cámara activa manda en tu aparato: nadie te la pisa.</p>
+    <p>Si dos trabajan la misma letra a la vez, vale lo último que se subió. Salir deja de compartir pero no borra nada de tu aparato.</p>
   </div>
 
   <div class="card">
@@ -5017,6 +5036,7 @@ function cambiaCam(letra){
   if (!c || CAM_LETRAS.indexOf(c) >= 0) S.parte.roll.cam = letra;
   ponTipo(S.parte.roll.tipo || "digital");
   fillParte(); renderRollExtra(); renderTomas(); pintaCams();
+  if (PC.parte) setTimeout(() => pcTick(false), 400);
 }
 function pintaCams(){
   document.querySelectorAll(".camSel").forEach(caja => {
@@ -5230,6 +5250,7 @@ function nuevaToma(nuevaEscena){
   for (let j = L.length - 1; j >= 0; j--){ if ((L[j].camLetra || "A") === camActiva()){ u = L[j]; break; } }
   const t = u ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
   t.camLetra = camActiva();
+  t.ts = Date.now();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
   t.clip = ""; t.dial = ""; t.pies = ""; t.mos = false;
   if (nuevaEscena){ t.sc = ""; t.tk = "1"; }
@@ -5488,6 +5509,13 @@ function descargar(texto, nombre, tipo){
 
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
+"Parte compartido":"Shared report","Nombre del parte del día":"Today's report name",
+"Conectar":"Connect","NIGHT HARVEST · día 3":"NIGHT HARVEST · day 3",
+"Entra en tu espacio de la Nube para compartir.":"Sign in to your Cloud space first to share.",
+"Conectado":"Connected","tú":"you","sin conexión":"offline",
+"Varios auxiliares pueden trabajar el mismo parte: cada uno entra con su cuenta de la Nube en el mismo espacio, escribe el mismo nombre de parte y pulsa Conectar.":"Several assistants can work the same report: each signs in to the Cloud in the same space, types the same report name and taps Connect.",
+"Cada auxiliar trabaja su cámara (A, B, C o D) y las demás se refrescan solas cada pocos segundos. Tu cámara activa manda en tu aparato: nadie te la pisa.":"Each assistant works their own camera (A, B, C or D) and the others refresh on their own every few seconds. Your active camera rules on your device: nobody overwrites it.",
+"Si dos trabajan la misma letra a la vez, vale lo último que se subió. Salir deja de compartir pero no borra nada de tu aparato.":"If two people work the same letter at once, the last upload wins. Leave stops sharing but deletes nothing from your device.",
 "Sin tomas todavía. Pulsa «+ Toma».":"No takes yet. Press «+ Take».",
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
@@ -6537,6 +6565,122 @@ function descartaBorrador(){
 document.addEventListener("input", autoguarda, true);
 document.addEventListener("click", () => setTimeout(autoguarda, 50), true);
 
+/* ================= v49: PARTE COMPARTIDO =================
+   Varios auxiliares, un solo reporte: cada uno trabaja SU cámara (A–D) y ve
+   las demás refrescarse solas cada 8 s. «Conectar» crea o une por nombre
+   dentro del espacio de la Nube. Tu letra activa manda en tu aparato: el
+   servidor nunca te la pisa (solo al conectar con la tuya vacía). */
+const PC_CONF = "wallio.compartido.v1";
+let PC = { parte: "", etiqueta: "", desde: "" };
+try { PC = Object.assign(PC, JSON.parse(localStorage.getItem(PC_CONF) || "{}")); } catch(e){}
+PC.timer = null; PC.ocupado = false; PC.pendiente = false; PC.vistos = {};
+PC.firmaMia = ""; PC.firmaProd = "";
+function pcGuarda(){ try { localStorage.setItem(PC_CONF,
+  JSON.stringify({ parte: PC.parte, etiqueta: PC.etiqueta, desde: PC.desde })); } catch(e){} }
+function pcTomasDe(l){ return S.parte.tomas.filter(t => (t.camLetra || "A") === l); }
+function pcMio(){ return { config: S.parte.roll, tomas: pcTomasDe(camActiva()) }; }
+async function pcConectar(){
+  if (!NB.token || !NB.casa) return pcEstado(traduce("Entra en tu espacio de la Nube para compartir."));
+  const el = $("pc_etiqueta");
+  const et = ((el && el.value) || "").trim() ||
+    ((S.prod.proyecto || "").trim() ? S.prod.proyecto + " · " + (S.prod.fecha || new Date().toISOString().slice(0, 10))
+                                    : new Date().toISOString().slice(0, 10));
+  if (el) el.value = et;
+  pcEstado("…");
+  try {
+    const id = await nbPide("/rest/v1/rpc/parte_abrir",
+      { p_casa: NB.casa, p_etiqueta: et, p_quien: NB.nombre || NB.correo || "" });
+    guarda();
+    PC.parte = id; PC.etiqueta = et; PC.desde = ""; PC.vistos = {};
+    PC.firmaMia = ""; PC.firmaProd = "";
+    pcGuarda();
+    await pcTick(true);
+    pcArranca();
+  } catch(e){ pcEstado((e && e.message) || traduce("sin conexión")); }
+}
+function pcSalir(){ pcPara(); PC.parte = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; pcGuarda(); pcEstado(); }
+function pcArranca(){ pcPara(); PC.timer = setInterval(() => pcTick(false), 8000); }
+function pcPara(){ if (PC.timer){ clearInterval(PC.timer); PC.timer = null; } }
+function pcEscribiendo(){
+  const a = document.activeElement;
+  return !!(a && a.tagName === "INPUT" && a.closest && a.closest("#v-parte"));
+}
+async function pcTick(primera){
+  if (!PC.parte || PC.ocupado || !NB.token || !navigator.onLine) return;
+  PC.ocupado = true;
+  try {
+    if (PC.pendiente && !pcEscribiendo()){
+      PC.pendiente = false;
+      renderTomas(); fillParte(); fillProdParte();
+    }
+    if (primera){
+      /* al conectar: primero se mira lo que hay, luego se sube lo propio */
+      const d0 = await nbPide("/rest/v1/rpc/parte_baja", { p_parte: PC.parte, p_desde: null });
+      const prodServidorVacio = !d0 || !d0.prod || !Object.keys(d0.prod).length;
+      if (d0){ pcAplica(d0, true); PC.desde = d0.ahora || ""; }
+      const mio = JSON.stringify(pcMio());
+      await nbPide("/rest/v1/rpc/parte_sube", { p_parte: PC.parte, p_letra: camActiva(),
+        p_datos: JSON.parse(mio), p_quien: NB.nombre || NB.correo || "",
+        p_prod: (prodServidorVacio && Object.keys(S.prod || {}).length) ? S.prod : null });
+      PC.firmaMia = mio; PC.firmaProd = JSON.stringify(S.prod);
+    } else {
+      const mio = JSON.stringify(pcMio()), prod = JSON.stringify(S.prod);
+      if (mio !== PC.firmaMia || prod !== PC.firmaProd){
+        await nbPide("/rest/v1/rpc/parte_sube", { p_parte: PC.parte, p_letra: camActiva(),
+          p_datos: mio !== PC.firmaMia ? JSON.parse(mio) : null,
+          p_quien: NB.nombre || NB.correo || "",
+          p_prod: prod !== PC.firmaProd ? JSON.parse(prod) : null });
+        PC.firmaMia = mio; PC.firmaProd = prod;
+      }
+      const d = await nbPide("/rest/v1/rpc/parte_baja", { p_parte: PC.parte, p_desde: PC.desde || null });
+      if (d){ pcAplica(d, false); PC.desde = d.ahora || PC.desde; }
+    }
+    pcGuarda(); pcEstado();
+  } catch(e){ pcEstado((e && e.message) || traduce("sin conexión")); }
+  PC.ocupado = false;
+}
+function pcAplica(d, primera){
+  let cambio = false;
+  const cams = (d && d.camaras) || {};
+  const miLetra = camActiva();
+  const miaVacia = !pcTomasDe(miLetra).length && !((S.parte.roll || {}).body) && !((S.parte.roll || {}).roll);
+  Object.keys(cams).forEach(l => {
+    PC.vistos[l] = { por: cams[l].por, cuando: cams[l].actualizado };
+    const esMia = l === miLetra;
+    if (esMia && !(primera && miaVacia)) return;      /* tu cámara manda en tu aparato */
+    const datos = cams[l].datos || {};
+    if (esMia) S.parte.roll = datos.config || S.parte.roll;
+    else { S.parte.camsGuardadas = S.parte.camsGuardadas || {}; S.parte.camsGuardadas[l] = datos.config || {}; }
+    const nuevas = (datos.tomas || []).map(t => Object.assign({}, t, { camLetra: l }));
+    S.parte.tomas = S.parte.tomas.filter(t => (t.camLetra || "A") !== l).concat(nuevas);
+    cambio = true;
+  });
+  if (d && d.prod && Object.keys(d.prod).length && JSON.stringify(d.prod) !== JSON.stringify(S.prod)){
+    S.prod = Object.assign({}, S.prod, d.prod);
+    PC.firmaProd = JSON.stringify(S.prod);
+    cambio = true;
+  }
+  if (!cambio) return;
+  S.parte.tomas.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  if (pcEscribiendo()){ PC.pendiente = true; return; }  /* no pisar el teclado del aux */
+  renderTomas(); fillParte(); fillProdParte();
+  if (typeof pintaTipo === "function") pintaTipo();
+  autoguarda();
+}
+function pcEstado(txt){
+  const el = $("pc_estado"); if (!el) return;
+  if (txt !== undefined){ el.textContent = txt; return; }
+  if (!PC.parte){ el.textContent = "—"; return; }
+  const tro = CAM_LETRAS.map(l => {
+    const v = PC.vistos[l];
+    if (!v && l !== camActiva()) return "";
+    const h = v && v.cuando ? new Date(v.cuando).toTimeString().slice(0, 5) : "";
+    const quien = l === camActiva() ? traduce("tú") : ((v && v.por) || "");
+    return "CAM " + l + (quien ? " · " + quien : "") + (h ? " · " + h : "");
+  }).filter(Boolean).join("   ");
+  el.textContent = traduce("Conectado") + " · «" + PC.etiqueta + "»" + (tro ? "  —  " + tro : "");
+}
+
 /* ---------------- arranque ---------------- */
 /* el idioma manda también en la distancia de fábrica: en inglés, «Minimum» */
 if (LANG === "en" && S.focos.join("|") === "Mínimo|2.40 m|INF") S.focos[0] = "Minimum";
@@ -6547,6 +6691,9 @@ enlazaProdParte(); enlazaLoaderProd(); fillProdParte(); pintaTira(); ptLista(); 
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
 if (!(S.prod.proyecto || "").trim()){ const dd = $("pp_bloque"); if (dd) dd.open = true; }
+if (PC.parte){ const pe = $("pc_etiqueta"); if (pe) pe.value = PC.etiqueta;
+  setTimeout(() => pcTick(false), 2500); pcArranca(); }
+pcEstado();
 cuentaVisita(); bzDrena();
 pintaFotoSerial();
 if (typeof abreEnlace === "function") abreEnlace();
