@@ -602,6 +602,13 @@ html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){displ
 tr.camA td.camtd{color:#b3261e}
 tr.camB td.camtd{color:#1a5fb4}
 tr.camC td.camtd{color:#8a6d00}
+/* v57: cada cámara en su hoja y nada partido entre hojas */
+h4.salto{page-break-before:always;break-before:page}
+.camblock{page-break-inside:avoid;break-inside:avoid}
+.fl > div{page-break-inside:avoid;break-inside:avoid}
+.rep tr{page-break-inside:avoid;break-inside:avoid}
+.rep tr.cont{page-break-before:avoid}
+.sum{page-break-inside:avoid;break-inside:avoid}
 tr.camD td.camtd{color:#15803d}
 @page{size:A4;margin:18mm 20mm}
 
@@ -5254,7 +5261,7 @@ function renderTomas(){
   $("listaTomas").innerHTML = enLista ? L.map((t, i) => {
     if ((t.camLetra || "A") !== camActiva()) return "";
     const pft = esFilm() ? piesDeToma(i) : 0;
-    const meta = [t.mos ? "MOS" : "", t.desc, t.clip, t.serial, t.focal ? t.focal + " mm" : "", t.t ? "T" + t.t : "", t.filt,
+    const meta = [t.mos ? "MOS" : "", t.desc, t.clip, t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
                   t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
     const T_LISTAS = { sc: "dlEscenas", serial: "dlSeries", t: "dlT", filt: "dlFiltros",
@@ -5358,6 +5365,7 @@ function durTexto(seg){
   seg = Math.round(seg || 0);
   return Math.floor(seg / 60) + "′" + String(seg % 60).padStart(2, "0") + "″";
 }
+function focalTxt(v){ v = String(v == null ? "" : v).trim(); return v ? v.replace(/\s*mm\s*$/i, "") + " mm" : ""; }
 function cuentaTomas(letra){   /* v54: cuentas por cámara ("*" = todas) */
   const L = S.parte.tomas.filter(t => letra === "*" || (t.camLetra || "A") === letra);
   const sc = new Set(L.map(t => (t.sc || "").trim()).filter(Boolean)).size;
@@ -5408,39 +5416,98 @@ function renderParte(soloLetra){
   const conGrid = norm(S.lens.serial) && Object.keys(S.takes).length;
 
   const par = (et, v) => v ? `<b>${esc(et)}</b> ${esc(v)}` : "";
-  const filas = LI.map(({ x, i }, nfila) => {
-    const xl = x.camLetra || "A";
+  /* v57: el colectivo se genera POR CÁMARA — cada una con su tabla clásica,
+     sin columna extra y sin apretar el colgroup validado del v45 */
+  const filaHTML = (x, i, nfila, cf, uu) => {
     const ficha = conGrid && norm(x.serial) === norm(S.lens.serial);
     const tr = [x.tilt ? "tilt " + x.tilt : "", x.roll ? "roll " + x.roll : ""].filter(Boolean).join(" · ");
     const extra = Object.entries(x.extra || {}).map(([k, v]) => par(k, v)).filter(Boolean);
     const cont = [par("fps", x.fps), par("obt.", x.shutter), par("EI", x.ei),
-                  film ? par("altura", x.alt) : "", film && tr ? esc(tr) : "",
-                  film ? "" : par("temp.", x.wb), film ? "" : par("LUT", x.lut), film ? "" : par("resol.", x.res),
+                  cf ? par("altura", x.alt) : "", cf && tr ? esc(tr) : "",
+                  cf ? "" : par("temp.", x.wb), cf ? "" : par("LUT", x.lut), cf ? "" : par("resol.", x.res),
                   ...extra, x.nota ? `<i>${esc(x.nota)}</i>` : ""].filter(Boolean).join("  ·  ");
-    const pft = film ? piesDeToma(i) : 0;
-    const finales = film
+    const pft = cf ? piesDeToma(i) : 0;
+    const finales = cf
       ? `<td class="mo">${esc(x.dial || "—")}</td>
-      <td class="mo">${pft ? pft + " " + uTxt() : "—"}</td>`
+      <td class="mo">${pft ? pft + " " + uu : "—"}</td>`
       : `<td class="mo">${esc(x.alt || "—")}${tr ? `<span class="sn">${esc(tr)}</span>` : ""}</td>
       <td class="mo">${esc(x.tc || "—")}</td>
       <td class="mo">${esc(x.dur ? x.dur + " s" : "—")}</td>`;
-    return `<tr class="${x.ok ? "buena" : ""} cam${xl}">
-      <td class="n">${String(nfila+1).padStart(2,"0")}</td>${mc ? `
-      <td class="camtd">${xl}</td>` : ""}
+    return `<tr class="${x.ok ? "buena" : ""}">
+      <td class="n">${String(nfila + 1).padStart(2, "0")}</td>
       <td class="sl">${esc(x.sc || "—")}</td>
       <td class="sl">${esc(x.tk || "—")}</td>
       <td><span class="cir">${x.ok ? "◯" : ""}</span></td>
-      <td>${esc(x.desc || "—")}${x.mos ? " · MOS" : ""}</td>${film ? "" : `
+      <td>${esc(x.desc || "—")}${x.mos ? " · MOS" : ""}</td>${cf ? "" : `
       <td class="mo">${esc(x.clip || "—")}</td>`}
-      <td>${esc(x.focal ? x.focal + " mm" : "—")}
+      <td>${esc(focalTxt(x.focal) || "—")}
         <span class="sn">${esc(x.serial || "sin nº de serie")}${ficha ? " · con ficha WLG-02" : ""}</span></td>
       <td class="mo">${esc(x.t ? "T" + String(x.t).replace(/^T/i,"") : "—")}</td>
       <td>${esc(x.filt || "—")}</td>
       <td class="mo fo">${esc(x.foco || "—")}</td>
       ${finales}</tr>` +
       (cont ? `<tr class="cont ${x.ok ? "buena" : ""}"><td></td>
-        <td colspan="${(film ? 10 : 12) + (mc ? 1 : 0)}">${cont}</td></tr>` : "");
-  }).join("");
+        <td colspan="${cf ? 10 : 12}">${cont}</td></tr>` : "");
+  };
+  const filasDe = (sub, cf, uu) => sub.map((p, k) => filaHTML(p.x, p.i, k, cf, uu)).join("");
+  const dentroDe = (C, cf, le) => `${le ? F("Cámara", C.cam || le) + F("Rollo / magazine", C.roll) : ""}${F("Cuerpo", C.body)}${F("Formato de captura", C.fmt)}${cf ? `
+    ${F("Emulsión", C.emul)}${F("Lote / batch", C.lote)}
+    ${F("Nº de magazine", C.mag)}${F("Carga", C.carga ? C.carga + " " + uT(C) : "")}
+    ${F("Paso", pasoTexto(C.perf))}
+    ${F("Contador al empezar", (C.dial0 || "0") + " " + uT(C))}` : `
+    ${F("Codec / emulsión", C.codec)}${F("Soporte", C.media)}`}
+    ${F("Fotogramas por segundo", C.fps)}${F("EI / ISO", C.ei)}
+    ${F("Obturador", C.shutter)}${cf ? "" : F("Temperatura de color", C.wb)}
+    ${cf ? "" : F("LUT / look", C.lut)}${F("Filtros fijos", C.filt)}
+    ${(S.parte.camposRollo || []).map(n => F(n, (C.extra || {})[n])).join("")}`;
+  const tablaDe = (cf, contenido) => cf
+    ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:6%"><col style="width:4.5%">
+    <col style="width:3%"><col style="width:19%"><col style="width:20%"><col style="width:5%">
+    <col style="width:10%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
+    <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th>
+    <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Contador</th><th>Metraje</th></tr></thead>
+    <tbody>${contenido || `<tr><td colspan="11" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`
+    : `<table class="rep"><colgroup><col style="width:3%"><col style="width:5%"><col style="width:4%">
+    <col style="width:3%"><col style="width:14.5%"><col style="width:9%"><col style="width:13.5%"><col style="width:4.5%">
+    <col style="width:7%"><col style="width:7.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:5.5%"></colgroup>
+    <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th><th>Archivo</th>
+    <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Altura</th><th>Timecode</th>
+    <th>Dur.</th></tr></thead>
+    <tbody>${contenido || `<tr><td colspan="13" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`;
+  const piesHTML = (pl, uu) => `<div class="sum pies">
+    <div><b>${pl.G} ${uu}</b><span>G · buenas (imprimir)</span></div>
+    <div><b>${pl.NG} ${uu}</b><span>NG · no buenas</span></div>
+    <div><b>${pl.W} ${uu}</b><span>W · desperdicio</span></div>
+    <div><b>${pl.T} ${uu}</b><span>T · expuesto</span></div>
+    <div><b>${pl.SE === null ? "—" : pl.SE + " " + uu}</b><span>SE · cola sin exponer</span></div>
+  </div>`;
+  const cuerpoCams = () => {
+    if (!mc){
+      return `<h4><span class="nn">3</span>Cámara y rollo</h4>
+  <div class="fl">${dentroDe(R, film, null)}</div>${film ? `
+
+  <h4><span class="nn">4</span>Laboratorio</h4>
+  <div class="fl">${F("Laboratorio", R.lab)}${F("Revelado", R.rev || "Normal")}
+    ${F("Positivado / escaneo", R.copia || "Best light")}
+    ${F("Fin del rollo", pf && pf.ultimo !== null ? pf.ultimo + " " + uTxt() : "")}
+    ${F("Instrucciones", R.labnotas)}</div>` : ""}
+
+  <h4><span class="nn">${film ? "5" : "4"}</span>Tomas</h4>
+  ${tablaDe(film, filasDe(LI, film, uTxt()))}`;
+    }
+    return usadas.map((le, ix) => {
+      const C = configDe(le), cf = (C.tipo || "digital") === "film", uu = uT(C);
+      const subLI = LI.filter(p => (p.x.camLetra || "A") === le);
+      const pl = cf ? piesResumen(le) : null;
+      return `<h4${ix ? ' class="salto"' : ""}><span class="nn">${3 + ix}</span><span class="camtag cam${le}">CAM ${le}</span></h4>
+  <div class="camblock cam${le}"><div class="fl">${dentroDe(C, cf, le)}</div></div>${cf ? `
+  <div class="fl">${F("Laboratorio", C.lab)}${F("Revelado", C.rev || "Normal")}
+    ${F("Positivado / escaneo", C.copia || "Best light")}
+    ${F("Fin del rollo", pl && pl.ultimo !== null ? pl.ultimo + " " + uu : "")}
+    ${F("Instrucciones", C.labnotas)}</div>` : ""}
+  ${tablaDe(cf, filasDe(subLI, cf, uu))}${cf ? piesHTML(pl, uu) : ""}`;
+    }).join("");
+  };
 
   $("parte").innerHTML = `
   <div class="head">
@@ -5471,58 +5538,14 @@ function renderParte(soloLetra){
   <div class="fl">${F("Director de fotografía", P.dop ?? R.dop)}${F("Foquista / parte", P.ac ?? R.ac ?? P.por)}
     ${F("Auxiliar · 2º AC", P.ac2 ?? R.ac2)}${F("VTR", P.vtr)}${film ? F("Cargado por", R.loader) : F("Técnico de cámara / DIT", P.dit)}</div>
 
-  <h4><span class="nn">3</span>Cámara y rollo</h4>
-  ${(mc ? usadas : [null]).map(le => { const C = le ? configDe(le) : R;
-    const cf = (C.tipo || "digital") === "film";
-    const dentro = `${mc ? F("Cámara", C.cam || le) + F("Rollo / magazine", C.roll) : ""}${F("Cuerpo", C.body)}${F("Formato de captura", C.fmt)}${cf ? `
-    ${F("Emulsión", C.emul)}${F("Lote / batch", C.lote)}
-    ${F("Nº de magazine", C.mag)}${F("Carga", C.carga ? C.carga + " " + uT(C) : "")}
-    ${F("Paso", pasoTexto(C.perf))}
-    ${F("Contador al empezar", (C.dial0 || "0") + " " + uT(C))}` : `
-    ${F("Codec / emulsión", C.codec)}${F("Soporte", C.media)}`}
-    ${F("Fotogramas por segundo", C.fps)}${F("EI / ISO", C.ei)}
-    ${F("Obturador", C.shutter)}${cf ? "" : F("Temperatura de color", C.wb)}
-    ${cf ? "" : F("LUT / look", C.lut)}${F("Filtros fijos", C.filt)}
-    ${(S.parte.camposRollo || []).map(n => F(n, (C.extra || {})[n])).join("")}`;
-    return mc ? `<div class="camblock cam${le}"><span class="camtag cam${le}">CAM ${le}</span>
-  <div class="fl">${dentro}</div></div>` : `<div class="fl">${dentro}</div>`; }).join("")}${film ? `
+  ${cuerpoCams()}
 
-  <h4><span class="nn">4</span>Laboratorio</h4>
-  <div class="fl">${F("Laboratorio", R.lab)}${F("Revelado", R.rev || "Normal")}
-    ${F("Positivado / escaneo", R.copia || "Best light")}
-    ${F("Fin del rollo", pf && pf.ultimo !== null ? pf.ultimo + " " + uTxt() : "")}
-    ${F("Instrucciones", R.labnotas)}</div>` : ""}
-
-  <h4><span class="nn">${film ? "5" : "4"}</span>Tomas</h4>
-  ${film ? `<table class="rep"><colgroup><col style="width:3%">${mc ? `<col style="width:3.4%">` : ""}<col style="width:6%"><col style="width:4.5%">
-    <col style="width:3%"><col style="width:${mc ? "15.6" : "19"}%"><col style="width:20%"><col style="width:5%">
-    <col style="width:10%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
-    <thead><tr><th>#</th>${mc ? "<th>CAM</th>" : ""}<th>Escena</th><th>Toma</th><th></th><th>Descripción</th>
-    <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Contador</th><th>Metraje</th></tr></thead>
-    <tbody>${filas || `<tr><td colspan="${mc ? 12 : 11}" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`
-  : `<table class="rep"><colgroup><col style="width:3%">${mc ? `<col style="width:3.2%">` : ""}<col style="width:5%"><col style="width:4%">
-    <col style="width:3%"><col style="width:${mc ? "11.3" : "14.5"}%"><col style="width:9%"><col style="width:13.5%"><col style="width:4.5%">
-    <col style="width:7%"><col style="width:7.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:5.5%"></colgroup>
-    <thead><tr><th>#</th>${mc ? "<th>CAM</th>" : ""}<th>Escena</th><th>Toma</th><th></th><th>Descripción</th><th>Archivo</th>
-    <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Altura</th><th>Timecode</th>
-    <th>Dur.</th></tr></thead>
-    <tbody>${filas || `<tr><td colspan="${mc ? 14 : 13}" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`}
-
-  <h4><span class="nn">${film ? "6" : "5"}</span>Resumen del rollo</h4>
-  ${film ? (mc ? usadas.map(le => { const pl = piesResumen(le), uu = uT(configDe(le));
-    return `<span class="camtag cam${le}">CAM ${le}</span><div class="sum pies">
-    <div><b>${pl.G} ${uu}</b><span>G · buenas (imprimir)</span></div>
-    <div><b>${pl.NG} ${uu}</b><span>NG · no buenas</span></div>
-    <div><b>${pl.W} ${uu}</b><span>W · desperdicio</span></div>
-    <div><b>${pl.T} ${uu}</b><span>T · expuesto</span></div>
-    <div><b>${pl.SE === null ? "—" : pl.SE + " " + uu}</b><span>SE · cola sin exponer</span></div>
-  </div>`; }).join("") : `<div class="sum pies">
-    <div><b>${pf.G} ${uTxt()}</b><span>G · buenas (imprimir)</span></div>
-    <div><b>${pf.NG} ${uTxt()}</b><span>NG · no buenas</span></div>
-    <div><b>${pf.W} ${uTxt()}</b><span>W · desperdicio</span></div>
-    <div><b>${pf.T} ${uTxt()}</b><span>T · expuesto</span></div>
-    <div><b>${pf.SE === null ? "—" : pf.SE + " " + uTxt()}</b><span>SE · cola sin exponer</span></div>
-  </div>`) + `
+  <h4${mc ? ' class="salto"' : ""}><span class="nn">${mc ? 3 + usadas.length : (film ? "6" : "5")}</span>Resumen del rollo</h4>
+  ${mc ? `<div class="sum">
+    <div><b>${t.sc}</b><span>escenas</span></div>
+    <div><b>${t.tk}</b><span>tomas</span></div>
+    <div><b>${t.ok}</b><span>buenas</span></div>
+  </div>` : film ? piesHTML(pf, uTxt()) + `
   <div class="sum">
     <div><b>${t.sc}</b><span>escenas</span></div>
     <div><b>${t.tk}</b><span>tomas</span></div>
