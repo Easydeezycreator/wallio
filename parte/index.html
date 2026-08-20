@@ -6778,13 +6778,14 @@ async function pcTick(primera){
     if (primera){
       const d0 = await nbPide("/rest/v1/rpc/parte_baja_codigo",
         { p_parte: PC.parte, p_codigo: PC.clave, p_desde: null }, false);
-      const prodServidorVacio = !d0 || !d0.prod || !Object.keys(d0.prod).length;
+      const prodSrv = JSON.stringify((d0 && d0.prod) || {});
       if (d0){ pcAplica(d0, true); PC.desde = d0.ahora || ""; }
       const mio = JSON.stringify(pcMio());
+      const prodLoc = JSON.stringify(S.prod || {});
       await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
         p_letra: pcMiLetra(), p_datos: JSON.parse(mio), p_quien: pcQuien(),
-        p_prod: (prodServidorVacio && Object.keys(S.prod || {}).length) ? S.prod : null }, false);
-      PC.firmaMia = mio; PC.firmaProd = JSON.stringify(S.prod);
+        p_prod: (prodLoc !== prodSrv && Object.keys(S.prod || {}).length) ? S.prod : null }, false);
+      PC.firmaMia = mio; PC.firmaProd = prodLoc;
     } else {
       const mio = JSON.stringify(pcMio()), prod = JSON.stringify(S.prod);
       if (mio !== PC.firmaMia || prod !== PC.firmaProd){
@@ -6811,16 +6812,27 @@ function pcAplica(d, primera){
     const esMia = l === miLetra;
     if (esMia && !(primera && miaVacia)) return;      /* tu cámara manda en tu aparato */
     const datos = cams[l].datos || {};
-    if (l === camActiva()) S.parte.roll = datos.config || S.parte.roll;
-    else { S.parte.camsGuardadas = S.parte.camsGuardadas || {}; S.parte.camsGuardadas[l] = datos.config || {}; }
+    const cNueva = datos.config;
+    const conAlgo = cNueva && Object.keys(cNueva).some(k => String(cNueva[k] === undefined || cNueva[k] === null ? "" : cNueva[k]).trim() !== "");
+    if (l === camActiva()){ if (conAlgo) S.parte.roll = cNueva; }
+    else { S.parte.camsGuardadas = S.parte.camsGuardadas || {};
+      if (conAlgo || !S.parte.camsGuardadas[l]) S.parte.camsGuardadas[l] = cNueva || {}; }
     const nuevas = (datos.tomas || []).map(t => Object.assign({}, t, { camLetra: l }));
     S.parte.tomas = S.parte.tomas.filter(t => (t.camLetra || "A") !== l).concat(nuevas);
     cambio = true;
   });
-  if (d && d.prod && Object.keys(d.prod).length && JSON.stringify(d.prod) !== JSON.stringify(S.prod)){
-    S.prod = Object.assign({}, S.prod, d.prod);
-    PC.firmaProd = JSON.stringify(S.prod);
-    cambio = true;
+  if (d && d.prod && Object.keys(d.prod).length){
+    /* v60: NADA del servidor borra lo tuyo — un campo del servidor solo entra
+       si viene CON contenido y el tuyo está vacío. Lo tuyo lleno, manda. */
+    let cambioProd = false;
+    Object.keys(d.prod).forEach(k => {
+      const v = d.prod[k];
+      if (v !== undefined && v !== null && String(v).trim() !== "" &&
+          String(S.prod[k] === undefined || S.prod[k] === null ? "" : S.prod[k]).trim() === ""){
+        S.prod[k] = v; cambioProd = true;
+      }
+    });
+    if (cambioProd) cambio = true;
   }
   if (!cambio) return;
   S.parte.tomas.sort((a, b) => (a.ts || 0) - (b.ts || 0));
