@@ -1236,6 +1236,10 @@ html.solo-parte .portada{display:none}
         <div class="f"><label>Localización</label><input id="pp_localizacion" autocomplete="off"></div>
         <div class="f"><label>Fecha</label><input id="pp_fecha" type="date" autocomplete="off"></div>
         <div class="f"><label>Casa de renta / propietario</label><input id="pp_casa" autocomplete="off"></div>
+        <div class="f"><label>Director de fotografía</label><input id="pp_dop" autocomplete="off"></div>
+        <div class="f"><label>Foquista</label><input id="pp_ac" autocomplete="off"></div>
+        <div class="f"><label>Auxiliar · 2º AC</label><input id="pp_ac2" autocomplete="off"></div>
+        <div class="f"><label>VTR</label><input id="pp_vtr" autocomplete="off"></div>
         <div class="f"><label>Técnico de cámara / DIT</label><input id="pp_dit" autocomplete="off"></div>
       </div>
     </div>
@@ -1260,9 +1264,6 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Temperatura de color</label><input id="r_wb" placeholder="5600 K · +0" autocomplete="off"></div>
       <div class="f"><label>LUT / look</label><input id="r_lut" placeholder="ARRI 709 · show LUT v3" autocomplete="off"></div>
       <div class="f"><label>Filtros fijos</label><input id="r_filt" placeholder="Black Pro-Mist 1/4" autocomplete="off"></div>
-      <div class="f"><label>Foquista</label><input id="r_ac" autocomplete="off"></div>
-      <div class="f"><label>Auxiliar · 2º AC</label><input id="r_ac2" autocomplete="off"></div>
-      <div class="f"><label>Director de fotografía</label><input id="r_dop" autocomplete="off"></div>
     </div>
     <div class="grid" id="filmRollo">
       <div class="f"><label>Laboratorio</label><input id="r2_lab" placeholder="Fotofilm Madrid" autocomplete="off"></div>
@@ -4599,7 +4600,7 @@ function guardarFicha(){
    producción de la primera pestaña, pero editables desde aquí: se escriba
    donde se escriba, es el mismo dato. Así esta página se basta sola.   */
 const PROD_PARTE = ["proyecto", "productora", "unidad", "jornada",
-                    "localizacion", "fecha", "casa", "dit"];
+                    "localizacion", "fecha", "casa", "dop", "ac", "ac2", "vtr", "dit"];
 
 function enlazaProdParte(){
   PROD_PARTE.forEach(function(k){
@@ -4624,7 +4625,17 @@ function enlazaProdParte(){
     el.addEventListener("change", pon);
   });
 }
+/* los responsables viven ahora en Producción; un borrador viejo los traía en el
+   rollo → se migran una vez (el borrado con "" se respeta) */
+function migraResponsables(){
+  const P = S.prod, R = (S.parte && S.parte.roll) || {};
+  if (P.dop === undefined && R.dop !== undefined) P.dop = R.dop;
+  if (P.ac === undefined && R.ac !== undefined) P.ac = R.ac;
+  if (P.ac2 === undefined && R.ac2 !== undefined) P.ac2 = R.ac2;
+  if (P.ac === undefined && P.por) P.ac = P.por;
+}
 function fillProdParte(){
+  migraResponsables();
   PROD_PARTE.forEach(function(k){
     const el = $("pp_" + k);
     if (el && S.prod[k] !== undefined) el.value = S.prod[k];
@@ -4923,7 +4934,7 @@ function tomaVacia(){
   t.ok = false; t.mos = false; t.extra = {};
   return t;
 }
-const R_CAMPOS = ["cam","roll","body","fmt","media","codec","fps","ei","shutter","wb","lut","filt","ac","ac2","dop"];
+const R_CAMPOS = ["cam","roll","body","fmt","media","codec","fps","ei","shutter","wb","lut","filt"];
 const R2_CAMPOS = ["lab","mag","emul","lote","carga","unidad","perf","loader","dial0","rev","copia","labnotas"];
 const FPP = {"4":16, "3":64/3, "2":32, "16":40, "65":12.8};
 function esFilm(){ return ((S.parte.roll || {}).tipo || "digital") === "film"; }
@@ -5021,8 +5032,7 @@ function wireParte(){
 }
 function fillParte(){
   const P = S.prod, R = S.parte.roll;
-  if (R.ac === undefined && P.por) R.ac = P.por;
-  if (R.dop === undefined && P.dop) R.dop = P.dop;
+  migraResponsables();
   R_CAMPOS.forEach(k => { const el = $("r_" + k); if (el) el.value = R[k] || ""; });
   if (!R.tipo) R.tipo = "digital";
   if (!R.unidad) R.unidad = "ft";
@@ -5231,8 +5241,8 @@ function renderParte(){
     ${F("Casa de renta", P.casa)}</div>
 
   <h4><span class="nn">2</span>Responsables</h4>
-  <div class="fl">${F("Director de fotografía", R.dop)}${F("Foquista / parte", R.ac || P.por)}
-    ${F("Auxiliar · 2º AC", R.ac2)}${film ? F("Cargado por", R.loader) : F("Técnico de cámara / DIT", P.dit)}</div>
+  <div class="fl">${F("Director de fotografía", P.dop ?? R.dop)}${F("Foquista / parte", P.ac ?? R.ac ?? P.por)}
+    ${F("Auxiliar · 2º AC", P.ac2 ?? R.ac2)}${F("VTR", P.vtr)}${film ? F("Cargado por", R.loader) : F("Técnico de cámara / DIT", P.dit)}</div>
 
   <h4><span class="nn">3</span>Cámara y rollo</h4>
   <div class="fl">${F("Cuerpo", R.body)}${F("Formato de captura", R.fmt)}${film ? `
@@ -5296,9 +5306,9 @@ function renderParte(){
   </div>
   <div class="sig">
     <div><div class="rl">Foquista</div><div class="box"></div>
-      <div class="nm"><span>${esc(R.ac || P.por || "nombre")}</span><span>fecha</span></div></div>
+      <div class="nm"><span>${esc(P.ac || R.ac || P.por || "nombre")}</span><span>fecha</span></div></div>
     <div><div class="rl">Auxiliar · 2º AC</div><div class="box"></div>
-      <div class="nm"><span>${esc(R.ac2 || "nombre y función")}</span><span>fecha</span></div></div>
+      <div class="nm"><span>${esc(P.ac2 || R.ac2 || "nombre y función")}</span><span>fecha</span></div></div>
     <div><div class="rl">Recibido por (DIT / lab)</div><div class="box"></div>
       <div class="nm"><span>nombre y función</span><span>fecha</span></div></div>
   </div>
