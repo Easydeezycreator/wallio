@@ -4328,7 +4328,7 @@ function guarda(){
 function pintaUndo(){
   const b = $("btnUndo"); if (!b) return;
   b.hidden = UNDO.length === 0;
-  b.textContent = (LANG === "en" ? "Undo" : "Deshacer") + (UNDO.length > 1 ? " " + UNDO.length : "");
+  b.textContent = (LANG === "en" ? "Undo" : "Deshacer");   /* v56: sin contador */
 }
 function deshacer(){
   const prev = UNDO.pop(); if (!prev) return;
