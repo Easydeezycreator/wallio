@@ -1306,12 +1306,12 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Formato de captura</label><input id="r_fmt" list="dlFmts" onfocus="this.select()" placeholder="Open Gate 4.6K" autocomplete="off"></div>
       <div class="f"><label>Soporte</label><input id="r_media" placeholder="Codex Compact 2 TB · 04" autocomplete="off"></div>
       <div class="f"><label>Codec / emulsión</label><input id="r_codec" placeholder="ARRIRAW 4.6K OG" autocomplete="off"></div>
-      <div class="f"><label>Fotogramas por segundo</label><input id="r_fps" inputmode="decimal" placeholder="25" autocomplete="off"></div>
-      <div class="f"><label>EI / ISO</label><input id="r_ei" inputmode="numeric" placeholder="800" autocomplete="off"></div>
-      <div class="f"><label>Obturador</label><input id="r_shutter" placeholder="180°" autocomplete="off"></div>
-      <div class="f"><label>Temperatura de color</label><input id="r_wb" placeholder="5600 K · +0" autocomplete="off"></div>
+      <div class="f"><label>Fotogramas por segundo</label><input id="r_fps" inputmode="decimal" placeholder="25" list="dlFps" autocomplete="off"></div>
+      <div class="f"><label>EI / ISO</label><input id="r_ei" inputmode="numeric" placeholder="800" list="dlEi" autocomplete="off"></div>
+      <div class="f"><label>Obturador</label><input id="r_shutter" placeholder="180°" list="dlShutter" autocomplete="off"></div>
+      <div class="f"><label>Temperatura de color</label><input id="r_wb" placeholder="5600 K · +0" list="dlWb" autocomplete="off"></div>
       <div class="f"><label>LUT / look</label><input id="r_lut" placeholder="ARRI 709 · show LUT v3" autocomplete="off"></div>
-      <div class="f"><label>Filtros fijos</label><input id="r_filt" placeholder="Black Pro-Mist 1/4" autocomplete="off"></div>
+      <div class="f"><label>Filtros fijos</label><input id="r_filt" placeholder="Black Pro-Mist 1/4" list="dlFiltros" autocomplete="off"></div>
     </div>
     <div class="grid" id="filmRollo">
       <div class="f"><label>Laboratorio</label><input id="r2_lab" placeholder="Fotofilm Madrid" autocomplete="off"></div>
@@ -1389,6 +1389,7 @@ html.solo-parte .portada{display:none}
     <h2>Generar</h2>
     <div class="btnrow">
       <button class="primary" onclick="hacerParte()">Parte en PDF</button>
+      <button onclick="hacerParte(camActiva())">PDF · solo mi cámara</button>
       <button onclick="parteCSV()">CSV</button>
       <button onclick="guardarParte()">Guardar parte</button>
       <button class="ghost" onclick="document.getElementById('partIn').click()">Abrir un parte guardado</button>
@@ -1421,6 +1422,13 @@ html.solo-parte .portada{display:none}
 </datalist>
 <datalist id="dlFmts"></datalist>
 <datalist id="dlSeries"></datalist>
+<datalist id="dlEscenas"></datalist>
+<datalist id="dlT"><option>1.3</option><option>1.4</option><option>2</option><option>2.8</option><option>4</option><option>5.6</option><option>8</option><option>11</option><option>16</option><option>22</option></datalist>
+<datalist id="dlFps"><option>23.976</option><option>24</option><option>25</option><option>29.97</option><option>30</option><option>48</option><option>50</option><option>60</option><option>75</option><option>90</option><option>96</option><option>120</option></datalist>
+<datalist id="dlEi"><option>200</option><option>400</option><option>500</option><option>640</option><option>800</option><option>1280</option><option>1600</option><option>2500</option><option>3200</option></datalist>
+<datalist id="dlShutter"><option>180°</option><option>172.8°</option><option>144°</option><option>90°</option><option>45°</option><option>1/48</option><option>1/50</option><option>1/60</option><option>1/100</option><option>1/120</option></datalist>
+<datalist id="dlWb"><option>3200 K</option><option>4300 K</option><option>5600 K</option><option>6500 K</option><option>2800 K</option></datalist>
+<datalist id="dlFiltros"><option>ND .3</option><option>ND .6</option><option>ND .9</option><option>ND 1.2</option><option>ND 1.5</option><option>ND 1.8</option><option>ND 2.1</option><option>Black Pro-Mist 1/8</option><option>Black Pro-Mist 1/4</option><option>Black Pro-Mist 1/2</option><option>Black Pro-Mist 1</option><option>Glimmerglass 1/4</option><option>Polarizador</option><option>Diopter +0.5</option><option>Diopter +1</option><option>Diopter +2</option><option>Clear / UV</option></datalist>
 
 <!-- ===================== 4 · FICHA ===================== -->
 <section id="v-ficha">
@@ -5212,13 +5220,18 @@ function campoToma(i, k, etiqueta, lista, ancho){
 function renderTomas(){
   if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
   const L = S.parte.tomas;
+  const dlE = $("dlEscenas");
+  if (dlE) dlE.innerHTML = Array.from(new Set(L.map(x => (x.sc || "").trim()).filter(Boolean)))
+    .map(s => "<option>" + esc(s) + "</option>").join("");
   $("listaTomas").innerHTML = L.length ? L.map((t, i) => {
     const pft = esFilm() ? piesDeToma(i) : 0;
     const meta = [t.mos ? "MOS" : "", t.desc, t.clip, t.serial, t.focal ? t.focal + " mm" : "", t.t ? "T" + t.t : "", t.filt,
                   t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
+    const T_LISTAS = { sc: "dlEscenas", serial: "dlSeries", t: "dlT", filt: "dlFiltros",
+                       wb: "dlWb", fps: "dlFps", shutter: "dlShutter", ei: "dlEi" };
     const campos = T_CAMPOS.map(([k, et, , extra]) =>
-      campoToma(i, k, et, extra === "dlSeries" ? "dlSeries" : null, extra === "w")).join("");
+      campoToma(i, k, et, T_LISTAS[k] || null, extra === "w")).join("");
     const propios = (S.parte.campos || []).map(n =>
       `<div class="f"><label>${esc(n)}</label>
         <input value="${esc((t.extra || {})[n] || "")}"
@@ -5333,10 +5346,22 @@ function parteId(){
   return `WLG03-${c(S.prod.casa)}-${c(S.prod.proyecto)}-${(S.parte.roll.roll || "ROLLO").toUpperCase()}`;
 }
 
-function renderParte(){
-  const P = S.prod, R = S.parte.roll, L = S.parte.tomas, t = resumenParte();
-  const film = esFilm(), pf = film ? piesResumen() : null;
-  const mc = esMulticam(), usadas = mc ? camarasEnUso() : [camActiva()];
+function renderParte(soloLetra){
+  /* v50: sin argumento = COLECTIVO (todas las cámaras, como siempre);
+     con letra = INDIVIDUAL (solo esa cámara, con la maqueta clásica) */
+  const P = S.prod;
+  const R = soloLetra ? configDe(soloLetra) : S.parte.roll;
+  const LI = S.parte.tomas.map((x, i) => ({ x, i }))
+    .filter(p => !soloLetra || (p.x.camLetra || "A") === soloLetra);
+  const L = LI.map(p => p.x);
+  resumenParte();
+  const t = { sc: new Set(L.map(x => (x.sc || "").trim()).filter(Boolean)).size,
+              tk: L.length, ok: L.filter(x => x.ok).length,
+              dur: L.reduce((a, x) => a + (parseFloat(x.dur) || 0), 0) };
+  const film = (R.tipo || "digital") === "film";
+  const pf = film ? piesResumen(soloLetra || undefined) : null;
+  const mc = soloLetra ? false : esMulticam();
+  const usadas = mc ? camarasEnUso() : [soloLetra || camActiva()];
   const uT = c => ((c || {}).unidad === "m") ? "m" : "ft";
   const hoy = new Date().toISOString().slice(0, 10);
   const ver = codigoDe(JSON.stringify({r: R, c: S.parte.camsGuardadas || {}, t: L, p: P}));
@@ -5344,7 +5369,7 @@ function renderParte(){
   const conGrid = norm(S.lens.serial) && Object.keys(S.takes).length;
 
   const par = (et, v) => v ? `<b>${esc(et)}</b> ${esc(v)}` : "";
-  const filas = L.map((x, i) => {
+  const filas = LI.map(({ x, i }, nfila) => {
     const xl = x.camLetra || "A";
     const ficha = conGrid && norm(x.serial) === norm(S.lens.serial);
     const tr = [x.tilt ? "tilt " + x.tilt : "", x.roll ? "roll " + x.roll : ""].filter(Boolean).join(" · ");
@@ -5361,7 +5386,7 @@ function renderParte(){
       <td class="mo">${esc(x.tc || "—")}</td>
       <td class="mo">${esc(x.dur ? x.dur + " s" : "—")}</td>`;
     return `<tr class="${x.ok ? "buena" : ""} cam${xl}">
-      <td class="n">${String(i+1).padStart(2,"0")}</td>${mc ? `
+      <td class="n">${String(nfila+1).padStart(2,"0")}</td>${mc ? `
       <td class="camtd">${xl}</td>` : ""}
       <td class="sl">${esc(x.sc || "—")}</td>
       <td class="sl">${esc(x.tk || "—")}</td>
@@ -5490,10 +5515,12 @@ function renderParte(){
     <span>${esc(parteId())} · ${ver}</span></div>`;
 }
 
-function hacerParte(){
-  if (!S.parte.roll.roll){ alert(traduce("Falta el número de rollo o magazine.")); show("parte"); return; }
-  if (!S.parte.tomas.length){ alert(traduce("El parte no tiene ninguna toma.")); show("parte"); return; }
-  renderParte();
+function hacerParte(sola){
+  const R = sola ? configDe(sola) : S.parte.roll;
+  const n = sola ? S.parte.tomas.filter(t => (t.camLetra || "A") === sola).length : S.parte.tomas.length;
+  if (!R.roll){ alert(traduce("Falta el número de rollo o magazine.")); show("parte"); return; }
+  if (!n){ alert(traduce("El parte no tiene ninguna toma.")); show("parte"); return; }
+  renderParte(sola || undefined);
   document.body.className = "pr-parte";
   if (typeof ptArchiva === "function") ptArchiva(false);
   setTimeout(() => window.print(), 120);
@@ -5542,7 +5569,7 @@ function descargar(texto, nombre, tipo){
 
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
-"Parte compartido":"Shared report","Nombre del parte del día":"Today's report name",
+"Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only","Nombre del parte del día":"Today's report name",
 "Conectar":"Connect","NIGHT HARVEST · día 3":"NIGHT HARVEST · day 3",
 "Entra en tu espacio de la Nube para compartir.":"Sign in to your Cloud space first to share.",
 "Conectado":"Connected","tú":"you","sin conexión":"offline",
@@ -6758,6 +6785,16 @@ document.querySelectorAll("input").forEach(e => {
   e.setAttribute("readonly", "");
   e.addEventListener("focus", () => e.removeAttribute("readonly"), {once: true});
 });
+/* v50: tocar un campo con contenido lo deja seleccionado entero — lo que
+   teclees lo sustituye sin borrar a mano; tocar sin teclear no pierde nada */
+document.addEventListener("focusin", e => {
+  const t = e.target;
+  if (!t || t.tagName !== "INPUT") return;
+  if (t.type === "date" || t.type === "file" || t.type === "password") return;
+  if ((t.id || "").indexOf("nb_") === 0) return;
+  if (!t.value) return;
+  setTimeout(() => { try { if (document.activeElement === t) t.select(); } catch(_){} }, 0);
+});
 /* version visible en la Guia: para saber que corre cada aparato */
 (async () => { try {
   const el = document.getElementById("verapp"); if (!el) return;
@@ -6768,12 +6805,14 @@ document.querySelectorAll("input").forEach(e => {
 (function(){
   const caja = document.createElement("div"); caja.id = "combo"; caja.hidden = true;
   document.body.appendChild(caja);
-  let activo = null;
+  let activo = null, abiertoEn = 0;
   const cierra = () => { caja.hidden = true; activo = null; };
-  const pinta = (inp) => {
+  const pinta = (inp, filtrar) => {
+    /* v50: al TOCAR salen TODAS las opciones (la regla de siempre);
+       el filtro solo actúa cuando se ESCRIBE */
     const id = inp.getAttribute("data-lista"); const dl = id && document.getElementById(id);
     if (!dl) return cierra();
-    const v = (inp.value || "").toLowerCase().trim();
+    const v = filtrar ? (inp.value || "").toLowerCase().trim() : "";
     const ops = [...dl.options].map(o => o.value)
       .filter(x => !v || x.toLowerCase().includes(v));
     if (!ops.length) return cierra();
@@ -6783,7 +6822,7 @@ document.querySelectorAll("input").forEach(e => {
     caja.style.left = (r.left + scrollX) + "px";
     caja.style.top = (r.bottom + scrollY + 2) + "px";
     caja.style.minWidth = r.width + "px";
-    caja.hidden = false; activo = inp;
+    caja.hidden = false; activo = inp; abiertoEn = Date.now();
     [...caja.children].forEach(d => d.onclick = () => {
       inp.value = d.textContent;
       inp.dispatchEvent(new Event("input", {bubbles: true}));
@@ -6795,14 +6834,23 @@ document.querySelectorAll("input").forEach(e => {
       t.setAttribute("data-lista", t.getAttribute("list")); t.removeAttribute("list"); }
     if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t); else cierra(); });
   document.addEventListener("input", e => { const t = e.target;
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t); });
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t, true); });
   document.addEventListener("click", e => { const t = e.target;
     if (t.tagName === "INPUT" && t.hasAttribute("list")){
       t.setAttribute("data-lista", t.getAttribute("list")); t.removeAttribute("list"); }
     if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t); });
   document.addEventListener("pointerdown", e => {
     if (!caja.contains(e.target) && e.target !== activo) cierra(); });
-  window.addEventListener("scroll", e => { if (!caja.contains(e.target)) cierra(); }, true);
+  /* v50: el scroll que provoca el propio foco (teclado del iPhone, autoscroll
+     del navegador) ya NO cierra el combo — en ese primer momento se recoloca
+     bajo el campo; un scroll deliberado más tarde sí lo cierra (v42) */
+  const recoloca = () => { if (!activo) return; const r = activo.getBoundingClientRect();
+    caja.style.left = (r.left + scrollX) + "px";
+    caja.style.top = (r.bottom + scrollY + 2) + "px"; };
+  window.addEventListener("scroll", e => {
+    if (caja.contains(e.target)) return;
+    if (activo && document.activeElement === activo && Date.now() - abiertoEn < 700){ recoloca(); return; }
+    cierra(); }, true);
 })();
 if (NB.rol) $("nb_rol").value = NB.rol;
 nbPinta();
