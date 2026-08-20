@@ -114,6 +114,11 @@ button.danger{color:var(--err);border-color:rgba(196,84,75,.4)}
   border:1px dashed var(--line);border-right:1px dashed var(--line);color:var(--tx2);
   background:transparent;letter-spacing:.06em;margin-left:6px}
 .btnrow.addmini button:active{color:var(--tx)}
+/* v55: añadir campo vive dentro de cada toma abierta, discreto */
+.toma .row .addf{display:flex;align-items:flex-end;justify-content:flex-end}
+.toma .row .addf button{min-height:0;font-size:9px;padding:5px 9px;border:1px dashed var(--line);
+  color:var(--tx3);background:transparent;letter-spacing:.06em;flex:0 0 auto}
+.toma .row .addf button:active{color:var(--tx)}
 /* v53: compartir arriba a la derecha, amarillo suave */
 #btnCompartir{color:#e8cc6a;border-color:rgba(217,181,69,.6);background:rgba(227,192,92,.13)}
 #pcPanel{position:fixed;top:60px;right:11px;z-index:9998;background:var(--panel);
@@ -1370,7 +1375,6 @@ html.solo-parte .portada{display:none}
       <button class="ghost" onclick="borrarToma(-1)">Borrar última</button>
     </div>
     <div id="listaCampos"></div>
-    <div class="btnrow addmini"><button onclick="addCampo()">+ Añadir campo</button></div>
   </div>
 
 
@@ -5236,7 +5240,7 @@ function renderTomas(){
         <button class="${t.ok ? "si" : ""}" onclick="guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
         <button class="x" onclick="borrarToma(${i})">×</button>
       </div>
-      <div class="row">${campos}${propios}</div></div>`;
+      <div class="row">${campos}${propios}<div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div></div></div>`;
   }).join("") : '<div class="empty">Sin tomas todavía. Pulsa «+ Toma».</div>';
   $("listaTomas").classList.toggle("mc", esMulticam());
   resumenParte(); fillParte(); updateChip(); pintaCams();
@@ -5279,7 +5283,7 @@ function renderCampos(){
   c.innerHTML = cs.length
     ? cs.map((n, i) => `<div class="selfmt"><div class="t">${esc(n)}</div>
         <button onclick="quitarCampo(${i})">×</button></div>`).join("")
-    : '<div class="empty">Ningún campo adicional. El parte ya lleva los habituales.</div>';
+    : "";
 }
 function nuevaToma(nuevaEscena){
   guarda();
