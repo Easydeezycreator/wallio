@@ -35,7 +35,7 @@ export const listings = pgTable("listings", {
   transactionType: text("transaction_type").notNull(),
   propertyType: text("property_type").notNull(),
   price: doublePrecision("price").notNull(),
-  currency: text("currency").notNull().default("MXN"),
+  currency: text("currency").notNull().default("EUR"),
   city: text("city").notNull(),
   neighborhood: text("neighborhood"),
   address: text("address"),

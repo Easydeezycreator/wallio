@@ -162,7 +162,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
             />
             <select
               name="currency"
-              defaultValue={initial?.currency ?? "MXN"}
+              defaultValue={initial?.currency ?? "EUR"}
               className="rounded-md border border-neutral-300 px-3 py-2 text-sm"
             >
               {CURRENCIES.map((c) => (
@@ -186,7 +186,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
 
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Colonia / Zona (opcional)
+            Barrio / Zona (opcional)
           </label>
           <input
             name="neighborhood"
@@ -210,7 +210,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
           <>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Recámaras
+                Habitaciones
               </label>
               <input
                 type="number"
@@ -319,7 +319,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
             placeholder={
               isRoom
                 ? "Ej. Cocina y lavandería compartida, no fumar, horario flexible…"
-                : "Ej. Alberca, estacionamiento, seguridad 24h…"
+                : "Ej. Piscina, garaje, seguridad 24h…"
             }
             className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
           />

@@ -85,7 +85,7 @@ export default async function ListingDetailPage(
 
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
             {!isRoom && listing.bedrooms != null && (
-              <Stat label="Recámaras" value={listing.bedrooms} />
+              <Stat label="Habitaciones" value={listing.bedrooms} />
             )}
             {!isRoom && listing.bathrooms != null && (
               <Stat label="Baños" value={listing.bathrooms} />

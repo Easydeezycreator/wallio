@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { FEATURED_DAYS, FEATURED_PRICE_MXN } from "@/lib/constants";
+import { FEATURED_DAYS, FEATURED_PRICE_EUR } from "@/lib/constants";
 
 export default function FeatureListingButton({ listingId }: { listingId: string }) {
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function FeatureListingButton({ listingId }: { listingId: string 
       <p className="font-semibold text-amber-900">Destaca este anuncio</p>
       <p className="mt-1 text-sm text-amber-800">
         Aparece primero en los resultados de búsqueda durante {FEATURED_DAYS} días
-        por ${FEATURED_PRICE_MXN} MXN.
+        por {FEATURED_PRICE_EUR}€.
       </p>
       <button
         onClick={handleActivate}

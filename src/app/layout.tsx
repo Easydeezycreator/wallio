@@ -15,9 +15,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Header />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-neutral-200 bg-white">
-          <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-neutral-500">
-            Habita — plataforma de anuncios de vivienda. Venta, renta y
-            renta de cuartos.
+          <div className="mx-auto max-w-6xl px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-2 font-bold text-neutral-800">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-dark text-white text-xs">
+                H
+              </span>
+              Habita
+            </div>
+            <p className="text-sm text-neutral-500 text-center sm:text-right">
+              Plataforma de anuncios de vivienda — venta, renta y renta de
+              cuartos.
+            </p>
           </div>
         </footer>
       </body>

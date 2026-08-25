@@ -17,7 +17,7 @@ export const listingInputSchema = z.object({
     "TERRENO",
   ]),
   price: z.coerce.number().positive("El precio debe ser mayor a 0"),
-  currency: z.enum(["MXN", "USD"]).default("MXN"),
+  currency: z.enum(["EUR"]).default("EUR"),
   city: z.string().min(2, "La ciudad es requerida"),
   neighborhood: z.string().optional(),
   address: z.string().optional(),

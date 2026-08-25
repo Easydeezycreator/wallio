@@ -13,12 +13,12 @@ export const PROPERTY_TYPES = [
   { value: "TERRENO", label: "Terreno" },
 ] as const;
 
-export const CURRENCIES = ["MXN", "USD"] as const;
+export const CURRENCIES = ["EUR"] as const;
 
 // Plan de "anuncio destacado": precio y duración.
 // TODO(pagos): cuando se conecte Stripe, este precio se usará para crear la
 // sesión de pago (Stripe Checkout) antes de activar el destacado.
-export const FEATURED_PRICE_MXN = 99;
+export const FEATURED_PRICE_EUR = 9;
 export const FEATURED_DAYS = 14;
 
 export type TransactionType = (typeof TRANSACTION_TYPES)[number]["value"];
@@ -33,7 +33,7 @@ export function propertyLabel(value: string) {
 }
 
 export function formatPrice(price: number, currency: string) {
-  return new Intl.NumberFormat("es-MX", {
+  return new Intl.NumberFormat("es-ES", {
     style: "currency",
     currency,
     maximumFractionDigits: 0,

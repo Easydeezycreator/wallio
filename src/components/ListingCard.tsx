@@ -26,7 +26,7 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
   return (
     <Link
       href={`/anuncios/${listing.id}`}
-      className="group block overflow-hidden rounded-xl border border-neutral-200 bg-white hover:shadow-md transition-shadow"
+      className="group block overflow-hidden rounded-2xl border border-neutral-200/70 bg-white card-shadow card-shadow-hover transition-shadow duration-300"
     >
       <div className="aspect-[4/3] w-full bg-neutral-100 overflow-hidden relative">
         {cover ? (
@@ -56,31 +56,33 @@ export default function ListingCard({ listing }: { listing: ListingCardData }) {
           </span>
         )}
         {featured && (
-          <span className="badge absolute bottom-2 left-2 bg-amber-500 text-white">
+          <span className="badge absolute bottom-2 left-2 bg-accent text-white">
             ★ Destacado
           </span>
         )}
       </div>
-      <div className="p-3">
-        <p className="font-semibold text-neutral-900 truncate">{listing.title}</p>
+      <div className="p-4">
+        <p className="font-semibold text-neutral-900 truncate group-hover:text-brand transition-colors">
+          {listing.title}
+        </p>
         <p className="text-sm text-neutral-500 truncate">
           {listing.neighborhood ? `${listing.neighborhood}, ` : ""}
           {listing.city}
         </p>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-brand font-bold">
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-brand font-extrabold text-lg">
             {formatPrice(listing.price, listing.currency)}
             {listing.transactionType === "RENTA" && (
-              <span className="text-xs font-normal text-neutral-500">/mes</span>
+              <span className="text-xs font-medium text-neutral-500">/mes</span>
             )}
           </span>
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs font-medium text-neutral-500 bg-neutral-100 rounded-full px-2 py-1">
             {propertyLabel(listing.propertyType)}
           </span>
         </div>
         {!isRoom && (listing.bedrooms || listing.bathrooms) && (
-          <p className="mt-1 text-xs text-neutral-500">
-            {listing.bedrooms ? `${listing.bedrooms} rec. ` : ""}
+          <p className="mt-2 text-xs text-neutral-500">
+            {listing.bedrooms ? `${listing.bedrooms} hab. ` : ""}
             {listing.bathrooms ? `${listing.bathrooms} baños` : ""}
           </p>
         )}

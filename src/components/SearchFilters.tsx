@@ -7,7 +7,7 @@ export default function SearchFilters({
 }) {
   return (
     <form
-      className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 bg-white border border-neutral-200 rounded-xl p-4"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
       method="get"
     >
       <div className="col-span-2 lg:col-span-2">
@@ -15,8 +15,8 @@ export default function SearchFilters({
         <input
           name="city"
           defaultValue={searchParams.city}
-          placeholder="Ej. Guadalajara"
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          placeholder="Ej. Madrid"
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
         />
       </div>
 
@@ -25,7 +25,7 @@ export default function SearchFilters({
         <select
           name="transactionType"
           defaultValue={searchParams.transactionType ?? ""}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
         >
           <option value="">Todas</option>
           {TRANSACTION_TYPES.map((t) => (
@@ -41,7 +41,7 @@ export default function SearchFilters({
         <select
           name="propertyType"
           defaultValue={searchParams.propertyType ?? ""}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
         >
           <option value="">Todos</option>
           {PROPERTY_TYPES.map((t) => (
@@ -60,7 +60,7 @@ export default function SearchFilters({
           type="number"
           name="minPrice"
           defaultValue={searchParams.minPrice}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
         />
       </div>
 
@@ -72,20 +72,20 @@ export default function SearchFilters({
           type="number"
           name="maxPrice"
           defaultValue={searchParams.maxPrice}
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
         />
       </div>
 
       <div className="col-span-2 sm:col-span-3 lg:col-span-6 flex justify-end gap-2">
         <a
           href="/"
-          className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+          className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition-colors"
         >
           Limpiar
         </a>
         <button
           type="submit"
-          className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
+          className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-white hover:bg-brand-dark transition-colors"
         >
           Buscar
         </button>
