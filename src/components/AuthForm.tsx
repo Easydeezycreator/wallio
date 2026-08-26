@@ -2,8 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { t, type Locale } from "@/lib/i18n";
 
-export default function AuthForm({ mode }: { mode: "login" | "register" }) {
+export default function AuthForm({
+  mode,
+  locale,
+}: {
+  mode: "login" | "register";
+  locale: Locale;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,7 +44,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error || "Ocurrió un error, intenta de nuevo");
+      setError(data.error || t(locale, "auth.genericError"));
       return;
     }
 
@@ -50,7 +57,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       {mode === "register" && (
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Nombre completo
+            {t(locale, "auth.fullName")}
           </label>
           <input
             name="name"
@@ -62,7 +69,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
 
       <div>
         <label className="block text-sm font-medium text-neutral-700 mb-1">
-          Correo electrónico
+          {t(locale, "auth.email")}
         </label>
         <input
           type="email"
@@ -75,7 +82,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
       {mode === "register" && (
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Teléfono (opcional)
+            {t(locale, "auth.phone")}
           </label>
           <input
             name="phone"
@@ -86,7 +93,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
 
       <div>
         <label className="block text-sm font-medium text-neutral-700 mb-1">
-          Contraseña
+          {t(locale, "auth.password")}
         </label>
         <input
           type="password"
@@ -109,10 +116,10 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
         className="w-full rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
       >
         {loading
-          ? "Un momento…"
+          ? t(locale, "auth.loading")
           : mode === "register"
-          ? "Crear cuenta"
-          : "Iniciar sesión"}
+          ? t(locale, "auth.registerButton")
+          : t(locale, "auth.loginButton")}
       </button>
     </form>
   );

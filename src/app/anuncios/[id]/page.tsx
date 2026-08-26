@@ -3,16 +3,15 @@ import Link from "next/link";
 import { getListingById, isCurrentlyFeatured } from "@/lib/listings";
 import { getSession } from "@/lib/auth";
 import FeatureListingButton from "@/components/FeatureListingButton";
-import {
-  formatPrice,
-  propertyLabel,
-  transactionLabel,
-} from "@/lib/constants";
+import { formatPrice } from "@/lib/constants";
+import { t, transactionLabel, propertyLabel } from "@/lib/i18n";
 import ContactForm from "@/components/ContactForm";
+import { getLocale } from "@/lib/locale";
 
 export default async function ListingDetailPage(
   props: PageProps<"/anuncios/[id]">
 ) {
+  const locale = await getLocale();
   const { id } = await props.params;
   const listing = await getListingById(id);
   if (!listing) notFound();
@@ -26,7 +25,7 @@ export default async function ListingDetailPage(
     <div className="mx-auto max-w-4xl px-4 py-8">
       <div className="mb-4">
         <Link href="/" className="text-sm text-neutral-500 hover:text-brand">
-          ← Volver a la búsqueda
+          {t(locale, "detail.backToSearch")}
         </Link>
       </div>
 
@@ -46,7 +45,7 @@ export default async function ListingDetailPage(
         </div>
       ) : (
         <div className="mb-6 flex h-56 items-center justify-center rounded-lg bg-neutral-100 text-neutral-400 text-sm">
-          Este anuncio no tiene fotos todavía
+          {t(locale, "detail.noPhotos")}
         </div>
       )}
 
@@ -60,13 +59,15 @@ export default async function ListingDetailPage(
                   : "bg-amber-500 text-white"
               }`}
             >
-              {transactionLabel(listing.transactionType)}
+              {transactionLabel(locale, listing.transactionType)}
             </span>
             <span className="badge bg-neutral-100 text-neutral-700">
-              {propertyLabel(listing.propertyType)}
+              {propertyLabel(locale, listing.propertyType)}
             </span>
             {featured && (
-              <span className="badge bg-amber-500 text-white">★ Destacado</span>
+              <span className="badge bg-amber-500 text-white">
+                {t(locale, "card.featured")}
+              </span>
             )}
           </div>
 
@@ -77,33 +78,48 @@ export default async function ListingDetailPage(
           </p>
 
           <p className="text-3xl font-bold text-brand mt-4">
-            {formatPrice(listing.price, listing.currency)}
+            {formatPrice(listing.price, listing.currency, locale)}
             {listing.transactionType === "RENTA" && (
-              <span className="text-base font-normal text-neutral-500">/mes</span>
+              <span className="text-base font-normal text-neutral-500">
+                {t(locale, "card.perMonth")}
+              </span>
             )}
           </p>
 
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
             {!isRoom && listing.bedrooms != null && (
-              <Stat label="Habitaciones" value={listing.bedrooms} />
+              <Stat label={t(locale, "detail.bedrooms")} value={listing.bedrooms} />
             )}
             {!isRoom && listing.bathrooms != null && (
-              <Stat label="Baños" value={listing.bathrooms} />
+              <Stat label={t(locale, "detail.bathrooms")} value={listing.bathrooms} />
             )}
-            {listing.areaM2 != null && <Stat label="Área" value={`${listing.areaM2} m²`} />}
+            {listing.areaM2 != null && (
+              <Stat label={t(locale, "detail.area")} value={`${listing.areaM2} m²`} />
+            )}
             {isRoom && listing.privateBathroom != null && (
-              <Stat label="Baño privado" value={listing.privateBathroom ? "Sí" : "No"} />
+              <Stat
+                label={t(locale, "detail.privateBathroom")}
+                value={
+                  listing.privateBathroom
+                    ? t(locale, "detail.yes")
+                    : t(locale, "detail.no")
+                }
+              />
             )}
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
-            {listing.furnished && <Tag label="Amueblado" />}
-            {listing.utilitiesIncluded && <Tag label="Servicios incluidos" />}
-            {listing.petsAllowed && <Tag label="Acepta mascotas" />}
+            {listing.furnished && <Tag label={t(locale, "detail.furnished")} />}
+            {listing.utilitiesIncluded && (
+              <Tag label={t(locale, "detail.utilities")} />
+            )}
+            {listing.petsAllowed && <Tag label={t(locale, "detail.petsTag")} />}
           </div>
 
           <div className="mt-8">
-            <h2 className="font-semibold text-neutral-900 mb-2">Descripción</h2>
+            <h2 className="font-semibold text-neutral-900 mb-2">
+              {t(locale, "detail.description")}
+            </h2>
             <p className="text-neutral-700 whitespace-pre-line leading-relaxed">
               {listing.description}
             </p>
@@ -112,7 +128,9 @@ export default async function ListingDetailPage(
           {listing.amenities && (
             <div className="mt-6">
               <h2 className="font-semibold text-neutral-900 mb-2">
-                {isRoom ? "Convivencia y amenidades" : "Amenidades"}
+                {isRoom
+                  ? t(locale, "detail.livingAmenities")
+                  : t(locale, "detail.amenities")}
               </h2>
               <p className="text-neutral-700 whitespace-pre-line leading-relaxed">
                 {listing.amenities}
@@ -126,13 +144,13 @@ export default async function ListingDetailPage(
                 href={`/anuncios/${listing.id}/editar`}
                 className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50"
               >
-                Editar anuncio
+                {t(locale, "detail.editListing")}
               </Link>
               <Link
                 href="/mi-cuenta"
                 className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium hover:bg-neutral-50"
               >
-                Ir a mi cuenta
+                {t(locale, "detail.goToAccount")}
               </Link>
             </div>
           )}
@@ -140,30 +158,33 @@ export default async function ListingDetailPage(
 
         <div>
           <div className="rounded-xl border border-neutral-200 p-4 sticky top-20">
-            <p className="text-sm text-neutral-500">Publicado por</p>
+            <p className="text-sm text-neutral-500">
+              {t(locale, "detail.publishedBy")}
+            </p>
             <p className="font-semibold text-neutral-900">{listing.owner?.name}</p>
 
             {isOwner ? (
               <div className="mt-3 space-y-3">
                 <p className="text-sm text-neutral-500">
-                  Este es tu anuncio. Los mensajes que recibas aparecerán en tu
-                  cuenta.
+                  {t(locale, "detail.yourListingNote")}
                 </p>
                 {featured ? (
                   <p className="text-sm font-medium text-amber-700">
-                    ★ Destacado hasta{" "}
-                    {listing.featuredUntil?.toLocaleDateString("es-MX")}
+                    {t(locale, "detail.featuredUntil")}{" "}
+                    {listing.featuredUntil?.toLocaleDateString(
+                      locale === "en" ? "en-GB" : "es-ES"
+                    )}
                   </p>
                 ) : (
-                  <FeatureListingButton listingId={listing.id} />
+                  <FeatureListingButton listingId={listing.id} locale={locale} />
                 )}
               </div>
             ) : (
               <div className="mt-4">
                 <p className="text-sm font-medium text-neutral-700 mb-2">
-                  Contactar al anunciante
+                  {t(locale, "contact.title")}
                 </p>
-                <ContactForm listingId={listing.id} />
+                <ContactForm listingId={listing.id} locale={locale} />
               </div>
             )}
           </div>

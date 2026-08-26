@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import ListingForm from "@/components/ListingForm";
+import { getLocale } from "@/lib/locale";
+import { t } from "@/lib/i18n";
 
 export default async function NewListingPage() {
+  const locale = await getLocale();
   const session = await getSession();
   if (!session) {
     redirect("/login?next=/anuncios/nuevo");
@@ -10,11 +13,13 @@ export default async function NewListingPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Publicar anuncio</h1>
+      <h1 className="text-2xl font-bold text-neutral-900 mb-1">
+        {t(locale, "form.newListingTitle")}
+      </h1>
       <p className="text-sm text-neutral-500 mb-6">
-        Completa los datos de tu propiedad, casa, apartamento o cuarto en renta.
+        {t(locale, "form.newListingSubtitle")}
       </p>
-      <ListingForm />
+      <ListingForm locale={locale} />
     </div>
   );
 }

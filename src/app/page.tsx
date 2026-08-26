@@ -2,8 +2,11 @@ import { getListings } from "@/lib/listings";
 import ListingCard from "@/components/ListingCard";
 import SearchFilters from "@/components/SearchFilters";
 import Link from "next/link";
+import { getLocale } from "@/lib/locale";
+import { t } from "@/lib/i18n";
 
 export default async function HomePage({ searchParams }: PageProps<"/">) {
+  const locale = await getLocale();
   const sp = await searchParams;
   const params = {
     city: typeof sp.city === "string" ? sp.city : undefined,
@@ -35,28 +38,27 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         />
         <div className="mx-auto max-w-6xl px-4 pt-14 pb-10 sm:pt-20 sm:pb-14">
           <span className="badge bg-brand-light text-brand-dark">
-            Nuevo en tu ciudad
+            {t(locale, "home.badge")}
           </span>
           <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight text-neutral-900 max-w-2xl">
-            Encuentra casa, apartamento o{" "}
-            <span className="text-brand">cuarto en renta</span>
+            {t(locale, "home.title1")}{" "}
+            <span className="text-brand">{t(locale, "home.title2")}</span>
           </h1>
           <p className="mt-4 text-lg text-neutral-600 max-w-xl">
-            Publica tu propiedad gratis. Espacio especial para quienes rentan
-            cuartos y buscan compañeros de casa.
+            {t(locale, "home.subtitle")}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/anuncios/nuevo"
               className="rounded-full bg-brand px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark transition-colors"
             >
-              Publicar mi anuncio
+              {t(locale, "home.publishCta")}
             </Link>
             <Link
               href="/?propertyType=CUARTO"
               className="rounded-full border border-neutral-300 bg-white px-5 py-3 text-sm font-semibold text-neutral-800 hover:border-brand hover:text-brand transition-colors"
             >
-              Ver cuartos en renta
+              {t(locale, "home.roomsCta")}
             </Link>
           </div>
         </div>
@@ -64,30 +66,38 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
       <div className="mx-auto max-w-6xl px-4 -mt-6 sm:-mt-8 relative z-10">
         <div className="rounded-2xl bg-white card-shadow border border-neutral-200/70 p-4">
-          <SearchFilters searchParams={params} />
+          <SearchFilters searchParams={params} locale={locale} />
         </div>
 
         <div className="mt-8 flex items-center justify-between">
           <h2 className="text-lg font-bold text-neutral-900">
-            {listings.length} {listings.length === 1 ? "anuncio encontrado" : "anuncios encontrados"}
+            {listings.length}{" "}
+            {t(
+              locale,
+              listings.length === 1
+                ? "home.resultsFound_one"
+                : "home.resultsFound_other"
+            )}
           </h2>
           {roomCount > 0 && !params.propertyType && (
-            <span className="text-sm text-neutral-500">{roomCount} son cuartos en renta</span>
+            <span className="text-sm text-neutral-500">
+              {roomCount} {t(locale, "home.roomsAmong")}
+            </span>
           )}
         </div>
 
         {listings.length === 0 ? (
           <div className="mt-4 mb-12 rounded-2xl border border-dashed border-neutral-300 bg-white/60 p-12 text-center text-neutral-500">
-            No hay anuncios que coincidan con tu búsqueda todavía.{" "}
+            {t(locale, "home.empty")}{" "}
             <Link href="/anuncios/nuevo" className="text-brand font-semibold">
-              Sé el primero en publicar
+              {t(locale, "home.emptyCta")}
             </Link>
             .
           </div>
         ) : (
           <div className="mt-4 mb-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <ListingCard key={listing.id} listing={listing} locale={locale} />
             ))}
           </div>
         )}

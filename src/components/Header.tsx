@@ -2,8 +2,10 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { isPlatformOwner } from "@/lib/admin";
 import LogoutButton from "./LogoutButton";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { t, type Locale } from "@/lib/i18n";
 
-export default async function Header() {
+export default async function Header({ locale }: { locale: Locale }) {
   const session = await getSession();
   const owner = session ? await isPlatformOwner(session.userId) : false;
 
@@ -14,15 +16,17 @@ export default async function Header() {
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-dark text-white text-sm shadow-sm">
             H
           </span>
-          Habita
+          {t(locale, "nav.brand")}
         </Link>
 
-        <nav className="flex items-center gap-5">
+        <nav className="flex items-center gap-4">
+          <LanguageSwitcher locale={locale} />
+
           <Link
             href="/anuncios/nuevo"
             className="hidden sm:inline-block rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-dark transition-colors"
           >
-            Publicar anuncio
+            {t(locale, "nav.publish")}
           </Link>
 
           {session ? (
@@ -32,16 +36,16 @@ export default async function Header() {
                   href="/admin"
                   className="text-sm font-medium text-neutral-600 hover:text-brand transition-colors"
                 >
-                  Admin
+                  {t(locale, "nav.admin")}
                 </Link>
               )}
               <Link
                 href="/mi-cuenta"
                 className="text-sm font-medium text-neutral-600 hover:text-brand transition-colors"
               >
-                Mi cuenta
+                {t(locale, "nav.myAccount")}
               </Link>
-              <LogoutButton />
+              <LogoutButton label={t(locale, "nav.logout")} />
             </>
           ) : (
             <>
@@ -49,13 +53,13 @@ export default async function Header() {
                 href="/login"
                 className="text-sm font-medium text-neutral-600 hover:text-brand transition-colors"
               >
-                Iniciar sesión
+                {t(locale, "nav.login")}
               </Link>
               <Link
                 href="/registro"
                 className="text-sm font-semibold text-brand hover:text-brand-dark transition-colors"
               >
-                Crear cuenta
+                {t(locale, "nav.register")}
               </Link>
             </>
           )}
@@ -66,7 +70,7 @@ export default async function Header() {
           href="/anuncios/nuevo"
           className="block text-center rounded-full bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-dark"
         >
-          Publicar anuncio
+          {t(locale, "nav.publish")}
         </Link>
       </div>
     </header>

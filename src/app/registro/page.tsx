@@ -1,18 +1,23 @@
 import Link from "next/link";
 import AuthForm from "@/components/AuthForm";
+import { getLocale } from "@/lib/locale";
+import { t } from "@/lib/i18n";
 
-export default function RegisterPage() {
+export default async function RegisterPage() {
+  const locale = await getLocale();
   return (
     <div className="mx-auto max-w-sm px-4 py-16">
-      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Crear cuenta</h1>
+      <h1 className="text-2xl font-bold text-neutral-900 mb-1">
+        {t(locale, "auth.registerTitle")}
+      </h1>
       <p className="text-sm text-neutral-500 mb-6">
-        Regístrate para publicar tu casa, apartamento o cuarto en renta.
+        {t(locale, "auth.registerSubtitle")}
       </p>
-      <AuthForm mode="register" />
+      <AuthForm mode="register" locale={locale} />
       <p className="text-sm text-neutral-500 mt-4">
-        ¿Ya tienes cuenta?{" "}
+        {t(locale, "auth.hasAccount")}{" "}
         <Link href="/login" className="text-brand font-medium">
-          Inicia sesión
+          {t(locale, "auth.loginLink")}
         </Link>
       </p>
     </div>

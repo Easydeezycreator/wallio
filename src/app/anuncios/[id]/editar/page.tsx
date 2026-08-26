@@ -2,10 +2,13 @@ import { notFound, redirect } from "next/navigation";
 import { getListingById } from "@/lib/listings";
 import { getSession } from "@/lib/auth";
 import ListingForm from "@/components/ListingForm";
+import { getLocale } from "@/lib/locale";
+import { t } from "@/lib/i18n";
 
 export default async function EditListingPage(
   props: PageProps<"/anuncios/[id]/editar">
 ) {
+  const locale = await getLocale();
   const { id } = await props.params;
   const session = await getSession();
   if (!session) {
@@ -20,9 +23,14 @@ export default async function EditListingPage(
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Editar anuncio</h1>
-      <p className="text-sm text-neutral-500 mb-6">Actualiza los datos de tu propiedad.</p>
+      <h1 className="text-2xl font-bold text-neutral-900 mb-1">
+        {t(locale, "form.editListingTitle")}
+      </h1>
+      <p className="text-sm text-neutral-500 mb-6">
+        {t(locale, "form.editListingSubtitle")}
+      </p>
       <ListingForm
+        locale={locale}
         initial={{
           id: listing.id,
           title: listing.title,

@@ -2,13 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { t, type Locale } from "@/lib/i18n";
 
-export default function DeleteListingButton({ listingId }: { listingId: string }) {
+export default function DeleteListingButton({
+  listingId,
+  locale,
+}: {
+  listingId: string;
+  locale: Locale;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function handleDelete() {
-    if (!confirm("¿Seguro que quieres eliminar este anuncio? Esta acción no se puede deshacer.")) {
+    if (!confirm(t(locale, "button.deleteConfirm"))) {
       return;
     }
     setLoading(true);
@@ -23,7 +30,7 @@ export default function DeleteListingButton({ listingId }: { listingId: string }
       disabled={loading}
       className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-60"
     >
-      {loading ? "Eliminando…" : "Eliminar"}
+      {loading ? t(locale, "button.deleting") : t(locale, "button.delete")}
     </button>
   );
 }

@@ -32,8 +32,12 @@ export function propertyLabel(value: string) {
   return PROPERTY_TYPES.find((t) => t.value === value)?.label ?? value;
 }
 
-export function formatPrice(price: number, currency: string) {
-  return new Intl.NumberFormat("es-ES", {
+export function formatPrice(
+  price: number,
+  currency: string,
+  locale: "es" | "en" = "es"
+) {
+  return new Intl.NumberFormat(locale === "en" ? "en-IE" : "es-ES", {
     style: "currency",
     currency,
     maximumFractionDigits: 0,

@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { t, type Locale } from "@/lib/i18n";
 
-export default function ContactForm({ listingId }: { listingId: string }) {
+export default function ContactForm({
+  listingId,
+  locale,
+}: {
+  listingId: string;
+  locale: Locale;
+}) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,7 +35,7 @@ export default function ContactForm({ listingId }: { listingId: string }) {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error || "No se pudo enviar el mensaje");
+      setError(data.error || t(locale, "contact.error"));
       return;
     }
 
@@ -38,7 +45,7 @@ export default function ContactForm({ listingId }: { listingId: string }) {
   if (sent) {
     return (
       <div className="rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm px-4 py-3">
-        ¡Mensaje enviado! El anunciante podrá contactarte pronto.
+        {t(locale, "contact.sent")}
       </div>
     );
   }
@@ -48,26 +55,26 @@ export default function ContactForm({ listingId }: { listingId: string }) {
       <input
         name="name"
         required
-        placeholder="Tu nombre"
+        placeholder={t(locale, "contact.name")}
         className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
       />
       <input
         type="email"
         name="email"
         required
-        placeholder="Tu correo"
+        placeholder={t(locale, "contact.email")}
         className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
       />
       <input
         name="phone"
-        placeholder="Tu teléfono (opcional)"
+        placeholder={t(locale, "contact.phone")}
         className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
       />
       <textarea
         name="message"
         required
         rows={3}
-        defaultValue="Hola, me interesa este anuncio. ¿Sigue disponible?"
+        defaultValue={t(locale, "contact.defaultMessage")}
         className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -76,7 +83,7 @@ export default function ContactForm({ listingId }: { listingId: string }) {
         disabled={loading}
         className="w-full rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
       >
-        {loading ? "Enviando…" : "Enviar mensaje"}
+        {loading ? t(locale, "contact.sending") : t(locale, "contact.send")}
       </button>
     </form>
   );

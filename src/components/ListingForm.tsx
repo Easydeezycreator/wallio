@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CURRENCIES, PROPERTY_TYPES, TRANSACTION_TYPES } from "@/lib/constants";
+import { CURRENCIES } from "@/lib/constants";
+import { t, TRANSACTION_TYPES_I18N, PROPERTY_TYPES_I18N, type Locale } from "@/lib/i18n";
 
 type InitialData = {
   id?: string;
@@ -26,7 +27,13 @@ type InitialData = {
   images?: { url: string }[];
 };
 
-export default function ListingForm({ initial }: { initial?: InitialData }) {
+export default function ListingForm({
+  initial,
+  locale,
+}: {
+  initial?: InitialData;
+  locale: Locale;
+}) {
   const router = useRouter();
   const isEdit = Boolean(initial?.id);
   const [propertyType, setPropertyType] = useState(initial?.propertyType ?? "CASA");
@@ -37,6 +44,8 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
   const [loading, setLoading] = useState(false);
 
   const isRoom = propertyType === "CUARTO";
+  const transactionTypes = TRANSACTION_TYPES_I18N(locale);
+  const propertyTypes = PROPERTY_TYPES_I18N(locale);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -84,7 +93,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error || "Ocurrió un error, revisa los datos");
+      setError(data.error || t(locale, "form.error"));
       return;
     }
 
@@ -97,29 +106,29 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Título del anuncio
+            {t(locale, "form.titleLabel")}
           </label>
           <input
             name="title"
             required
             defaultValue={initial?.title}
-            placeholder="Ej. Cuarto amueblado cerca de la universidad"
+            placeholder={t(locale, "form.titlePlaceholder")}
             className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Operación
+            {t(locale, "form.operation")}
           </label>
           <select
             name="transactionType"
             defaultValue={initial?.transactionType ?? "RENTA"}
             className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
           >
-            {TRANSACTION_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            {transactionTypes.map((tItem) => (
+              <option key={tItem.value} value={tItem.value}>
+                {tItem.label}
               </option>
             ))}
           </select>
@@ -127,7 +136,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
 
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Tipo de propiedad
+            {t(locale, "form.propertyType")}
           </label>
           <select
             name="propertyType"
@@ -135,21 +144,21 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
             onChange={(e) => setPropertyType(e.target.value)}
             className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
           >
-            {PROPERTY_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
+            {propertyTypes.map((tItem) => (
+              <option key={tItem.value} value={tItem.value}>
+                {tItem.label}
               </option>
             ))}
           </select>
           {isRoom && (
-            <p className="mt-1 text-xs text-brand">
-              Publicarás un cuarto dentro de una casa o apartamento compartido.
-            </p>
+            <p className="mt-1 text-xs text-brand">{t(locale, "form.roomHint")}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Precio</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
+            {t(locale, "form.price")}
+          </label>
           <div className="flex gap-2">
             <input
               type="number"
@@ -175,7 +184,9 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">Ciudad</label>
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
+            {t(locale, "form.city")}
+          </label>
           <input
             name="city"
             required
@@ -186,7 +197,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
 
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Barrio / Zona (opcional)
+            {t(locale, "form.neighborhood")}
           </label>
           <input
             name="neighborhood"
@@ -197,7 +208,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
 
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Dirección (opcional, no se muestra públicamente)
+            {t(locale, "form.address")}
           </label>
           <input
             name="address"
@@ -210,7 +221,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
           <>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Habitaciones
+                {t(locale, "form.bedrooms")}
               </label>
               <input
                 type="number"
@@ -222,7 +233,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Baños
+                {t(locale, "form.bathrooms")}
               </label>
               <input
                 type="number"
@@ -238,7 +249,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
 
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Área (m², opcional)
+            {t(locale, "form.area")}
           </label>
           <input
             type="number"
@@ -251,7 +262,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
 
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Disponible desde (opcional)
+            {t(locale, "form.availableFrom")}
           </label>
           <input
             type="date"
@@ -263,7 +274,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
 
       <div className="rounded-xl border border-neutral-200 p-4">
         <p className="text-sm font-semibold text-neutral-800 mb-3">
-          {isRoom ? "Detalles del cuarto compartido" : "Comodidades"}
+          {isRoom ? t(locale, "form.roomDetails") : t(locale, "form.amenitiesTitle")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="flex items-center gap-2 text-sm text-neutral-700">
@@ -273,7 +284,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
               defaultChecked={initial?.furnished}
               className="rounded border-neutral-300"
             />
-            Amueblado
+            {t(locale, "form.furnished")}
           </label>
           <label className="flex items-center gap-2 text-sm text-neutral-700">
             <input
@@ -282,7 +293,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
               defaultChecked={initial?.utilitiesIncluded}
               className="rounded border-neutral-300"
             />
-            Servicios incluidos (luz, agua, internet)
+            {t(locale, "form.utilitiesIncluded")}
           </label>
           {isRoom && (
             <label className="flex items-center gap-2 text-sm text-neutral-700">
@@ -292,7 +303,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
                 defaultChecked={initial?.privateBathroom ?? undefined}
                 className="rounded border-neutral-300"
               />
-              Baño privado
+              {t(locale, "form.privateBathroom")}
             </label>
           )}
           <label className="flex items-center gap-2 text-sm text-neutral-700">
@@ -302,15 +313,13 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
               defaultChecked={initial?.petsAllowed}
               className="rounded border-neutral-300"
             />
-            Se aceptan mascotas
+            {t(locale, "form.petsAllowed")}
           </label>
         </div>
 
         <div className="mt-3">
           <label className="block text-sm font-medium text-neutral-700 mb-1">
-            {isRoom
-              ? "Reglas de convivencia / amenidades (cocina, lavandería, etc.)"
-              : "Amenidades (opcional)"}
+            {isRoom ? t(locale, "form.roomRules") : t(locale, "form.amenitiesOptional")}
           </label>
           <textarea
             name="amenities"
@@ -318,8 +327,8 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
             rows={2}
             placeholder={
               isRoom
-                ? "Ej. Cocina y lavandería compartida, no fumar, horario flexible…"
-                : "Ej. Piscina, garaje, seguridad 24h…"
+                ? t(locale, "form.roomRulesPlaceholder")
+                : t(locale, "form.amenitiesPlaceholder")
             }
             className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
           />
@@ -328,21 +337,21 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
 
       <div>
         <label className="block text-sm font-medium text-neutral-700 mb-1">
-          Descripción
+          {t(locale, "form.description")}
         </label>
         <textarea
           name="description"
           required
           rows={5}
           defaultValue={initial?.description}
-          placeholder="Describe el lugar, el ambiente, quién vive ahí, reglas, etc."
+          placeholder={t(locale, "form.descriptionPlaceholder")}
           className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-neutral-700 mb-1">
-          Fotos — una URL de imagen por línea (opcional)
+          {t(locale, "form.photos")}
         </label>
         <textarea
           value={imagesText}
@@ -351,10 +360,7 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
           placeholder="https://ejemplo.com/foto1.jpg"
           className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
         />
-        <p className="mt-1 text-xs text-neutral-500">
-          Sube tus fotos a un servicio como Imgur o Google Drive (enlace público) y pega
-          aquí la URL de cada imagen.
-        </p>
+        <p className="mt-1 text-xs text-neutral-500">{t(locale, "form.photosHelp")}</p>
       </div>
 
       {error && (
@@ -368,7 +374,11 @@ export default function ListingForm({ initial }: { initial?: InitialData }) {
         disabled={loading}
         className="w-full sm:w-auto rounded-md bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
       >
-        {loading ? "Guardando…" : isEdit ? "Guardar cambios" : "Publicar anuncio"}
+        {loading
+          ? t(locale, "form.saving")
+          : isEdit
+          ? t(locale, "form.saveChanges")
+          : t(locale, "form.publish")}
       </button>
     </form>
   );

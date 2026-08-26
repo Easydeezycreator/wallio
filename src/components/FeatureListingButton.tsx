@@ -3,8 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FEATURED_DAYS, FEATURED_PRICE_EUR } from "@/lib/constants";
+import { t, type Locale } from "@/lib/i18n";
 
-export default function FeatureListingButton({ listingId }: { listingId: string }) {
+export default function FeatureListingButton({
+  listingId,
+  locale,
+}: {
+  listingId: string;
+  locale: Locale;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -15,24 +22,22 @@ export default function FeatureListingButton({ listingId }: { listingId: string 
     router.refresh();
   }
 
+  const description = t(locale, "feature.description")
+    .replace("{days}", String(FEATURED_DAYS))
+    .replace("{price}", String(FEATURED_PRICE_EUR));
+
   return (
     <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
-      <p className="font-semibold text-amber-900">Destaca este anuncio</p>
-      <p className="mt-1 text-sm text-amber-800">
-        Aparece primero en los resultados de búsqueda durante {FEATURED_DAYS} días
-        por {FEATURED_PRICE_EUR}€.
-      </p>
+      <p className="font-semibold text-amber-900">{t(locale, "feature.title")}</p>
+      <p className="mt-1 text-sm text-amber-800">{description}</p>
       <button
         onClick={handleActivate}
         disabled={loading}
         className="mt-3 rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:opacity-60"
       >
-        {loading ? "Activando…" : `Activar destacado — modo de prueba`}
+        {loading ? t(locale, "feature.activating") : t(locale, "feature.activate")}
       </button>
-      <p className="mt-2 text-xs text-amber-700">
-        El cobro real con tarjeta todavía no está conectado. Por ahora este botón
-        activa el destacado sin cobrar, para que puedas probarlo.
-      </p>
+      <p className="mt-2 text-xs text-amber-700">{t(locale, "feature.note")}</p>
     </div>
   );
 }

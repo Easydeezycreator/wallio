@@ -2,10 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getListingsByOwner, getMessagesForOwner } from "@/lib/listings";
-import { formatPrice, propertyLabel, transactionLabel } from "@/lib/constants";
+import { formatPrice } from "@/lib/constants";
+import { t, transactionLabel, propertyLabel } from "@/lib/i18n";
 import DeleteListingButton from "@/components/DeleteListingButton";
+import { getLocale } from "@/lib/locale";
 
 export default async function MyAccountPage() {
+  const locale = await getLocale();
   const session = await getSession();
   if (!session) {
     redirect("/login?next=/mi-cuenta");
@@ -18,25 +21,29 @@ export default async function MyAccountPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-neutral-900">Mi cuenta</h1>
+      <h1 className="text-2xl font-bold text-neutral-900">
+        {t(locale, "account.title")}
+      </h1>
       <p className="text-sm text-neutral-500 mt-1">
-        Hola {session.name} — aquí administras tus anuncios y mensajes.
+        {t(locale, "account.hello").replace("{name}", session.name)}
       </p>
 
       <section className="mt-8">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-neutral-900">Mis anuncios ({myListings.length})</h2>
+          <h2 className="font-semibold text-neutral-900">
+            {t(locale, "account.myListings")} ({myListings.length})
+          </h2>
           <Link
             href="/anuncios/nuevo"
             className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-dark"
           >
-            + Nuevo anuncio
+            {t(locale, "account.newListing")}
           </Link>
         </div>
 
         {myListings.length === 0 ? (
           <div className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-neutral-500 text-sm">
-            Todavía no has publicado ningún anuncio.
+            {t(locale, "account.noListings")}
           </div>
         ) : (
           <div className="space-y-2">
@@ -53,9 +60,9 @@ export default async function MyAccountPage() {
                     {listing.title}
                   </Link>
                   <p className="text-xs text-neutral-500">
-                    {transactionLabel(listing.transactionType)} ·{" "}
-                    {propertyLabel(listing.propertyType)} · {listing.city} ·{" "}
-                    {formatPrice(listing.price, listing.currency)}
+                    {transactionLabel(locale, listing.transactionType)} ·{" "}
+                    {propertyLabel(locale, listing.propertyType)} · {listing.city} ·{" "}
+                    {formatPrice(listing.price, listing.currency, locale)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
@@ -63,9 +70,9 @@ export default async function MyAccountPage() {
                     href={`/anuncios/${listing.id}/editar`}
                     className="text-sm font-medium text-neutral-600 hover:text-brand"
                   >
-                    Editar
+                    {t(locale, "button.edit")}
                   </Link>
-                  <DeleteListingButton listingId={listing.id} />
+                  <DeleteListingButton listingId={listing.id} locale={locale} />
                 </div>
               </div>
             ))}
@@ -75,12 +82,12 @@ export default async function MyAccountPage() {
 
       <section className="mt-10">
         <h2 className="font-semibold text-neutral-900 mb-3">
-          Mensajes recibidos ({messages.length})
+          {t(locale, "account.myMessages")} ({messages.length})
         </h2>
 
         {messages.length === 0 ? (
           <div className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-neutral-500 text-sm">
-            Aún no has recibido mensajes de interesados.
+            {t(locale, "account.noMessages")}
           </div>
         ) : (
           <div className="space-y-2">
@@ -89,11 +96,13 @@ export default async function MyAccountPage() {
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-neutral-900">{msg.name}</p>
                   <p className="text-xs text-neutral-400">
-                    {new Date(msg.createdAt).toLocaleDateString("es-MX")}
+                    {new Date(msg.createdAt).toLocaleDateString(
+                      locale === "en" ? "en-GB" : "es-ES"
+                    )}
                   </p>
                 </div>
                 <p className="text-xs text-neutral-500 mb-1">
-                  Sobre:{" "}
+                  {t(locale, "account.about")}:{" "}
                   <Link href={`/anuncios/${msg.listingId}`} className="text-brand">
                     {msg.listingTitle}
                   </Link>
