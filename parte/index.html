@@ -1427,16 +1427,26 @@ html.solo-parte .portada{display:none}
   </div>
 
   <div class="card">
-    <h2>Generar</h2>
+    <h2>Entregas el parte</h2>
     <div class="btnrow">
       <button class="primary" onclick="hacerParte()">Parte en PDF</button>
+    </div>
+    <div class="btnrow addmini">
       <button onclick="hacerParte(camActiva())">PDF · solo mi cámara</button>
       <button onclick="parteCSV()">CSV</button>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Sigues</h2>
     <div class="btnrow">
       <button onclick="ptSiguienteRollo()">Empezar el rollo siguiente</button>
       <button onclick="jornadaSiguiente()">Empezar la jornada siguiente</button>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Por si acaso</h2>
     <div class="btnrow addmini">
       <button onclick="guardarParte()">Guardar parte</button>
       <button onclick="document.getElementById('partIn').click()">Abrir un parte guardado</button>
