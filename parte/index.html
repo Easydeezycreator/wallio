@@ -5279,9 +5279,12 @@ function renderTomas(){
   if (dlE) dlE.innerHTML = Array.from(new Set(L.filter(x => (x.camLetra || "A") === camActiva())
     .map(x => (x.sc || "").trim()).filter(Boolean)))
     .map(s => "<option>" + esc(s) + "</option>").join("");
-  const enLista = L.filter(x => (x.camLetra || "A") === camActiva()).length;  /* v54: solo la activa */
+      const propiasCam = L.filter(x => (x.camLetra || "A") === camActiva());  /* v54: solo la activa */
+     const escenaActual = propiasCam.length ? (propiasCam[propiasCam.length - 1].sc || "").trim() : "";
+     const enLista = propiasCam.filter(x => (x.sc || "").trim() === escenaActual).length;  /* v65: solo la escena en curso */
   $("listaTomas").innerHTML = enLista ? L.map((t, i) => {
     if ((t.camLetra || "A") !== camActiva()) return "";
+       if ((t.sc || "").trim() !== escenaActual) return "";
     const pft = esFilm() ? piesDeToma(i) : 0;
     const meta = [t.mos ? "MOS" : "", t.desc, t.clip, t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
                   t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
