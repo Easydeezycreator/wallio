@@ -452,6 +452,10 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 /* ---- editor de tomas ---- */
 .toma{border-bottom:1px solid var(--line2);padding:8px 0}
 .toma:last-child{border-bottom:none}
+.toma>summary{list-style:none;cursor:pointer}
+.toma>summary::-webkit-details-marker{display:none}
+.toma:not([open]){opacity:.6}
+.toma:not([open]):hover{opacity:.85}
 .toma .th{display:flex;align-items:center;gap:9px;margin-bottom:1px}
 .toma .th .sl{font:700 15px/1 var(--mono);letter-spacing:-.01em;white-space:nowrap}
 .toma .th .meta{flex:1;font:10.5px/1.35 var(--mono);color:var(--tx3);overflow:hidden;
@@ -5287,6 +5291,10 @@ function renderTomas(){
      const escenaActual = propiasCam.length ? (propiasCam[propiasCam.length - 1].sc || "").trim() : "";
      const enLista = propiasCam.filter(x => (x.sc || "").trim() === escenaActual).length;  /* v65: solo la escena en curso */
   $("listaTomas").innerHTML = enLista ? L.map((t, i) => {
+     let ultimoIdx = -1;  /* v66: la toma activa (la última) queda abierta; las anteriores se guardan colapsadas */
+     for (let j = L.length - 1; j >= 0; j--){
+       if ((L[j].camLetra || "A") === camActiva() && (L[j].sc || "").trim() === escenaActual){ ultimoIdx = j; break; }
+     }
     if ((t.camLetra || "A") !== camActiva()) return "";
        if ((t.sc || "").trim() !== escenaActual) return "";
     const pft = esFilm() ? piesDeToma(i) : 0;
@@ -5302,15 +5310,16 @@ function renderTomas(){
         <input value="${esc((t.extra || {})[n] || "")}"
           oninput="if(!S.parte.tomas[${i}].extra)S.parte.tomas[${i}].extra={};S.parte.tomas[${i}].extra['${esc(n)}']=this.value"
           onchange="renderTomas()" autocomplete="off"></div>`).join("");
-    return `<div class="toma cam${t.camLetra || "A"}">
-      <div class="th">
+        const abierta = i === ultimoIdx;
+    return `<details class="toma cam${t.camLetra || "A"}"${abierta ? " open" : ""}>
+      <summary class="th">
         ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}</div>
-        <button class="${t.mos ? "si" : ""}" onclick="guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
-        <button class="${t.ok ? "si" : ""}" onclick="guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
-        <button class="x" onclick="borrarToma(${i})">×</button>
-      </div>
-      <div class="row">${campos}${propios}<div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div></div></div>`;
+        <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
+        <button class="${t.ok ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
+        <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
+      </summary>
+      <div class="row">${campos}${propios}<div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div></div></details>`;
   }).join("") : '<div class="empty">Sin tomas todavía. Pulsa «+ Toma».</div>';
   $("listaTomas").classList.toggle("mc", esMulticam());
   resumenParte(); fillParte(); updateChip(); pintaCams();
