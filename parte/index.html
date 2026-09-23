@@ -5098,7 +5098,9 @@ const T_CLAVES = T_CAMPOS.map(c => c[0]);
 function tomaVacia(){
   const t = {}; T_CLAVES.forEach(k => t[k] = "");
   T_CAMPOS.forEach(([k,,hereda]) => { if (hereda && S.parte.roll[hereda]) t[k] = S.parte.roll[hereda]; });
-  t.serial = S.lens.serial || ""; t.focal = String(S.lens.focal || "");
+  /* v74: ya no se copia el serial/focal de la ultima optica seleccionada en
+     Emitir un grid a una toma nueva -- eso era dato "fantasma" que Waldo no
+     habia tecleado en el parte; el datalist de series ya sugiere lo usado antes */
   t.ok = false; t.mos = false; t.extra = {};
   return t;
 }
