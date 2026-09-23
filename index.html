@@ -1361,27 +1361,27 @@ html.solo-parte .portada{display:none}
     </div>
     <div class="grid">
       <div class="f"><label>Cámara</label><input id="r_cam" placeholder="A" autocomplete="off"></div>
-      <div class="f"><label>Cuerpo <span style="float:right;cursor:pointer" onclick="otraCamara()">+ otra cámara</span></label><input id="r_body" list="dlBodies" onfocus="this.select()" placeholder="ARRI ALEXA 35" autocomplete="off"></div>
-      <div class="f"><label>Formato de captura</label><input id="r_fmt" list="dlFmts" onfocus="this.select()" placeholder="Open Gate 4.6K" autocomplete="off"></div>
-      <div class="f"><label>Soporte</label><input id="r_media" list="dlMedia" placeholder="Codex Compact 2 TB · 04" autocomplete="off"></div>
-      <div class="f"><label>Codec / emulsión</label><input id="r_codec" list="dlCodec" placeholder="ARRIRAW 4.6K OG" autocomplete="off"></div>
+      <div class="f"><label>Cuerpo <span style="float:right;cursor:pointer" onclick="otraCamara()">+ otra cámara</span></label><input id="r_body" list="dlBodies" onfocus="this.select()" placeholder="" autocomplete="off"></div>
+      <div class="f"><label>Formato de captura</label><input id="r_fmt" list="dlFmts" onfocus="this.select()" placeholder="" autocomplete="off"></div>
+      <div class="f"><label>Soporte</label><input id="r_media" list="dlMedia" placeholder="" autocomplete="off"></div>
+      <div class="f"><label>Codec / emulsión</label><input id="r_codec" list="dlCodec" placeholder="" autocomplete="off"></div>
     </div>
     <!-- v71: Rollo/magazine, FPS, EI, Obturador, WB, LUT y Filtros se registran
          por Toma (estructura de claqueta: Rollo -> Escena -> Toma), no aquí -->
     <div class="grid" id="filmRollo">
-      <div class="f"><label>Laboratorio</label><input id="r2_lab" placeholder="Fotofilm Madrid" autocomplete="off"></div>
-      <div class="f"><label>Nº de magazine</label><input id="r2_mag" placeholder="M3" autocomplete="off"></div>
-      <div class="f"><label>Emulsión</label><input id="r2_emul" list="dlEmul" placeholder="KODAK VISION3 500T 5219" autocomplete="off" onfocus="this.select()"></div>
-      <div class="f"><label>Lote / batch</label><input id="r2_lote" placeholder="0231 042" autocomplete="off"></div>
-      <div class="f"><label>Carga</label><input id="r2_carga" inputmode="numeric" list="dlCarga" placeholder="1000" autocomplete="off" onfocus="this.select()"></div>
+      <div class="f"><label>Laboratorio</label><input id="r2_lab" placeholder="" autocomplete="off"></div>
+      <div class="f"><label>Nº de magazine</label><input id="r2_mag" placeholder="" autocomplete="off"></div>
+      <div class="f"><label>Emulsión</label><input id="r2_emul" list="dlEmul" placeholder="" autocomplete="off" onfocus="this.select()"></div>
+      <div class="f"><label>Lote / batch</label><input id="r2_lote" placeholder="" autocomplete="off"></div>
+      <div class="f"><label>Carga</label><input id="r2_carga" inputmode="numeric" list="dlCarga" placeholder="" autocomplete="off" onfocus="this.select()"></div>
       <div class="f"><label>Unidad de medida</label><select id="r2_unidad">
-        <option value="ft">Pies (ft)</option><option value="m">Metros (m)</option></select></div>
+        <option value="" selected>—</option><option value="ft">Pies (ft)</option><option value="m">Metros (m)</option></select></div>
       <div class="f"><label>Paso</label><select id="r2_perf">
-        <option value="4">35 mm · 4 perf</option><option value="3">35 mm · 3 perf</option>
+        <option value="" selected>—</option><option value="4">35 mm · 4 perf</option><option value="3">35 mm · 3 perf</option>
         <option value="2">35 mm · 2 perf</option><option value="16">16 mm</option>
         <option value="65">65 mm · 5 perf</option></select></div>
       <div class="f"><label>Cargado por</label><input id="r2_loader" autocomplete="off"></div>
-      <div class="f"><label>Contador al empezar</label><input id="r2_dial0" inputmode="numeric" placeholder="0" autocomplete="off"></div>
+      <div class="f"><label>Contador al empezar</label><input id="r2_dial0" inputmode="numeric" placeholder="" autocomplete="off"></div>
     </div>
     <div id="rollExtra"></div>
     <div class="btnrow addmini"><button onclick="addCampoRollo()">+ Añadir campo del rollo</button></div>
@@ -1404,8 +1404,8 @@ html.solo-parte .portada{display:none}
   <div class="card" id="cardLab">
     <h2>Laboratorio</h2>
     <div class="grid">
-      <div class="f"><label>Revelado</label><input id="r2_rev" list="dlRev" onfocus="this.select()" autocomplete="off" placeholder="Normal"></div>
-      <div class="f"><label>Positivado / escaneo</label><input id="r2_copia" list="dlCopia" onfocus="this.select()" autocomplete="off" placeholder="Best light"></div>
+      <div class="f"><label>Revelado</label><input id="r2_rev" list="dlRev" onfocus="this.select()" autocomplete="off" placeholder=""></div>
+      <div class="f"><label>Positivado / escaneo</label><input id="r2_copia" list="dlCopia" onfocus="this.select()" autocomplete="off" placeholder=""></div>
       <div class="f wide"><label>Instrucciones al laboratorio</label><input id="r2_labnotas" placeholder="revelar aparte del resto" autocomplete="off"></div>
     </div>
   </div>
@@ -5224,8 +5224,8 @@ function pintaTipo(){
   document.documentElement.classList.toggle("pfilm", f);
   const a = $("tp_dig"), b = $("tp_film");
   if (a && b){ a.className = f ? "ghost" : "primary"; b.className = f ? "primary" : "ghost"; }
-  [["r_body", f ? "ARRICAM LT" : "ARRI ALEXA 35"], ["r_fmt", f ? "Super 35 3-perf" : "Open Gate 4.6K"]]
-    .forEach(([id, ej]) => { const e = $(id); if (e){ e.setAttribute("placeholder", ej); e.__op = ej; } });
+  /* v72: ya no se pone un ejemplo de cámara/formato real como placeholder —
+     confundía con dato guardado; el datalist ya sugiere lo que se ha usado antes */
 }
 function piesDeToma(i){
   const L = S.parte.tomas, t = L[i] || {};
@@ -5297,10 +5297,9 @@ function fillParte(){
   migraResponsables();
   R_CAMPOS.forEach(k => { const el = $("r_" + k); if (el) el.value = R[k] || ""; });
   if (!R.tipo) R.tipo = "digital";
-  if (!R.unidad) R.unidad = "ft";
-  if (!R.perf) R.perf = "4";
-  if (!R.rev) R.rev = "Normal";
-  if (!R.copia) R.copia = "Best light";
+  /* v72: unidad/perf/rev/copia YA NO se rellenan solos — quedan vacíos hasta
+     que Waldo los elige; solo se usa un valor por defecto al exportar/mostrar
+     el reporte (ver resumenParte/PDF), nunca como dato guardado del rollo */
   R2_CAMPOS.forEach(k => { const el = $("r2_" + k); if (el) el.value = R[k] || ""; });
   pintaTipo();
   const film = esFilm();
