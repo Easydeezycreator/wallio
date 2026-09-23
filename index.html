@@ -1364,8 +1364,8 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div>
       <div class="f"><label>Cuerpo <span style="float:right;cursor:pointer" onclick="otraCamara()">+ otra cámara</span></label><input id="r_body" list="dlBodies" onfocus="this.select()" placeholder="ARRI ALEXA 35" autocomplete="off"></div>
       <div class="f"><label>Formato de captura</label><input id="r_fmt" list="dlFmts" onfocus="this.select()" placeholder="Open Gate 4.6K" autocomplete="off"></div>
-      <div class="f"><label>Soporte</label><input id="r_media" placeholder="Codex Compact 2 TB · 04" autocomplete="off"></div>
-      <div class="f"><label>Codec / emulsión</label><input id="r_codec" placeholder="ARRIRAW 4.6K OG" autocomplete="off"></div>
+      <div class="f"><label>Soporte</label><input id="r_media" list="dlMedia" placeholder="Codex Compact 2 TB · 04" autocomplete="off"></div>
+      <div class="f"><label>Codec / emulsión</label><input id="r_codec" list="dlCodec" placeholder="ARRIRAW 4.6K OG" autocomplete="off"></div>
       <div class="f"><label>Fotogramas por segundo</label><input id="r_fps" inputmode="decimal" placeholder="25" list="dlFps" autocomplete="off"></div>
       <div class="f"><label>EI / ISO</label><input id="r_ei" inputmode="numeric" placeholder="800" list="dlEi" autocomplete="off"></div>
       <div class="f"><label>Obturador</label><input id="r_shutter" placeholder="180°" list="dlShutter" autocomplete="off"></div>
@@ -1473,6 +1473,9 @@ html.solo-parte .portada{display:none}
   <option value="100"><option value="200"><option value="400"><option value="1000"><option value="2000">
 </datalist>
 <datalist id="dlFmts"></datalist>
+<datalist id="dlMedia"></datalist>
+<datalist id="dlCodec"></datalist>
+<datalist id="dlLut"></datalist>
 <datalist id="dlSeries"></datalist>
 <datalist id="dlEscenas"></datalist>
 <datalist id="dlT"><option>1.3</option><option>1.4</option><option>2</option><option>2.8</option><option>4</option><option>5.6</option><option>8</option><option>11</option><option>16</option><option>22</option></datalist>
@@ -1903,7 +1906,8 @@ let S = {
   takes: {},            // "fmtKey|foco" -> {file, date, by, res}
   parte: {roll: {}, tomas: [], campos: [], camposRollo: []},   // parte de cámara (WLG-03)
   base: {},             // lo que venía de la ficha cargada
-  historial: []
+  historial: [],
+  memCampos: {}          // v70: lo que escribió antes en cada campo del rollo, para sugerirlo (sobrevive a "proyecto nuevo")
 };
 
 /* ---------------- navegación ---------------- */
@@ -4942,7 +4946,7 @@ function proyectoNuevo(){
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
   S.prod = { };
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
-  S.parte = { roll: { tipo: "digital", wb: "5600 K · +0", fps: "25", shutter: "180°" },
+  S.parte = { roll: { tipo: "digital" },
               tomas: [], campos: [], camposRollo: [],
               camActiva: "A", camsGuardadas: {} };
   if (typeof fillProd === "function") fillProd();
@@ -5166,8 +5170,7 @@ function cambiaCam(letra){
   const previa = S.parte.roll || {};
   const sig = (S.parte.camsGuardadas[letra] && Object.keys(S.parte.camsGuardadas[letra]).length)
     ? copiaCam(S.parte.camsGuardadas[letra])
-    : { tipo: previa.tipo || "digital", unidad: previa.unidad || "ft",
-        wb: "5600 K · +0", fps: "25", shutter: "180°" };
+    : { tipo: previa.tipo || "digital", unidad: previa.unidad || "ft" };
   S.parte.roll = sig;
   S.parte.camActiva = letra;
   const c = String(S.parte.roll.cam || "").trim().toUpperCase();
@@ -5280,6 +5283,18 @@ function wireParte(){
     if (!S.camarasPropias.some(c => c.n === v && c.s === modo)){
       guarda(); S.camarasPropias.push({n: v, s: modo}); fillParte(); }
   };
+  /* v70: lo que escriba en estos campos queda sugerido la próxima vez (además
+     del catálogo fijo que ya tenían fps/ei/obturador/temperatura/filtros) */
+  ["fmt","media","codec","fps","ei","shutter","wb","lut","filt"].forEach(k => {
+    const el = $("r_" + k); if (!el) return;
+    el.onchange = () => {
+      const v = el.value.trim(); if (!v) return;
+      S.memCampos = S.memCampos || {};
+      S.memCampos[k] = S.memCampos[k] || [];
+      if (!S.memCampos[k].includes(v)){
+        guarda(); S.memCampos[k].unshift(v); S.memCampos[k] = S.memCampos[k].slice(0, 30); fillParte(); }
+    };
+  });
 }
 function fillParte(){
   const P = S.prod, R = S.parte.roll;
@@ -5299,12 +5314,20 @@ function fillParte(){
   const fmts   = [...new Set((film ? [] : S.formats.map(f => f.fmt)).concat(CAT.map(f => f.f)))];
   const series = [...new Set([S.lens.serial].concat(S.parte.tomas.map(t => t.serial)).filter(Boolean))];
   const dl = (id, arr) => { const e = $(id); if (e) e.innerHTML = arr.map(v => `<option value="${esc(v)}">`).join(""); };
-  dl("dlBodies", bodies); dl("dlFmts", fmts); dl("dlSeries", series);
+  const mem = k => (S.memCampos && S.memCampos[k]) || [];
+  dl("dlBodies", bodies); dl("dlFmts", [...new Set(fmts.concat(mem("fmt")))]); dl("dlSeries", series);
   dl("dlCarga", (R.unidad === "m") ? ["30","61","122","305","610"] : ["100","200","400","1000","2000"]);
   dl("dlRev", ["Normal","Forzado +1","Forzado +2","Retenido −1","Retenido −2"].map(traduce));
   dl("dlCopia", ["Best light","One-light","Etalonado (timed)","Escaneo 2K","Escaneo 4K","Escaneo 4K HDR"].map(traduce));
-  if (!film && R.body === undefined && S.formats.length) { R.body = S.formats[0].body; $("r_body").value = R.body; }
-  if (!film && R.fmt  === undefined && S.formats.length) { R.fmt  = S.formats[0].fmt;  $("r_fmt").value  = R.fmt;  }
+  /* v70: catálogo fijo + lo que se haya escrito antes en cada campo */
+  dl("dlMedia", mem("media"));
+  dl("dlCodec", mem("codec"));
+  dl("dlLut", mem("lut"));
+  dl("dlFps", [...new Set(["23.976","24","25","29.97","30","48","50","60","75","90","96","120"].concat(mem("fps")))]);
+  dl("dlEi", [...new Set(["200","400","500","640","800","1280","1600","2500","3200"].concat(mem("ei")))]);
+  dl("dlShutter", [...new Set(["180°","172.8°","144°","90°","45°","1/48","1/50","1/60","1/100","1/120"].concat(mem("shutter")))]);
+  dl("dlWb", [...new Set(["3200 K","4300 K","5600 K","6500 K","2800 K"].concat(mem("wb")))]);
+  dl("dlFiltros", [...new Set(["ND .3","ND .6","ND .9","ND 1.2","ND 1.5","ND 1.8","ND 2.1","Black Pro-Mist 1/8","Black Pro-Mist 1/4","Black Pro-Mist 1/2","Black Pro-Mist 1","Glimmerglass 1/4","Polarizador","Diopter +0.5","Diopter +1","Diopter +2","Diopter +3","Hollywood Black Magic 1/4","Soft FX 1/2","Rota-Pola","Clear / UV"].concat(mem("filt")))]);
 }
 
 function campoToma(i, k, etiqueta, lista, ancho){
@@ -5444,36 +5467,15 @@ function focalTxt(v){ v = String(v == null ? "" : v).trim(); return v ? v.replac
 function filtroHTML(v){ v = String(v == null ? "" : v).trim();
   if (!v) return "\u2014";
   return v.split(/\s*\u00b7\s*|\s*,\s*|\s+\+\s+/).filter(Boolean).map(esc).join("<br>"); }
-/* v69: LO PREDETERMINADO VALE — para toda cámara EN USO (con cuerpo, rollo o
-   tomas), los recuadros de fábrica que él no tocó pasan a ser DATO REAL del
-   proyecto: se ven en el campo, viajan a los demás y salen en el parte y el
-   PDF. Su borrado ("") se respeta SIEMPRE. No se inventan identidad (cámara/
-   rollo) ni instrucciones de laboratorio. */
+/* v70: LO PREDETERMINADO YA NO SE INVENTA — antes (v69) esta función rellenaba
+   los recuadros de fábrica (cámara, formato, medios, códec…) como si fueran
+   dato real del proyecto en cuanto la cámara estaba "en uso". Waldo pidió que
+   los campos queden vacíos y editables de verdad, y que lo ya escrito antes
+   aparezca como sugerencia al teclear (eso ya lo hacen los datalist dlBodies/
+   dlFmts/dlSeries, ver fillParte). Se deja la función como no-operación para
+   no tocar las llamadas existentes. */
 function materializaDefectos(){
-  const D = { body: "ARRI ALEXA 35", fmt: "Open Gate 4.6K", media: "Codex Compact 2 TB · 04",
-    codec: "ARRIRAW 4.6K OG", fps: "25", ei: "800", shutter: "180°", wb: "5600 K · +0",
-    lut: "ARRI 709 · show LUT v3", filt: "Black Pro-Mist 1/4" };
-  const F = { body: "ARRICAM LT", fmt: "Super 35 3-perf", fps: "25", ei: "800", shutter: "180°",
-    filt: "Black Pro-Mist 1/4", lab: "Fotofilm Madrid", mag: "M3",
-    emul: "KODAK VISION3 500T 5219", lote: "0231 042", dial0: "0",
-    rev: "Normal", copia: "Best light" };
-  let cambio = false;
-  CAM_LETRAS.forEach(function(l){
-    const C = configDe(l); if (!C) return;
-    const enUso = String(C.body || "").trim() || String(C.roll || "").trim() || pcTomasDe(l).length;
-    if (!enUso) return;
-    const cf = (C.tipo || "digital") === "film";
-    const tabla = cf ? F : D;
-    Object.keys(tabla).forEach(function(k){
-      if (C[k] === undefined){ C[k] = tabla[k]; cambio = true; }
-    });
-    if (cf && C.carga === undefined){ C.carga = (C.unidad === "m") ? "305" : "1000"; cambio = true; }
-  });
-  if (cambio){
-    fillParte();
-    if (typeof autoguarda === "function") autoguarda();
-  }
-  return cambio;
+  return false;
 }
 function cuentaTomas(letra){   /* v54: cuentas por cámara ("*" = todas) */
   const L = S.parte.tomas.filter(t => letra === "*" || (t.camLetra || "A") === letra);
