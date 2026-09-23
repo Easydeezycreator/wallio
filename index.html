@@ -1392,10 +1392,10 @@ html.solo-parte .portada{display:none}
     <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
     <div id="listaTomas"></div>
     <div class="btnrow">
-      <button class="primary" onclick="nuevaToma(false)">+ Toma</button>
       <button onclick="nuevaToma(true)">+ Escena</button>
+      <button class="primary" onclick="nuevaToma(false)">+ Toma</button>
       <button class="ghost" onclick="borrarToma(-1)">Borrar última</button>
-    </div>
+div>
     <div id="listaCampos"></div>
   </div>
 
@@ -5421,7 +5421,10 @@ function nuevaToma(nuevaEscena){
   const L = S.parte.tomas;
   let u = null;
   for (let j = L.length - 1; j >= 0; j--){ if ((L[j].camLetra || "A") === camActiva()){ u = L[j]; break; } }
-  const t = u ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
+  /* v73: +Escena arranca en blanco (claqueta nueva: nada se hereda de la
+     escena anterior); +Toma sigue clonando la última toma de esta escena —
+     conserva lo ya tecleado y solo avanza el número de toma */
+  const t = (!nuevaEscena && u) ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
   t.camLetra = camActiva();
   if (typeof pcReclama === "function") pcReclama();
   if (typeof pcAutoProgramar === "function") pcAutoProgramar();
