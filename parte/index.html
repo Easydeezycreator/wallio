@@ -5100,7 +5100,7 @@ function ptSiguienteRollo(){
 /* ================= PARTE DE CÁMARA · WLG-03 ================= */
 /* cada toma: clave, etiqueta, hereda del rollo, ancho en el editor */
 const T_CAMPOS = [
-  ["sc","Escena"], ["tk","Toma"], ["desc","Descripción",null,"w"], ["clip","Archivo / clip"],
+  ["sc","Escena"], ["tk","Toma"], ["desc","Descripción",null,"w"], ["clip","Archivo / clip"], ["nclip","Nº de clips"],
   ["serial","Óptica · nº de serie","", "dlSeries"], ["focal","Focal (mm)"],
     ["t","Diafragma T"], ["foco","Distancia de foco"], ["filt","Filtro","filt"],
   ["dial","Contador"], ["pies","Metraje"],
@@ -5116,7 +5116,7 @@ function tomaVacia(){
   /* v74: ya no se copia el serial/focal de la ultima optica seleccionada en
      Emitir un grid a una toma nueva -- eso era dato "fantasma" que Waldo no
      habia tecleado en el parte; el datalist de series ya sugiere lo usado antes */
-  t.ok = false; t.mos = false; t.falso = false; t.extra = {};
+    t.ok = false; t.mos = false; t.falso = false; t.notaEsp = ""; t.extra = {};
   return t;
 }
 const R_CAMPOS = ["cam","roll","body","fmt","aspecto","res","codec","fps","ei","shutter","wb","cc","lut","filt"];
@@ -5348,12 +5348,13 @@ function renderTomas(){
       ? `<div class="escGrupo">${esc(traduce("Escena"))} ${esc(escenaAqui || "—")}</div>` : "";
     escenaAnterior = escenaAqui;
     const pft = esFilm() ? piesDeToma(i) : 0;
-    const meta = [t.mos ? "MOS" : "", t.falso ? traduce("CLIP FALSO") : "", t.desc, t.clip, t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
+    const meta = [t.mos ? "MOS" : "", t.notaEsp || "", t.falso ? traduce("CLIP FALSO") : "", t.desc, t.clip, t.nclip ? t.nclip + " clips" : "", t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
                   t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
     const camposOcultos = S.parte.camposOcultos || [];
     const campos = T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0).map(([k, et, , extra]) =>
-      campoToma(i, k, et, T_LISTAS[k] || null, extra === "w")).join("");
+                        t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
+                  t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
     const restaurar = camposOcultos.length ? `<div class="f restaurar">` +
       camposOcultos.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
         return `<button class="ghost" onclick="restaurarCampoToma('${k}')">+ ${c ? c[1] : k}</button>`; }).join(" ") +
@@ -5369,6 +5370,8 @@ function renderTomas(){
         ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}</div>
         <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
+        <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
+        <button class="${t.notaEsp === 'PU' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='PU'?'':'PU');renderTomas()">PU</button>
         <button class="${t.falso ? "mal" : ""}" title="${esc(traduce("Marcar esta toma como clip falso (equivocación, prueba, no es material real)"))}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].falso=!S.parte.tomas[${i}].falso;renderTomas()">${t.falso ? traduce("falso") : traduce("real")}</button>
         <button class="${t.ok ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
@@ -5442,7 +5445,7 @@ function nuevaToma(nuevaEscena){
   if (typeof materializaDefectos === "function") materializaDefectos();
   t.ts = Date.now();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
-  t.clip = ""; t.dial = ""; t.pies = ""; t.mos = false; t.falso = false;
+    t.clip = ""; t.nclip = ""; t.dial = ""; t.pies = ""; t.mos = false; t.falso = false; t.notaEsp = "";
   if (nuevaEscena){ t.sc = ""; t.tk = "1"; }
   else t.tk = String((parseInt(t.tk, 10) || 0) + 1);
   L.push(t); renderTomas();
@@ -5715,7 +5718,7 @@ function parteCSV(){
     "codec","soporte","escena","toma","buena","descripcion","optica_serie","focal_mm","diafragma_t",
     "filtro","distancia_foco","altura_optica","tilt","roll_grados","temperatura_color","fps",
     "obturador","ei_iso","lut","resolucion","timecode","duracion_s","notas",
-    "tipo","archivo_clip","mos","contador","metraje_toma","laboratorio","magazine","emulsion",
+          "tipo","archivo_clip","mos","nota_especial","num_clips","contador","metraje_toma","laboratorio","magazine",
     "lote","carga","unidad_medida","paso","cargado_por","contador_inicial","revelado","positivado_escaneo",
     "instrucciones_lab"].concat(pr).concat(props);
   const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
@@ -5725,7 +5728,7 @@ function parteCSV(){
     C.fmt, C.codec, C.media, x.sc, x.tk, x.ok ? "si" : "no", x.desc, x.serial, x.focal, x.t,
     x.filt, x.foco, x.alt, x.tilt, x.roll, x.wb, x.fps, x.shutter, x.ei, x.lut, x.res, x.tc,
     x.dur, x.nota,
-    C.tipo || "digital", x.clip, x.mos ? "si" : "no", x.dial, cf ? (piesDeToma(i) || "") : "",
+          C.tipo || "digital", x.clip, x.mos ? "si" : "no", x.notaEsp || "", x.nclip || "", x.dial, cf ? (piesDeToma(i) || "") : "",
     C.lab, C.mag, C.emul, C.lote, C.carga, cf ? (C.unidad || "ft") : "", cf ? pasoTexto(C.perf) : "", C.loader,
     C.dial0, C.rev, C.copia, C.labnotas].concat(pr.map(n => (C.extra || {})[n] || ""))
     .concat(props.map(n => (x.extra || {})[n] || "")).map(q).join(","); });
