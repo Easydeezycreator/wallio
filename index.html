@@ -2,6 +2,18 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<script>
+/* v86: por defecto wallioapp.com abre directo el Camera Report (pedido de Waldo
+   24/09-26). Los enlaces de ficha/entrega compartidos (?ficha=...  / ?entrega=...)
+   siguen abriendo esta plataforma completa (Lens Grid), igual que siempre --
+   nunca se rompe un link ya compartido con una casa de renta. */
+(function(){
+  var p = new URLSearchParams(location.search);
+  if (!p.has("ficha") && !p.has("entrega")){
+    location.replace("/parte/" + location.search + location.hash);
+  }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
