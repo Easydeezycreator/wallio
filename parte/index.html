@@ -462,6 +462,11 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
  text-overflow:ellipsis;white-space:nowrap}
 .toma .th button{min-height:30px;min-width:52px;flex:0 0 auto;font-size:9.5px;padding:0 9px}
 .toma .th button.si{background:var(--ok);border-color:var(--ok);color:#04160e}
+.toma .th button.mal{background:#7a1f1f;border-color:#7a1f1f;color:#fff}
+.toma.falso{opacity:.5}
+.escGrupo{font:700 11px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;
+  color:var(--tx3);margin:14px 2px 4px;padding-top:6px;border-top:1px solid var(--line2)}
+.escGrupo:first-child{border-top:none;margin-top:0}
 /* ---- v48: multicámara A/B/C (rojo / azul / amarillo, dictado) ---- */
 .camSel button{min-width:46px;font-weight:800;letter-spacing:.08em}
 .camSel button[data-cam="A"]{color:var(--camA);border-color:var(--camA)}
@@ -4068,9 +4073,21 @@ async function nbPide(ruta, cuerpo, conSesion){
   if (!NB.url || !NB.key) throw new Error(traduce("Falta configurar la conexión."));
   const h = {"Content-Type": "application/json", "apikey": NB.key};
   if (conSesion !== false && NB.token) h["Authorization"] = "Bearer " + NB.token;
-  const r = await fetch(NB.url.replace(/\/+$/, "") + ruta,
-                        {method: "POST", headers: h, body: JSON.stringify(cuerpo || {})});
-  let d = null; try { d = await r.json(); } catch(e){}
+  /* v78: en set, con wifi/datos con señal pero SIN internet real, un fetch
+     puede quedarse colgado indefinidamente (navigator.onLine no lo detecta).
+     Eso encadenaba peticiones sin resolver cada 8 s (pcTick) hasta que la
+     pestaña se sentía trabada. Con AbortController el fetch SIEMPRE
+     resuelve o falla antes de 10 s, así el resto de la app sigue fluida. */
+  const ac = new AbortController();
+  const venc = setTimeout(() => ac.abort(), 10000);
+  let r;
+  try {
+    r = await fetch(NB.url.replace(/\/+$/, "") + ruta,
+                    {method: "POST", headers: h, body: JSON.stringify(cuerpo || {}), signal: ac.signal});
+  } catch(e){
+    if (e && e.name === "AbortError") throw new Error(traduce("sin conexión"));
+    throw e;
+  } finally { clearTimeout(venc); }  let d = null; try { d = await r.json(); } catch(e){}
   if (!r.ok) throw new Error((d && (d.message || d.error_description || d.error)) || ("HTTP " + r.status));
   return d;
 }
@@ -5101,7 +5118,7 @@ function tomaVacia(){
   /* v74: ya no se copia el serial/focal de la ultima optica seleccionada en
      Emitir un grid a una toma nueva -- eso era dato "fantasma" que Waldo no
      habia tecleado en el parte; el datalist de series ya sugiere lo usado antes */
-  t.ok = false; t.mos = false; t.extra = {};
+  t.ok = false; t.mos = false; t.falso = false; t.extra = {};
   return t;
 }
 const R_CAMPOS = ["cam","roll","body","fmt","media","codec","fps","ei","shutter","wb","lut","filt"];
@@ -5312,21 +5329,29 @@ function renderTomas(){
     .map(x => (x.sc || "").trim()).filter(Boolean)))
     .map(s => "<option>" + esc(s) + "</option>").join("");
       const propiasCam = L.filter(x => (x.camLetra || "A") === camActiva());  /* v54: solo la activa */
-     const escenaActual = propiasCam.length ? (propiasCam[propiasCam.length - 1].sc || "").trim() : "";
-     const enLista = propiasCam.filter(x => (x.sc || "").trim() === escenaActual).length;  /* v65: solo la escena en curso */
-  $("listaTomas").innerHTML = enLista ? L.map((t, i) => {
-     let ultimoIdx = -1;  /* v66: la toma activa (la última) queda abierta; las anteriores se guardan colapsadas */
-     for (let j = L.length - 1; j >= 0; j--){
-       if ((L[j].camLetra || "A") === camActiva() && (L[j].sc || "").trim() === escenaActual){ ultimoIdx = j; break; }
-     }
-    if ((t.camLetra || "A") !== camActiva()) return "";
-       if ((t.sc || "").trim() !== escenaActual) return "";
+  /* v78: TODA la información de cámara report queda editable siempre —
+     antes, al cambiar de escena, las tomas de escenas anteriores dejaban de
+     pintarse por completo (no solo colapsadas: desaparecían de la lista y no
+     había forma de volver a abrirlas para corregir un dato o marcar un clip
+     falso). Ahora se listan TODAS las tomas de la cámara activa, agrupadas
+     por escena con un separador; solo la última queda abierta de entrada,
+     las demás se ven colapsadas pero siguen ahí, un toque las reabre. */
+  const idxCam = [];
+  for (let j = 0; j < L.length; j++) if ((L[j].camLetra || "A") === camActiva()) idxCam.push(j);
+  const ultimoIdx = idxCam.length ? idxCam[idxCam.length - 1] : -1;
+  const T_LISTAS = { sc: "dlEscenas", serial: "dlSeries", t: "dlT", filt: "dlFiltros",
+                     wb: "dlWb", fps: "dlFps", shutter: "dlShutter", ei: "dlEi" };
+  let escenaAnterior = null;
+  $("listaTomas").innerHTML = idxCam.length ? idxCam.map(i => {
+    const t = L[i];
+    const escenaAqui = (t.sc || "").trim();
+    const cabecera = (escenaAqui !== escenaAnterior)
+      ? `<div class="escGrupo">${esc(traduce("Escena"))} ${esc(escenaAqui || "—")}</div>` : "";
+    escenaAnterior = escenaAqui;
     const pft = esFilm() ? piesDeToma(i) : 0;
-    const meta = [t.mos ? "MOS" : "", t.desc, t.clip, t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
+    const meta = [t.mos ? "MOS" : "", t.falso ? traduce("CLIP FALSO") : "", t.desc, t.clip, t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
                   t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
-    const T_LISTAS = { sc: "dlEscenas", serial: "dlSeries", t: "dlT", filt: "dlFiltros",
-                       wb: "dlWb", fps: "dlFps", shutter: "dlShutter", ei: "dlEi" };
     const camposOcultos = S.parte.camposOcultos || [];
     const campos = T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0).map(([k, et, , extra]) =>
       campoToma(i, k, et, T_LISTAS[k] || null, extra === "w")).join("");
@@ -5340,11 +5365,12 @@ function renderTomas(){
           oninput="if(!S.parte.tomas[${i}].extra)S.parte.tomas[${i}].extra={};S.parte.tomas[${i}].extra['${esc(n)}']=this.value"
           onchange="renderTomas()" autocomplete="off"></div>`).join("");
         const abierta = i === ultimoIdx;
-    return `<details class="toma cam${t.camLetra || "A"}"${abierta ? " open" : ""}>
+        return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}"${abierta ? " open" : ""}>
       <summary class="th">
         ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}</div>
         <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
+        <button class="${t.falso ? "mal" : ""}" title="${esc(traduce("Marcar esta toma como clip falso (equivocación, prueba, no es material real)"))}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].falso=!S.parte.tomas[${i}].falso;renderTomas()">${t.falso ? traduce("falso") : traduce("real")}</button>
         <button class="${t.ok ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
       </summary>
@@ -5417,7 +5443,7 @@ function nuevaToma(nuevaEscena){
   if (typeof materializaDefectos === "function") materializaDefectos();
   t.ts = Date.now();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
-  t.clip = ""; t.dial = ""; t.pies = ""; t.mos = false;
+  t.clip = ""; t.dial = ""; t.pies = ""; t.mos = false; t.falso = false;
   if (nuevaEscena){ t.sc = ""; t.tk = "1"; }
   else t.tk = String((parseInt(t.tk, 10) || 0) + 1);
   L.push(t); renderTomas();
@@ -6401,7 +6427,7 @@ const EN = {
 "Tomas":"Takes","+ Toma":"+ Take","+ Escena":"+ Scene","Borrar última":"Delete last",
 "«+ Toma» repite la anterior y sube el número: es lo que cambia de verdad entre toma y toma lo único que tienes que tocar. «+ Escena» empieza en toma 1.":
  "«+ Take» repeats the previous one and bumps the number: what actually changes between takes is all you have to touch. «+ Scene» starts at take 1.",
-"Escena":"Scene","Toma":"Take","Óptica · nº de serie":"Lens · serial no.","Diafragma T":"T-stop",
+"Escena":"Scene","Toma":"Take","Óptica · nº de serie":"Lens · serial no.","Diafragma T":"T-stop","falso":"fake","real":"real","CLIP FALSO":"FAKE CLIP","Marcar esta toma como clip falso (equivocacion, prueba, no es material real)":"Mark this take as a fake clip (mistake, test, not real material)",
 "Filtro":"Filter","Distancia de foco":"Focus distance","Timecode":"Timecode","Duración (s)":"Duration (s)",
 "Nota":"Note","buena":"circle","Resumen del rollo":"Roll summary","escenas":"scenes","buenas":"circle takes",
 "duración":"duration","Generar":"Generate","Parte en PDF":"Report as PDF","Guardar parte":"Save report",
