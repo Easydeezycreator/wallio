@@ -5342,7 +5342,9 @@ function fillParte(){
   dl("dlEi", [...new Set(["200","400","500","640","800","1280","1600","2500","3200"].concat(mem("ei")))]);
   dl("dlShutter", [...new Set(["180°","172.8°","144°","90°","45°","1/48","1/50","1/60","1/100","1/120"].concat(mem("shutter")))]);
   dl("dlWb", [...new Set(["3200 K","4300 K","5600 K","6500 K","2800 K"].concat(mem("wb")))]);
-  dl("dlFiltros", [...new Set(["ND .3","ND .6","ND .9","ND 1.2","ND 1.5","ND 1.8","ND 2.1","Black Pro-Mist 1/8","Black Pro-Mist 1/4","Black Pro-Mist 1/2","Black Pro-Mist 1","Glimmerglass 1/4","Polarizador","Diopter +0.5","Diopter +1","Diopter +2","Diopter +3","Hollywood Black Magic 1/4","Soft FX 1/2","Rota-Pola","Clear / UV"].concat(mem("filt")))]);
+  const ndBase = ["ND .3","ND .6","ND .9","ND 1.2","ND 1.5","ND 1.8","ND 2.1"];
+  const ndVariantes = ndBase.concat(ndBase.map(n => n + " INT")).concat(ndBase.map(n => n + " EXT"));
+  dl("dlFiltros", [...new Set(ndVariantes.concat(["Black Pro-Mist 1/8","Black Pro-Mist 1/4","Black Pro-Mist 1/2","Black Pro-Mist 1","Glimmerglass 1/4","Polarizador","Diopter +0.5","Diopter +1","Diopter +2","Diopter +3","Hollywood Black Magic 1/4","Soft FX 1/2","Rota-Pola","Clear / UV"]).concat(mem("filt")))]);
 }
 
 function campoToma(i, k, etiqueta, lista, ancho){
