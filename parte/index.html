@@ -1400,7 +1400,9 @@ html.solo-parte .portada{display:none}
   <div class="card">
     <h2>Tomas</h2>
     <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
-    <div id="listaTomas"></div>
+<div class="btnrow presets"><button onclick="aplicaPresetCampos('digital')">Digital</button><button onclick="aplicaPresetCampos('pelicula')">Película</button><button onclick="aplicaPresetCampos('minimo')">Mínimo</button><button onclick="aplicaPresetCampos('completo')">Completo</button></div>
+    <div class="grid"><div class="f"><label>Offset de timecode</label><input id="r_tcOffset" placeholder="00:00:00:00" autocomplete="off"></div></div>
+        <div id="listaTomas"></div>
     <div class="btnrow">
       <button onclick="nuevaToma(true)">+ Escena</button>
       <button class="primary" onclick="nuevaToma(false)">+ Toma</button>
@@ -5120,7 +5122,7 @@ function tomaVacia(){
     t.ok = false; t.mos = false; t.falso = false; t.notaEsp = ""; t.extra = {};
   return t;
 }
-const R_CAMPOS = ["cam","roll","body","fmt","aspecto","res","codec","fps","ei","shutter","wb","cc","lut","filt"];
+const R_CAMPOS = ["cam","roll","body","fmt","aspecto","res","codec","fps","ei","shutter","wb","cc","lut","filt","tcOffset"];
 const R2_CAMPOS = ["lab","mag","emul","lote","carga","unidad","perf","loader","dial0","rev","copia","labnotas"];
 const FPP = {"4":16, "3":64/3, "2":32, "16":40, "65":12.8};
 /* ---- v48: multicámara. La cámara ACTIVA vive en S.parte.roll (todo el código
@@ -5245,6 +5247,35 @@ function durFilm(medida, R){
 function unidadFocoPref(){ try { return localStorage.getItem("wallio.unidadFoco") || "ft"; } catch(e){ return "ft"; } }
 function cambiaUnidadFoco(v){ try { localStorage.setItem("wallio.unidadFoco", v); } catch(e){} if (typeof renderTomas === "function") renderTomas(); }
 
+const PRESETS_CAMPOS = {
+  digital: ["dial","pies"],
+  pelicula: ["nclip","lut","res"],
+  minimo: ["nclip","dial","pies","alt","tilt","pan","wb","cc","fps","shutter","ei","lut","res","dur"],
+  completo: []
+};
+function aplicaPresetCampos(nombre){
+  guarda();
+  S.parte.camposOcultos = (PRESETS_CAMPOS[nombre] || []).slice();
+  renderTomas(); autoguarda();
+}
+function sumaTC(tc, offset, fps){
+  fps = Math.round(parseFloat(fps)) || 24;
+  const total = 24 * 3600 * fps;
+  const toFrames = s => {
+    const p = (s || "").split(":").map(x => parseInt(x, 10) || 0);
+    while (p.length < 4) p.unshift(0);
+    const [h, m, sec, f] = p.slice(-4);
+    return ((h * 3600 + m * 60 + sec) * fps) + f;
+  };
+  const toTC = fr => {
+    fr = ((fr % total) + total) % total;
+    const f = fr % fps; let s = Math.floor(fr / fps);
+    const sec = s % 60; s = Math.floor(s / 60);
+    const m = s % 60; const h = Math.floor(s / 60);
+    return [h, m, sec, f].map(x => String(x).padStart(2, "0")).join(":");
+  };
+  return toTC(toFrames(tc) + toFrames(offset));
+}
 function wireParte(){
   R_CAMPOS.forEach(k => {
     const el = $("r_" + k); if (!el) return;
@@ -5353,8 +5384,9 @@ function renderTomas(){
       ? `<div class="escGrupo">${esc(traduce("Escena"))} ${esc(escenaAqui || "—")}</div>` : "";
     escenaAnterior = escenaAqui;
     const pft = esFilm() ? piesDeToma(i) : 0;
+    const horaReal = (t.tc && S.parte.roll.tcOffset) ? "≈" + sumaTC(t.tc, S.parte.roll.tcOffset, S.parte.roll.fps) : "";
     const meta = [t.mos ? "MOS" : "", t.notaEsp || "", t.falso ? traduce("CLIP FALSO") : "", t.desc, t.clip, t.nclip ? t.nclip + " clips" : "", t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
-                  t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
+                  t.foco, t.tc, horaReal, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
     const camposOcultos = S.parte.camposOcultos || [];
     const campos = T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0).map(([k, et, , extra]) =>
@@ -6425,6 +6457,7 @@ const EN = {
 "Formato de captura":"Capture format","Codec / emulsión":"Codec / stock",
 "Aspect ratio":"Aspect ratio","Resolución del proyecto":"Project resolution","CC (tinte)":"Tint CC","Director":"Director",
   "Unidad de foco (lentes)":"Lens focus unit","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
+  "Offset de timecode":"Timecode offset","Completo":"Complete",
 "Fotogramas por segundo":"FPS","EI / ISO":"EI / ISO","Obturador":"Shutter",
 "Temperatura de color":"White balance","LUT / look":"LUT / look","Filtros fijos":"Standing filters",
 "Foquista":"Focus puller","Foquista / parte":"Focus puller / report",
