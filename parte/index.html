@@ -1373,6 +1373,7 @@ html.solo-parte .portada{display:none}
             <div class="f"><label>Aspect ratio</label><input id="r_aspecto" list="dlAspecto" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Resolución del proyecto</label><input id="r_res" list="dlResProy" placeholder="4608x3164" autocomplete="off"></div>
       <div class="f"><label>LUT</label><input id="r_lut" list="dlLut" placeholder="" autocomplete="off"></div>
+      <div class="f"><label>Unidad de foco (lentes)</label><select id="prefUnidadFoco" onchange="cambiaUnidadFoco(this.value)"><option value="ft">Pies (ft)</option><option value="m">Metros (m)</option></select></div>
       <div class="f"><label>Codec / emulsión</label><input id="r_codec" list="dlCodec" placeholder="" autocomplete="off"></div>
     </div>
     <!-- v71: Rollo/magazine, FPS, EI, Obturador, WB, LUT y Filtros se registran
@@ -5241,6 +5242,8 @@ function durFilm(medida, R){
   const pies = ((R || {}).unidad === "m") ? medida / 0.3048 : medida;
   return durTexto(pies * (FPP[(R || {}).perf || "4"] || 16) / fps);
 }
+function unidadFocoPref(){ try { return localStorage.getItem("wallio.unidadFoco") || "ft"; } catch(e){ return "ft"; } }
+function cambiaUnidadFoco(v){ try { localStorage.setItem("wallio.unidadFoco", v); } catch(e){} if (typeof renderTomas === "function") renderTomas(); }
 
 function wireParte(){
   R_CAMPOS.forEach(k => {
@@ -5278,6 +5281,7 @@ function wireParte(){
 function fillParte(){
   const P = S.prod, R = S.parte.roll;
   migraResponsables();
+  const ePuf = $("prefUnidadFoco"); if (ePuf) ePuf.value = unidadFocoPref();
   R_CAMPOS.forEach(k => { const el = $("r_" + k); if (el) el.value = R[k] || ""; });
   if (!R.tipo) R.tipo = "digital";
   /* v72: unidad/perf/rev/copia YA NO se rellenan solos — quedan vacíos hasta
@@ -5313,12 +5317,13 @@ function fillParte(){
 function campoToma(i, k, etiqueta, lista, ancho){
   const v = esc(S.parte.tomas[i][k] || "");
   const l = lista ? ` list="${lista}"` : "";
+  const ph = (k === "foco") ? (unidadFocoPref() === "m" ? "2.40 m" : "8 ft") : "";
   /* v76: cada campo de la toma lleva una x para quitarlo si no se usa --
      Escena y Toma quedan protegidos, son la identidad de la fila */
   const x = (k === "sc" || k === "tk") ? "" :
     ` <span style="cursor:pointer;opacity:.55" title="Quitar este campo" onclick="event.stopPropagation();ocultarCampoToma('${k}')">×</span>`;
   return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
-         `<input value="${v}"${l} oninput="S.parte.tomas[${i}].${k}=this.value" ` +
+               `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value" ` +
          `onchange="renderTomas()" autocomplete="off"></div>`;
 }
 function renderTomas(){
@@ -6419,6 +6424,7 @@ const EN = {
 "Cámara y rollo":"Camera and roll","Cámara":"Camera","Rollo / magazine":"Roll / magazine",
 "Formato de captura":"Capture format","Codec / emulsión":"Codec / stock",
 "Aspect ratio":"Aspect ratio","Resolución del proyecto":"Project resolution","CC (tinte)":"Tint CC","Director":"Director",
+  "Unidad de foco (lentes)":"Lens focus unit","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Fotogramas por segundo":"FPS","EI / ISO":"EI / ISO","Obturador":"Shutter",
 "Temperatura de color":"White balance","LUT / look":"LUT / look","Filtros fijos":"Standing filters",
 "Foquista":"Focus puller","Foquista / parte":"Focus puller / report",
