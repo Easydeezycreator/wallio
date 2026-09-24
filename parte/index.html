@@ -1379,7 +1379,6 @@ html.solo-parte .portada{display:none}
             <div class="f"><label>Aspect ratio</label><input id="r_aspecto" list="dlAspecto" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Resolución del proyecto</label><input id="r_res" list="dlResProy" placeholder="4608x3164" autocomplete="off"></div>
       <div class="f"><label>LUT</label><input id="r_lut" list="dlLut" placeholder="" autocomplete="off"></div>
-      <div class="f"><label>Unidad de foco (lentes)</label><select id="prefUnidadFoco" onchange="cambiaUnidadFoco(this.value)"><option value="ft">Pies (ft)</option><option value="m">Metros (m)</option></select></div>
       <div class="f"><label>Codec / emulsión</label><input id="r_codec" list="dlCodec" placeholder="" autocomplete="off"></div>
     </div>
     <!-- v71: Rollo/magazine, FPS, EI, Obturador, WB, LUT y Filtros se registran
@@ -1405,7 +1404,7 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <h2>Tomas</h2>
-    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
+    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div><div class="f"><label>Unidad de foco (lentes)</label><select id="prefUnidadFoco" onchange="cambiaUnidadFoco(this.value)"><option value="ft">Pies (ft)</option><option value="m">Metros (m)</option></select></div></div>
 <div class="btnrow presets"><button onclick="aplicaPresetCampos('digital')">Digital</button><button onclick="aplicaPresetCampos('pelicula')">Película</button><button onclick="aplicaPresetCampos('minimo')">Mínimo</button><button onclick="aplicaPresetCampos('completo')">Completo</button></div>
     <div class="grid"><div class="f"><label>Offset de timecode</label><input id="r_tcOffset" placeholder="00:00:00:00" autocomplete="off"></div></div>
         <div id="listaTomas"></div>
@@ -5256,7 +5255,7 @@ function cambiaUnidadFoco(v){ try { localStorage.setItem("wallio.unidadFoco", v)
 const PRESETS_CAMPOS = {
   digital: ["dial","pies"],
   pelicula: ["nclip","lut","res"],
-  minimo: ["nclip","dial","pies","alt","tilt","pan","wb","cc","fps","shutter","ei","lut","res","dur"],
+  minimo: ["nclip","dial","pies","alt","tilt","pan","wb","fps","shutter","ei","lut","res","dur"],
   completo: []
 };
 function aplicaPresetCampos(nombre){
@@ -5361,6 +5360,16 @@ function campoToma(i, k, etiqueta, lista, ancho){
      Escena y Toma quedan protegidos, son la identidad de la fila */
   const x = (k === "sc" || k === "tk") ? "" :
     ` <span style="cursor:pointer;opacity:.55" title="Quitar este campo" onclick="event.stopPropagation();ocultarCampoToma('${k}')">×</span>`;
+  /* v87: el tinte (CC) vive dentro del campo de balance de blancos, no como
+     campo propio -- Waldo lo pidio asi: un solo bloque "wb" con dos inputs */
+  if (k === "wb"){
+    const vcc = esc(S.parte.tomas[i].cc || "");
+    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+      `<div style="display:flex;gap:6px">` +
+      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value" onchange="renderTomas()" autocomplete="off">` +
+      `<input value="${vcc}" list="dlCc" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" oninput="S.parte.tomas[${i}].cc=this.value" onchange="renderTomas()" autocomplete="off">` +
+      `</div></div>`;
+  }
   return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
                `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value" ` +
          `onchange="renderTomas()" autocomplete="off"></div>`;
@@ -5397,10 +5406,11 @@ function renderTomas(){
                   t.foco, t.tc, horaReal, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
     const camposOcultos = S.parte.camposOcultos || [];
-    const campos = T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0).map(([k, et, , extra]) =>
+    const campos = T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0 && k !== "cc").map(([k, et, , extra]) =>
       campoToma(i, k, et, T_LISTAS[k] || null, extra === "w")).join("");
-    const restaurar = camposOcultos.length ? `<div class="f restaurar">` +
-      camposOcultos.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
+    const camposOcultosVisibles = camposOcultos.filter(k => k !== "cc");
+    const restaurar = camposOcultosVisibles.length ? `<div class="f restaurar">` +
+      camposOcultosVisibles.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
         return `<button class="ghost" onclick="restaurarCampoToma('${k}')">+ ${c ? c[1] : k}</button>`; }).join(" ") +
       `</div>` : "";
     const propios = (S.parte.campos || []).map(n =>
