@@ -1343,7 +1343,8 @@ html.solo-parte .portada{display:none}
         <div class="f"><label>Localización</label><input id="pp_localizacion" autocomplete="off"></div>
         <div class="f"><label>Fecha</label><input id="pp_fecha" type="date" autocomplete="off"></div>
         <div class="f"><label>Casa de renta / propietario</label><input id="pp_casa" autocomplete="off"></div>
-        <div class="f"><label>Director de fotografía</label><input id="pp_dop" autocomplete="off"></div>
+                <div class="f"><label>Director</label><input id="pp_director" autocomplete="off"></div>
+<div class="f"><label>Director de fotografía</label><input id="pp_dop" autocomplete="off"></div>
         <div class="f"><label>Foquista</label><input id="pp_ac" autocomplete="off"></div>
         <div class="f"><label>Auxiliar · 2º AC</label><input id="pp_ac2" autocomplete="off"></div>
         <div class="f"><label>VTR</label><input id="pp_vtr" autocomplete="off"></div>
@@ -1369,7 +1370,9 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Cámara</label><input id="r_cam" placeholder="A" autocomplete="off"></div>
       <div class="f"><label>Cuerpo <span style="float:right;cursor:pointer" onclick="otraCamara()">+ otra cámara</span></label><input id="r_body" list="dlBodies" onfocus="this.select()" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Formato de captura</label><input id="r_fmt" list="dlFmts" onfocus="this.select()" placeholder="" autocomplete="off"></div>
-      <div class="f"><label>Soporte</label><input id="r_media" list="dlMedia" placeholder="" autocomplete="off"></div>
+            <div class="f"><label>Aspect ratio</label><input id="r_aspecto" list="dlAspecto" placeholder="" autocomplete="off"></div>
+      <div class="f"><label>Resolución del proyecto</label><input id="r_res" list="dlResProy" placeholder="4608x3164" autocomplete="off"></div>
+      <div class="f"><label>LUT</label><input id="r_lut" list="dlLut" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Codec / emulsión</label><input id="r_codec" list="dlCodec" placeholder="" autocomplete="off"></div>
     </div>
     <!-- v71: Rollo/magazine, FPS, EI, Obturador, WB, LUT y Filtros se registran
@@ -1475,7 +1478,9 @@ html.solo-parte .portada{display:none}
   <option value="100"><option value="200"><option value="400"><option value="1000"><option value="2000">
 </datalist>
 <datalist id="dlFmts"></datalist>
-<datalist id="dlMedia"></datalist>
+<datalist id="dlAspecto"></datalist>
+      <datalist id="dlResProy"></datalist>
+      <datalist id="dlCc"></datalist>
 <datalist id="dlCodec"></datalist>
 <datalist id="dlLut"></datalist>
 <datalist id="dlSeries"></datalist>
@@ -4717,7 +4722,7 @@ function guardarFicha(){
    producción de la primera pestaña, pero editables desde aquí: se escriba
    donde se escriba, es el mismo dato. Así esta página se basta sola.   */
 const PROD_PARTE = ["proyecto", "productora", "unidad", "jornada",
-                    "localizacion", "fecha", "casa", "dop", "ac", "ac2", "vtr", "dit"];
+                                         "localizacion", "fecha", "casa", "director", "dop", "ac", "ac2", "vtr", "dit"];
 
 function enlazaProdParte(){
   PROD_PARTE.forEach(function(k){
@@ -5100,7 +5105,7 @@ const T_CAMPOS = [
     ["t","Diafragma T"], ["foco","Distancia de foco"], ["filt","Filtro","filt"],
   ["dial","Contador"], ["pies","Metraje"],
   ["alt","Altura de óptica"], ["tilt","Tilt"], ["pan","Pan"],
-["wb","Temperatura de color","wb"], ["fps","FPS","fps"], ["shutter","Obturador","shutter"],
+["wb","Temperatura de color","wb"], ["cc","CC (tinte)"], ["fps","FPS","fps"], ["shutter","Obturador","shutter"],
   ["ei","EI / ISO","ei"], ["lut","LUT","lut"], ["res","Resolución","fmt"],
   ["tc","Timecode"], ["dur","Duración (s)"], ["nota","Notas",null,"w"]
 ];
@@ -5114,7 +5119,7 @@ function tomaVacia(){
   t.ok = false; t.mos = false; t.falso = false; t.extra = {};
   return t;
 }
-const R_CAMPOS = ["cam","roll","body","fmt","media","codec","fps","ei","shutter","wb","lut","filt"];
+const R_CAMPOS = ["cam","roll","body","fmt","aspecto","res","codec","fps","ei","shutter","wb","cc","lut","filt"];
 const R2_CAMPOS = ["lab","mag","emul","lote","carga","unidad","perf","loader","dial0","rev","copia","labnotas"];
 const FPP = {"4":16, "3":64/3, "2":32, "16":40, "65":12.8};
 /* ---- v48: multicámara. La cámara ACTIVA vive en S.parte.roll (todo el código
@@ -5259,7 +5264,7 @@ function wireParte(){
   };
   /* v70: lo que escriba en estos campos queda sugerido la próxima vez (además
      del catálogo fijo que ya tenían fps/ei/obturador/temperatura/filtros) */
-  ["fmt","media","codec","fps","ei","shutter","wb","lut","filt"].forEach(k => {
+  ["fmt","aspecto","res","codec","fps","ei","shutter","wb","cc","lut","filt"].forEach(k => {
     const el = $("r_" + k); if (!el) return;
     el.onchange = () => {
       const v = el.value.trim(); if (!v) return;
@@ -5293,7 +5298,9 @@ function fillParte(){
   dl("dlRev", ["Normal","Forzado +1","Forzado +2","Retenido −1","Retenido −2"].map(traduce));
   dl("dlCopia", ["Best light","One-light","Etalonado (timed)","Escaneo 2K","Escaneo 4K","Escaneo 4K HDR"].map(traduce));
   /* v70: catálogo fijo + lo que se haya escrito antes en cada campo */
-  dl("dlMedia", mem("media"));
+  dl("dlAspecto", [...new Set(["1.33","1.66","1.78","1.85","2.00","2.35","2.39","Open Gate","4:3","16:9"].concat(mem("aspecto")))]);
+  dl("dlResProy", mem("res"));
+  dl("dlCc", [...new Set(["+1","+2","+3","+4","-1","-2","-3","-4"].concat(mem("cc")))]);
   dl("dlCodec", mem("codec"));
   dl("dlLut", mem("lut"));
   dl("dlFps", [...new Set(["23.976","24","25","29.97","30","48","50","60","75","90","96","120"].concat(mem("fps")))]);
@@ -5332,7 +5339,7 @@ function renderTomas(){
   for (let j = 0; j < L.length; j++) if ((L[j].camLetra || "A") === camActiva()) idxCam.push(j);
   const ultimoIdx = idxCam.length ? idxCam[idxCam.length - 1] : -1;
   const T_LISTAS = { sc: "dlEscenas", serial: "dlSeries", t: "dlT", filt: "dlFiltros",
-                     wb: "dlWb", fps: "dlFps", shutter: "dlShutter", ei: "dlEi" };
+                     wb: "dlWb", cc: "dlCc", fps: "dlFps", shutter: "dlShutter", ei: "dlEi", lut: "dlLut" };
   let escenaAnterior = null;
   $("listaTomas").innerHTML = idxCam.length ? idxCam.map(i => {
     const t = L[i];
@@ -6408,7 +6415,8 @@ const EN = {
 "Cada toma queda unida al número de serie de la óptica, así que desde el parte se puede saltar a la ficha de calibración de esa misma óptica. Un parte por rollo o magazine.":
  "Every take is tied to the lens serial number, so from the report you can jump to the calibration record of that same lens. One report per roll or magazine.",
 "Cámara y rollo":"Camera and roll","Cámara":"Camera","Rollo / magazine":"Roll / magazine",
-"Formato de captura":"Capture format","Soporte":"Media","Codec / emulsión":"Codec / stock",
+"Formato de captura":"Capture format","Codec / emulsión":"Codec / stock",
+"Aspect ratio":"Aspect ratio","Resolución del proyecto":"Project resolution","CC (tinte)":"Tint CC","Director":"Director",
 "Fotogramas por segundo":"FPS","EI / ISO":"EI / ISO","Obturador":"Shutter",
 "Temperatura de color":"White balance","LUT / look":"LUT / look","Filtros fijos":"Standing filters",
 "Foquista":"Focus puller","Foquista / parte":"Focus puller / report",
