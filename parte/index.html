@@ -5353,8 +5353,7 @@ function renderTomas(){
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
     const camposOcultos = S.parte.camposOcultos || [];
     const campos = T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0).map(([k, et, , extra]) =>
-                        t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
-                  t.foco, t.tc, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
+      campoToma(i, k, et, T_LISTAS[k] || null, extra === "w")).join("");
     const restaurar = camposOcultos.length ? `<div class="f restaurar">` +
       camposOcultos.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
         return `<button class="ghost" onclick="restaurarCampoToma('${k}')">+ ${c ? c[1] : k}</button>`; }).join(" ") +
