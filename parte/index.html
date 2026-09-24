@@ -1155,6 +1155,7 @@ html.solo-parte .portada{display:none}
   <button id="btnNueva" class="lang" onclick="aplicaActualizacion()" hidden style="color:#7fd6a2;border-color:rgba(127,214,162,.5)">Actualizar</button>
   <button id="btnProyNuevo" class="lang" onclick="proyectoNuevo()">Proyecto nuevo</button>
   <button id="btnCompartir" class="lang" onclick="pcPanel()">Compartir</button>
+    <button id="btnRefrescar" class="lang" title="Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado" onclick="refrescarTodo()">Refrescar</button>
   <button id="btnLang" class="lang" onclick="cambiaIdioma()">EN</button>
   <div class="st"><b id="chipCov">—</b>cobertura</div>
   <span id="chipVis"></span>
@@ -1479,7 +1480,7 @@ html.solo-parte .portada{display:none}
 <datalist id="dlLut"></datalist>
 <datalist id="dlSeries"></datalist>
 <datalist id="dlEscenas"></datalist>
-<datalist id="dlT"><option>1.3</option><option>1.4</option><option>2</option><option>2.8</option><option>4</option><option>5.6</option><option>8</option><option>11</option><option>16</option><option>22</option></datalist>
+<datalist id="dlT"><option>1.3</option><option>1.3 1/3</option><option>1.3 1/2</option><option>1.3 2/3</option><option>1.4</option><option>1.4 1/3</option><option>1.4 1/2</option><option>1.4 2/3</option><option>2</option><option>2 1/3</option><option>2 1/2</option><option>2 2/3</option><option>2.8</option><option>2.8 1/3</option><option>2.8 1/2</option><option>2.8 2/3</option><option>4</option><option>4 1/3</option><option>4 1/2</option><option>4 2/3</option><option>5.6</option><option>5.6 1/3</option><option>5.6 1/2</option><option>5.6 2/3</option><option>8</option><option>8 1/3</option><option>8 1/2</option><option>8 2/3</option><option>11</option><option>11 1/3</option><option>11 1/2</option><option>11 2/3</option><option>16</option><option>16 1/3</option><option>16 1/2</option><option>16 2/3</option><option>22</option><option>22 1/3</option><option>22 1/2</option><option>22 2/3</option></datalist>
 <datalist id="dlFps"><option>23.976</option><option>24</option><option>25</option><option>29.97</option><option>30</option><option>48</option><option>50</option><option>60</option><option>75</option><option>90</option><option>96</option><option>120</option></datalist>
 <datalist id="dlEi"><option>200</option><option>400</option><option>500</option><option>640</option><option>800</option><option>1280</option><option>1600</option><option>2500</option><option>3200</option></datalist>
 <datalist id="dlShutter"><option>180°</option><option>172.8°</option><option>144°</option><option>90°</option><option>45°</option><option>1/48</option><option>1/50</option><option>1/60</option><option>1/100</option><option>1/120</option></datalist>
@@ -4079,7 +4080,7 @@ async function nbPide(ruta, cuerpo, conSesion){
      pestaña se sentía trabada. Con AbortController el fetch SIEMPRE
      resuelve o falla antes de 10 s, así el resto de la app sigue fluida. */
   const ac = new AbortController();
-  const venc = setTimeout(() => ac.abort(), 10000);
+    const venc = setTimeout(() => ac.abort(), 30000);  /* v79: solo como último recurso — 30 s, no 10, para no cortar una conexión lenta pero real */
   let r;
   try {
     r = await fetch(NB.url.replace(/\/+$/, "") + ruta,
@@ -4845,14 +4846,6 @@ function modoParteSolo(){
   document.title = traduce("WALLIO · Parte de cámara");
   const wl = document.querySelector("header .wl");
   if (wl) wl.textContent = traduce("Parte de cámara");
-  // la vuelta a la principal: pidió poder regresar si eligió «solo el parte»
-  const bl = $("btnLang");
-  if (bl && !$("volverPlataforma")){
-    const a = document.createElement("a");
-    a.id = "volverPlataforma"; a.href = "../"; a.className = "lang";
-    a.textContent = "Plataforma";
-    bl.parentNode.insertBefore(a, bl);
-  }
   show("parte");
   const dd = $("pp_bloque");
   if (dd && !(S.prod.proyecto || "").trim()){
@@ -5104,10 +5097,10 @@ function ptSiguienteRollo(){
 const T_CAMPOS = [
   ["sc","Escena"], ["tk","Toma"], ["desc","Descripción",null,"w"], ["clip","Archivo / clip"],
   ["serial","Óptica · nº de serie","", "dlSeries"], ["focal","Focal (mm)"],
-  ["t","Diafragma T"], ["filt","Filtro","filt"], ["foco","Distancia de foco"],
+    ["t","Diafragma T"], ["foco","Distancia de foco"], ["filt","Filtro","filt"],
   ["dial","Contador"], ["pies","Metraje"],
-  ["alt","Altura de óptica"], ["tilt","Tilt"],
-  ["wb","Temperatura de color","wb"], ["fps","FPS","fps"], ["shutter","Obturador","shutter"],
+  ["alt","Altura de óptica"], ["tilt","Tilt"], ["pan","Pan"],
+["wb","Temperatura de color","wb"], ["fps","FPS","fps"], ["shutter","Obturador","shutter"],
   ["ei","EI / ISO","ei"], ["lut","LUT","lut"], ["res","Resolución","fmt"],
   ["tc","Timecode"], ["dur","Duración (s)"], ["nota","Notas",null,"w"]
 ];
@@ -6426,7 +6419,9 @@ const EN = {
 "Tomas":"Takes","+ Toma":"+ Take","+ Escena":"+ Scene","Borrar última":"Delete last",
 "«+ Toma» repite la anterior y sube el número: es lo que cambia de verdad entre toma y toma lo único que tienes que tocar. «+ Escena» empieza en toma 1.":
  "«+ Take» repeats the previous one and bumps the number: what actually changes between takes is all you have to touch. «+ Scene» starts at take 1.",
-"Escena":"Scene","Toma":"Take","Óptica · nº de serie":"Lens · serial no.","Diafragma T":"T-stop","falso":"fake","real":"real","CLIP FALSO":"FAKE CLIP","Marcar esta toma como clip falso (equivocación, prueba, no es material real)":"Mark this take as a fake clip (mistake, test, not real material)",
+"Escena":"Scene","Toma":"Take","Óptica · nº de serie":"Lens · serial no.","Diafragma T":"T-stop","falso":"fake","real":"real","CLIP FALSO":"FAKE CLIP","Marcar esta toma como clip falso (equivocación, prueba, no es material real)":"Mark this take as a fake clip (mistake, test, not real material)","Refrescar":"Refresh","actualizado":"updated","Pan":"Pan",
+"Refrescar":"Refresh","actualizado":"updated","Pan":"Pan",
+"Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado":"Redraws everything on screen without losing any data already entered",
 "Filtro":"Filter","Distancia de foco":"Focus distance","Timecode":"Timecode","Duración (s)":"Duration (s)",
 "Nota":"Note","buena":"circle","Resumen del rollo":"Roll summary","escenas":"scenes","buenas":"circle takes",
 "duración":"duration","Generar":"Generate","Parte en PDF":"Report as PDF","Guardar parte":"Save report",
@@ -6768,14 +6763,45 @@ function bzDrena(){
     .catch(function(){});
 }
 
+/* v79: botón "Refrescar" -- repinta TODA la pantalla desde el estado en
+   memoria (S), sin tocar ni un dato ya ingresado. Pensado para el caso "algo
+   se ve raro" (una toma en el lugar equivocado, un campo que no aparece)
+   después de que la app se congeló o hubo algún problema de red: en vez de
+   recargar la página (que podría perder lo no guardado aún), esto vuelve a
+   dibujar todo con la info que YA tiene el navegador. */
+function refrescarTodo(){
+  try {
+    if (typeof fillParte === "function") fillParte();
+    if (typeof fillProdParte === "function") fillProdParte();
+    if (typeof renderTomas === "function") renderTomas();
+    if (typeof renderCampos === "function") renderCampos();
+    if (typeof renderRollExtra === "function") renderRollExtra();
+    if (typeof pintaTira === "function") pintaTira();
+    if (typeof pintaTipo === "function") pintaTipo();
+    if (typeof updateChip === "function") updateChip();
+    if (typeof resumenParte === "function") resumenParte();
+    if (typeof ptLista === "function") ptLista();
+    if (typeof pcEstado === "function") pcEstado();
+    autoguarda();
+    const m = $("estadoGuardado");
+    if (m) m.textContent = "· " + traduce("actualizado") + " " + new Date().toTimeString().slice(0,5);
+  } catch(e){ /* aunque algo falle al repintar, los datos en S siguen intactos */ }
+}
 /* ---------------- guardado automático ---------------- */
 const CLAVE = "wallio.borrador.v1";
 let guardadoTimer = null;
 function autoguarda(){
   clearTimeout(guardadoTimer);
-  guardadoTimer = setTimeout(() => {
+    guardadoTimer = setTimeout(() => {
     try {
-      localStorage.setItem(CLAVE, JSON.stringify({t: Date.now(), s: S}));
+      const snap = JSON.stringify({t: Date.now(), s: S});
+      /* v79: antes de fiarse del guardado, se verifica que el JSON generado
+         se pueda volver a leer -- si algo quedó corrupto (ej. el navegador
+         se congeló a media escritura) NUNCA se sobreescribe el respaldo
+         bueno anterior con algo roto */
+      JSON.parse(snap);
+      localStorage.setItem(CLAVE, snap);
+      localStorage.setItem(CLAVE + ".bak", snap);
       const m = $("estadoGuardado");
       if (m) m.textContent = "· " + traduce("guardado") + " " + new Date().toTimeString().slice(0,5);
     } catch(e){ /* sin espacio o modo privado: se sigue trabajando igual */ }
@@ -6783,9 +6809,12 @@ function autoguarda(){
 }
 function hayBorrador(){
   try { const b = JSON.parse(localStorage.getItem(CLAVE) || "null");
-        return b && b.s ? b : null; } catch(e){ return null; }
-}
-/* Antes esto preguntaba con un confirm() y, si decías que no, BORRABA el
+        if (b && b.s) return b; } catch(e){}
+  /* v79: si el borrador principal quedó corrupto, se recurre al último
+     respaldo verificado en vez de perder el trabajo */
+  try { const bk = JSON.parse(localStorage.getItem(CLAVE + ".bak") || "null");
+        return bk && bk.s ? bk : null; } catch(e){ return null; }
+} /* Antes esto preguntaba con un confirm() y, si decías que no, BORRABA el
    borrador. Un toque de más en el móvil y perdías el día entero. Ahora se
    avisa sin bloquear y no se borra nada hasta que lo pidas tú. */
 function recuperaBorrador(){
