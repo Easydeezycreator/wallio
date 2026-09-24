@@ -22,7 +22,13 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--tx);
  font:15px/1.4 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
- -webkit-text-size-adjust:100%}
+ -webkit-text-size-adjust:100%;
+ /* v85: el gesto nativo de "volver atras" de Safari (deslizar desde el borde)
+    se disparaba si el dedo se desviaba un poco durante el scroll vertical,
+    mandando de vuelta a la pagina anterior en el historial (la plataforma).
+    touch-action:pan-y bloquea el paneo horizontal a nivel de pagina, asi el
+    gesto de "atras" nunca se dispara dentro del Camera Report. */
+ touch-action:pan-y;overscroll-behavior-x:none}
 body{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
 
 /* ---- cabecera: el documento, no una app ---- */
