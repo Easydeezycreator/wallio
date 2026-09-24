@@ -5328,7 +5328,6 @@ function renderTomas(){
   if (dlE) dlE.innerHTML = Array.from(new Set(L.filter(x => (x.camLetra || "A") === camActiva())
     .map(x => (x.sc || "").trim()).filter(Boolean)))
     .map(s => "<option>" + esc(s) + "</option>").join("");
-      const propiasCam = L.filter(x => (x.camLetra || "A") === camActiva());  /* v54: solo la activa */
   /* v78: TODA la información de cámara report queda editable siempre —
      antes, al cambiar de escena, las tomas de escenas anteriores dejaban de
      pintarse por completo (no solo colapsadas: desaparecían de la lista y no
@@ -6427,7 +6426,7 @@ const EN = {
 "Tomas":"Takes","+ Toma":"+ Take","+ Escena":"+ Scene","Borrar última":"Delete last",
 "«+ Toma» repite la anterior y sube el número: es lo que cambia de verdad entre toma y toma lo único que tienes que tocar. «+ Escena» empieza en toma 1.":
  "«+ Take» repeats the previous one and bumps the number: what actually changes between takes is all you have to touch. «+ Scene» starts at take 1.",
-"Escena":"Scene","Toma":"Take","Óptica · nº de serie":"Lens · serial no.","Diafragma T":"T-stop","falso":"fake","real":"real","CLIP FALSO":"FAKE CLIP","Marcar esta toma como clip falso (equivocacion, prueba, no es material real)":"Mark this take as a fake clip (mistake, test, not real material)",
+"Escena":"Scene","Toma":"Take","Óptica · nº de serie":"Lens · serial no.","Diafragma T":"T-stop","falso":"fake","real":"real","CLIP FALSO":"FAKE CLIP","Marcar esta toma como clip falso (equivocación, prueba, no es material real)":"Mark this take as a fake clip (mistake, test, not real material)",
 "Filtro":"Filter","Distancia de foco":"Focus distance","Timecode":"Timecode","Duración (s)":"Duration (s)",
 "Nota":"Note","buena":"circle","Resumen del rollo":"Roll summary","escenas":"scenes","buenas":"circle takes",
 "duración":"duration","Generar":"Generate","Parte en PDF":"Report as PDF","Guardar parte":"Save report",
