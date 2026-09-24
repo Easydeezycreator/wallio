@@ -4,7 +4,10 @@
    limpia SOLO su propia familia de cachés (wallio-v*) — antes la plataforma
    y el parte se borraban la caché el uno al otro —, jamás responde vacío
    (eso daba ERR_FAILED con el sitio perfectamente vivo), y aplana las
-   respuestas redirigidas, que el navegador rechaza en navegaciones. */
+   respuestas redirigidas, que el navegador rechaza en navegaciones.
+   v73: NUNCA intercepta nada bajo /parte — el Camera Report tiene su propio
+   service worker independiente y se maneja solo, para que un fallo de red
+   dentro del parte jamás te devuelva a la página de inicio de la plataforma. */
 
 const VERSION = "wallio-v73";
 const FAMILIA = "wallio-v";
@@ -49,6 +52,7 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/parte")) return; // el Camera Report se maneja solo, nunca por el sw de la plataforma
 
   if (req.mode === "navigate"){
     /* v64: RED PRIMERO — con internet siempre llega la versión nueva al momento
