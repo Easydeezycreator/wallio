@@ -5805,7 +5805,98 @@ function hacerParte(sola){
   if (typeof aplicaIdioma === "function") aplicaIdioma();
   document.body.className = "pr-parte";
   if (typeof ptArchiva === "function") ptArchiva(false);
+  if (pdfSinImprimir()){ pdfDirecto("parte", "WALLIO_" + parteId() + (sola ? "_CAM" + sola : "") + ".pdf"); return; }
   setTimeout(() => window.print(), 120);
+}
+/* v89: DENTRO DE LA APP (iPhone/iPad/Mac del App Store) window.print() NO HACE NADA:
+   el WebView de iOS lo ignora. Por eso en la app el botón de PDF no daba ningún PDF.
+   Aquí se genera el PDF de verdad (html2pdf, que ya viaja dentro de la app) y se abre la
+   hoja de Compartir de iOS (guardar en Archivos, AirDrop, Mail, WhatsApp…). Lo mismo para
+   la web añadida a la pantalla de inicio en iPhone, donde imprimir tampoco es fiable. */
+function pdfSinImprimir(){
+  try { if (typeof ESAPPNATIVA === "function" && ESAPPNATIVA()) return true; } catch(e){}
+  return window.navigator.standalone === true;
+}
+let _h2p = null;
+function cargaHtml2pdf(){
+  if (window.html2pdf) return Promise.resolve();
+  if (_h2p) return _h2p;
+  /* dentro de la app va local (sin internet también); en la web, si no está, del CDN */
+  const fuentes = ["html2pdf.bundle.min.js", "https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.3/dist/html2pdf.bundle.min.js"];
+  const prueba = function(i){
+    return new Promise(function(ok, ko){
+      const s = document.createElement("script");
+      s.src = fuentes[i];
+      s.onload = function(){ window.html2pdf ? ok() : ko(new Error("html2pdf")); };
+      s.onerror = function(){ s.remove(); ko(new Error("html2pdf")); };
+      document.head.appendChild(s);
+    }).catch(function(e){ if (i + 1 < fuentes.length) return prueba(i + 1); throw e; });
+  };
+  _h2p = prueba(0).catch(function(e){ _h2p = null; throw e; });
+  return _h2p;
+}
+function avisoPDF(txt){
+  let a = document.getElementById("avisoPDF");
+  if (!txt){ if (a) a.remove(); return; }
+  if (!a){
+    a = document.createElement("div"); a.id = "avisoPDF";
+    a.style.cssText = "position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:99999;" +
+      "background:#12151a;color:#fff;font:600 14px/1.3 -apple-system,system-ui,sans-serif;" +
+      "padding:12px 18px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.35)";
+    document.body.appendChild(a);
+  }
+  a.textContent = txt;
+}
+function blobABase64(b){
+  return new Promise(function(ok, ko){
+    const r = new FileReader();
+    r.onload = function(){ ok(String(r.result).split(",")[1] || ""); };
+    r.onerror = ko; r.readAsDataURL(b);
+  });
+}
+let _pdfEnCurso = false;
+async function pdfDirecto(id, nombre){
+  if (_pdfEnCurso) return;
+  _pdfEnCurso = true;
+  const el = document.getElementById(id);
+  const quita = function(){ if (el) el.style.display = ""; document.body.className = ""; _pdfEnCurso = false; };
+  nombre = String(nombre || "WALLIO.pdf").replace(/[^A-Za-z0-9._-]+/g, "_");
+  try {
+    avisoPDF(traduce("Generando PDF…"));
+    await cargaHtml2pdf();
+    el.style.display = "block";
+    const blob = await window.html2pdf().set({
+      margin: [10, 10, 12, 10],
+      filename: nombre,
+      image: { type: "jpeg", quality: 0.96 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 780 },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css", "legacy"], avoid: [".rep tr", ".sig", ".sum", ".decl", ".head", ".fl > div"] }
+    }).from(el).outputPdf("blob");
+    el.style.display = "";
+    const C = window.Capacitor;
+    const plug = function(n){ return C && ((C.Plugins && C.Plugins[n]) || (C.registerPlugin && C.registerPlugin(n))); };
+    if (C && C.isNativePlatform && C.isNativePlatform() && plug("Filesystem") && plug("Share")){
+      const datos = await blobABase64(blob);
+      const r = await plug("Filesystem").writeFile({ path: nombre, data: datos, directory: "CACHE" });
+      avisoPDF("");
+      await plug("Share").share({ title: nombre, url: r.uri });
+    } else {
+      const f = new File([blob], nombre, { type: "application/pdf" });
+      avisoPDF("");
+      if (navigator.canShare && navigator.canShare({ files: [f] })) await navigator.share({ files: [f], title: nombre });
+      else {
+        const u = URL.createObjectURL(blob);
+        const a = document.createElement("a"); a.href = u; a.download = nombre;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(u); }, 60000);
+      }
+    }
+  } catch(e){
+    avisoPDF("");
+    /* cancelar la hoja de Compartir no es un error */
+    if (!/cancel|abort/i.test(String(e && (e.message || e)))) alert(traduce("No se pudo generar el PDF. Vuelve a intentarlo."));
+  } finally { quita(); }
 }
 function parteCSV(){
   const R = S.parte.roll, P = S.prod, props = S.parte.campos || [];
@@ -5870,7 +5961,7 @@ const EN = {
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Paso":"Gauge · perfs",
-"altura":"height","clips":"clips","documento controlado":"controlled document",
+"altura":"height","clips":"clips","Generando PDF…":"Creating PDF…","No se pudo generar el PDF. Vuelve a intentarlo.":"The PDF could not be created. Please try again.","documento controlado":"controlled document",
 "Parte de cámara · película y digital":"Camera report · film & digital","Cargado por":"Loaded by",
 "Contador al empezar":"Counter at start",
 "Revelado":"Processing","Positivado / escaneo":"Print / scan",
