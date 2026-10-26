@@ -331,7 +331,7 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 /* ---- tabla del parte de cámara ---- */
 .doc .rep{font-size:7.9pt;table-layout:fixed}
 .doc .rep td{word-break:normal;overflow-wrap:break-word}
-.doc .rep td.mo{white-space:nowrap}
+.doc .rep td.mo{white-space:normal;overflow-wrap:anywhere;word-break:normal}
 /* la distancia de foco puede ser larga («Mínimo 0.35 m → 4.00 m»): se parte
    en dos líneas en vez de invadir la columna del timecode */
 .doc .rep td.fo{white-space:normal;overflow-wrap:anywhere}
@@ -635,6 +635,15 @@ h4.salto{page-break-before:auto}
   letter-spacing:.03em;padding-left:2px;padding-right:2px}
 .doc .rep td.sl{white-space:normal;overflow-wrap:break-word;word-break:break-word}
 .doc .rep td.ft,#parte .rep td.ft{white-space:normal;word-break:normal;overflow-wrap:break-word}
+/* v88: ninguna celda del parte puede invadir la columna de al lado (nombres de clip ARRI,
+   T-stops con tercios, timecodes): la monoespaciada baja un punto y parte donde haga falta */
+#parte h4{break-after:avoid;page-break-after:avoid}
+.doc .rep td.mo,#parte .rep td.mo{font-size:6.7pt;letter-spacing:-.03em;white-space:normal;overflow-wrap:anywhere;word-break:normal}
+.doc .rep td.mo .sn,#parte .rep td.mo .sn{overflow-wrap:anywhere}
+#parte .rep tr.falso td{color:#9aa1ad;background:#fff}
+#parte .rep tr.falso td:first-child{box-shadow:none}
+#parte .rep .fk{display:inline-block;font:800 6pt/1 var(--sans);letter-spacing:.08em;color:#b3261e;border:.7pt solid #b3261e;border-radius:2px;padding:1.5px 3px;margin-right:4px}
+#parte .rep .ne{font:800 6.4pt/1 var(--sans);letter-spacing:.06em;color:#12151a}
 .head{flex-wrap:wrap}
 .ctrl{max-width:100%}
 .fl > div{min-width:0}
@@ -5426,7 +5435,7 @@ function renderTomas(){
         <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
         <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
         <button class="${t.notaEsp === 'PU' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='PU'?'':'PU');renderTomas()">PU</button>
-        <button class="${t.falso ? "mal" : ""}" title="${esc(traduce("Marcar esta toma como clip falso (equivocación, prueba, no es material real)"))}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].falso=!S.parte.tomas[${i}].falso;renderTomas()">${t.falso ? traduce("falso") : traduce("real")}</button>
+        <button class="${t.falso ? "mal" : ""}" title="${esc(traduce("Marcar esta toma como clip falso (equivocación, prueba, no es material real)"))}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].falso=!S.parte.tomas[${i}].falso;renderTomas()">${traduce("FALSO")}</button>
         <button class="${t.ok ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
       </summary>
@@ -5484,6 +5493,20 @@ function renderCampos(){
         <button onclick="quitarCampo(${i})">×</button></div>`).join("")
     : "";
 }
+/* v88: el número de clip avanza solo, como la toma (C001 → C002 → C003). Toma el
+   bloque «C+dígitos» del nombre (ARRI/Sony/RED/BMD: A001C003_…) y, si no lo hay, el
+   último grupo de dígitos; respeta ceros y mayúsculas. Si la toma anterior llevó varios
+   clips (Nº de clips), salta esos. Un clip falso también gastó su número. */
+function siguienteClip(clip, nclip){
+  const c = String(clip || "").trim(); if (!c) return "";
+  const paso = Math.max(1, parseInt(nclip, 10) || 1);
+  const sube = d => String(parseInt(d, 10) + paso).padStart(d.length, "0");
+  const m = c.match(/^(.*?[Cc])(\d+)(.*)$/);
+  if (m) return m[1] + sube(m[2]) + m[3];
+  const u = c.match(/^(.*\D)?(\d+)(\D*)$/);
+  if (u) return (u[1] || "") + sube(u[2]) + u[3];
+  return "";
+}
 function nuevaToma(nuevaEscena){
   guarda();
   const L = S.parte.tomas;
@@ -5499,7 +5522,7 @@ function nuevaToma(nuevaEscena){
   if (typeof materializaDefectos === "function") materializaDefectos();
   t.ts = Date.now();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
-    t.clip = ""; t.nclip = ""; t.dial = ""; t.pies = ""; t.mos = false; t.falso = false; t.notaEsp = "";
+    t.clip = u ? siguienteClip(u.clip, u.nclip) : ""; t.nclip = ""; t.dial = ""; t.pies = ""; t.mos = false; t.falso = false; t.notaEsp = "";
   if (nuevaEscena){ t.sc = ""; t.tk = "1"; }
   else t.tk = String((parseInt(t.tk, 10) || 0) + 1);
   L.push(t); renderTomas();
@@ -5544,7 +5567,7 @@ function materializaDefectos(){
   return false;
 }
 function cuentaTomas(letra){   /* v54: cuentas por cámara ("*" = todas) */
-  const L = S.parte.tomas.filter(t => letra === "*" || (t.camLetra || "A") === letra);
+  const L = S.parte.tomas.filter(t => (letra === "*" || (t.camLetra || "A") === letra) && !t.falso);
   const sc = new Set(L.map(t => (t.sc || "").trim()).filter(Boolean)).size;
   const ok = L.filter(t => t.ok).length;
   const dur = L.reduce((a, t) => a + (parseFloat(t.dur) || 0), 0);
@@ -5578,10 +5601,11 @@ function renderParte(soloLetra){
   const LI = S.parte.tomas.map((x, i) => ({ x, i }))
     .filter(p => !soloLetra || (p.x.camLetra || "A") === soloLetra);
   const L = LI.map(p => p.x);
+  const LR = L.filter(x => !x.falso);   /* v88: los clips falsos no cuentan como material */
   resumenParte();
-  const t = { sc: new Set(L.map(x => (x.sc || "").trim()).filter(Boolean)).size,
-              tk: L.length, ok: L.filter(x => x.ok).length,
-              dur: L.reduce((a, x) => a + (parseFloat(x.dur) || 0), 0) };
+  const t = { sc: new Set(LR.map(x => (x.sc || "").trim()).filter(Boolean)).size,
+              tk: LR.length, ok: LR.filter(x => x.ok).length,
+              dur: LR.reduce((a, x) => a + (parseFloat(x.dur) || 0), 0) };
   const film = (R.tipo || "digital") === "film";
   const pf = film ? piesResumen(soloLetra || undefined) : null;
   const mc = soloLetra ? false : esMulticam();
@@ -5597,11 +5621,12 @@ function renderParte(soloLetra){
      sin columna extra y sin apretar el colgroup validado del v45 */
   const filaHTML = (x, i, nfila, cf, uu) => {
     const ficha = conGrid && norm(x.serial) === norm(S.lens.serial);
-    const tr = [x.tilt ? "tilt " + x.tilt : "", x.roll ? "roll " + x.roll : ""].filter(Boolean).join(" · ");
+    const tr = [x.tilt ? "tilt " + x.tilt : "", x.pan ? "pan " + x.pan : "", x.roll ? "roll " + x.roll : ""].filter(Boolean).join(" · ");
     const extra = Object.entries(x.extra || {}).map(([k, v]) => par(k, v)).filter(Boolean);
     const cont = [par("fps", x.fps), par("obt.", x.shutter), par("EI", x.ei),
                   cf ? par("altura", x.alt) : "", cf && tr ? esc(tr) : "",
-                  cf ? "" : par("temp.", x.wb), cf ? "" : par("LUT", x.lut), cf ? "" : par("resol.", x.res),
+                  cf ? "" : par("temp.", x.wb), par("CC", x.cc), cf ? "" : par("LUT", x.lut), cf ? "" : par("resol.", x.res),
+                  cf ? par("clips", x.nclip) : "",
                   ...extra, x.nota ? `<i>${esc(x.nota)}</i>` : ""].filter(Boolean).join("  ·  ");
     const pft = cf ? piesDeToma(i) : 0;
     const finales = cf
@@ -5610,43 +5635,57 @@ function renderParte(soloLetra){
       : `<td class="mo">${esc(x.alt || "—")}${tr ? `<span class="sn">${esc(tr)}</span>` : ""}</td>
       <td class="mo">${esc(x.tc || "—")}</td>
       <td class="mo">${esc(x.dur ? x.dur + " s" : "—")}</td>`;
-    return `<tr class="${x.ok ? "buena" : ""}">
+    const cls = x.falso ? "falso" : (x.ok ? "buena" : "");
+    return `<tr class="${cls}">
       <td class="n">${String(nfila + 1).padStart(2, "0")}</td>
       <td class="sl">${esc(x.sc || "—")}</td>
       <td class="sl">${esc(x.tk || "—")}</td>
-      <td><span class="cir">${x.ok ? "◯" : ""}</span></td>
-      <td>${esc(x.desc || "—")}${x.mos ? " · MOS" : ""}</td>${cf ? "" : `
-      <td class="mo">${esc(x.clip || "—")}</td>`}
+      <td><span class="cir">${x.ok && !x.falso ? "◯" : ""}</span></td>
+      <td>${x.falso ? `<span class="fk">CLIP FALSO</span>` : ""}${esc(x.desc || "—")}${x.mos ? ` · <span class="ne">MOS</span>` : ""}${x.notaEsp ? ` · <span class="ne">${esc(x.notaEsp)}</span>` : ""}</td>${cf ? "" : `
+      <td class="mo">${esc(x.clip || "—")}${x.nclip ? `<span class="sn">${esc(x.nclip)} clips</span>` : ""}</td>`}
       <td>${esc(focalTxt(x.focal) || "—")}
         <span class="sn">${esc(x.serial || "sin nº de serie")}${ficha ? " · con ficha WLG-02" : ""}</span></td>
       <td class="mo">${esc(x.t ? "T" + String(x.t).replace(/^T/i,"") : "—")}</td>
       <td class="ft">${filtroHTML(x.filt)}</td>
       <td class="mo fo">${esc(x.foco || "—")}</td>
       ${finales}</tr>` +
-      (cont ? `<tr class="cont ${x.ok ? "buena" : ""}"><td></td>
+      (cont ? `<tr class="cont ${cls}"><td></td>
         <td colspan="${cf ? 10 : 12}">${cont}</td></tr>` : "");
   };
   const filasDe = (sub, cf, uu) => sub.map((p, k) => filaHTML(p.x, p.i, k, cf, uu)).join("");
-  const dentroDe = (C, cf, le) => `${le ? F("Cámara", C.cam || le) + F("Rollo / magazine", C.roll) : ""}${F("Cuerpo", C.body)}${F("Formato de captura", C.fmt)}${cf ? `
+  /* v88: FPS, EI, obturador, temperatura y LUT se escriben POR TOMA (en el rollo no hay
+     casilla): el bloque de cámara los toma de las tomas de esa cámara — un valor si todas
+     coinciden, los distintos separados por «/» si cambian. Antes salían siempre «—». */
+  const deTomas = (lc, k, soloUno) => {
+    const vs = [...new Set(S.parte.tomas.filter(x => (x.camLetra || "A") === lc && !x.falso)
+      .map(x => String(x[k] || "").trim()).filter(Boolean))];
+    if (!vs.length || (soloUno && vs.length > 1)) return "";
+    return vs.slice(0, 3).join(" / ") + (vs.length > 3 ? " …" : "");
+  };
+  const dentroDe = (C, cf, le, lc) => { lc = lc || le || soloLetra || camActiva();
+    const v = k => C[k] || deTomas(lc, k);
+    const wbcc = [v("wb"), v("cc") ? "CC " + v("cc") : ""].filter(Boolean).join(" · ");
+    return `${le ? F("Cámara", C.cam || le) + F("Rollo / magazine", C.roll) : ""}${F("Cuerpo", C.body)}${F("Formato de captura", C.fmt)}${cf ? `
     ${F("Emulsión", C.emul)}${F("Lote / batch", C.lote)}
     ${F("Nº de magazine", C.mag)}${F("Carga", C.carga ? C.carga + " " + uT(C) : "")}
     ${F("Paso", pasoTexto(C.perf))}
     ${F("Contador al empezar", (C.dial0 || "0") + " " + uT(C))}` : `
-    ${F("Codec / emulsión", C.codec)}${F("Soporte", C.media)}`}
-    ${F("Fotogramas por segundo", C.fps)}${F("EI / ISO", C.ei)}
-    ${F("Obturador", C.shutter)}${cf ? "" : F("Temperatura de color", C.wb)}
-    ${cf ? "" : F("LUT / look", C.lut)}${F("Filtros fijos", C.filt)}
-    ${(S.parte.camposRollo || []).map(n => F(n, (C.extra || {})[n])).join("")}`;
+    ${F("Codec / emulsión", C.codec)}${F("Aspect ratio", C.aspecto)}${F("Resolución del proyecto", C.res)}`}
+    ${F("Fotogramas por segundo", v("fps"))}${F("EI / ISO", v("ei"))}
+    ${F("Obturador", v("shutter"))}${cf ? "" : F("Temperatura de color", wbcc)}
+    ${cf ? "" : F("LUT / look", v("lut"))}${F("Filtros fijos", C.filt)}
+    ${cf || !C.tcOffset ? "" : F("Offset de timecode", C.tcOffset)}
+    ${(S.parte.camposRollo || []).map(n => F(n, (C.extra || {})[n])).join("")}`; };
   const tablaDe = (cf, contenido) => cf
-    ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:6.6%"><col style="width:4.5%">
-    <col style="width:3%"><col style="width:18.4%"><col style="width:17.5%"><col style="width:5%">
-    <col style="width:12.5%"><col style="width:8.5%"><col style="width:10.5%"><col style="width:10.5%"></colgroup>
+    ? `<table class="rep"><colgroup><col style="width:3%"><col style="width:5.6%"><col style="width:4.4%">
+    <col style="width:3%"><col style="width:17.8%"><col style="width:16.5%"><col style="width:6.2%">
+    <col style="width:13%"><col style="width:8.5%"><col style="width:10%"><col style="width:12%"></colgroup>
     <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th>
     <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Contador</th><th>Metraje</th></tr></thead>
     <tbody>${contenido || `<tr><td colspan="11" style="color:#aab1be">Sin tomas registradas</td></tr>`}</tbody></table>`
-    : `<table class="rep"><colgroup><col style="width:3%"><col style="width:6.4%"><col style="width:4%">
-    <col style="width:3%"><col style="width:13.1%"><col style="width:9%"><col style="width:13.5%"><col style="width:4.5%">
-    <col style="width:10.5%"><col style="width:7.5%"><col style="width:9.5%"><col style="width:10.5%"><col style="width:5.5%"></colgroup>
+    : `<table class="rep"><colgroup><col style="width:3%"><col style="width:5.2%"><col style="width:4.4%">
+    <col style="width:3%"><col style="width:13.2%"><col style="width:11.4%"><col style="width:12.4%"><col style="width:5.4%">
+    <col style="width:12.5%"><col style="width:6.4%"><col style="width:7.2%"><col style="width:11.2%"><col style="width:4.7%"></colgroup>
     <thead><tr><th>#</th><th>Escena</th><th>Toma</th><th></th><th>Descripción</th><th>Archivo</th>
     <th>Óptica</th><th>T</th><th>Filtro</th><th>Foco</th><th>Altura</th><th>Timecode</th>
     <th>Dur.</th></tr></thead>
@@ -5686,18 +5725,21 @@ function renderParte(soloLetra){
     }).join("");
   };
 
+  /* v88: en multicámara el título no depende de la cámara activa */
+  const tiposUsados = new Set(usadas.map(l => ((l === camActiva() ? R : configDe(l)).tipo || "digital")));
+  const tipoTit = !mc ? (film ? "film" : "digital") : tiposUsados.size > 1 ? "mixto" : [...tiposUsados][0];
   $("parte").innerHTML = `
   <div class="head">
     <div class="brand">${MARCA}
       <div><div class="wm">WALLIO</div>
-        <div class="wl">Lens Grid<br>Platform</div>
-        <div class="dt">${film ? "Parte de cámara · película" : "Parte de cámara"}</div>
+        <div class="wl">Film ·<br>Digital</div>
+        <div class="dt">${tipoTit === "film" ? "Parte de cámara · película" : tipoTit === "mixto" ? "Parte de cámara · película y digital" : "Parte de cámara"}</div>
         <div class="std">Un parte por rollo · cada toma referida al número de serie de la óptica</div>
       </div></div>
     <div class="ctrl">
       <div class="ch">Control de documento</div>
       <div class="cr"><b>Nº de parte</b><span>${esc(parteId())}</span></div>
-      <div class="cr"><b>Cámara / rollo</b><span>${esc(mc ? usadas.map(l => l + " · " + (configDe(l).roll || "—")).join("  /  ") : (R.cam || "—") + " · " + (R.roll || "—"))}</span></div>${film && R.lab ? `
+      <div class="cr"><b>Cámara / rollo</b><span>${esc(mc ? usadas.map(l => l + " · " + (configDe(l).roll || "—")).join("  /  ") : (R.cam || "—") + " · " + (R.roll || "—"))}</span></div>${film && !mc && R.lab ? `
       <div class="cr"><b>Laboratorio</b><span>${esc(R.lab)}</span></div>` : ""}
       <div class="cr"><b>Fecha</b><span>${esc(P.fecha || hoy)}</span></div>
       <div class="cr"><b>Nº de jornada</b><span>${esc(P.jornada || "—")}</span></div>
@@ -5712,7 +5754,7 @@ function renderParte(soloLetra){
     ${F("Casa de renta", P.casa)}</div>
 
   <h4><span class="nn">2</span>Responsables</h4>
-  <div class="fl">${F("Director de fotografía", P.dop ?? R.dop)}${F("Foquista / parte", P.ac ?? R.ac ?? P.por)}
+  <div class="fl">${P.director ? F("Director", P.director) : ""}${F("Director de fotografía", P.dop ?? R.dop)}${F("Foquista / parte", P.ac ?? R.ac ?? P.por)}
     ${F("Auxiliar · 2º AC", P.ac2 ?? R.ac2)}${F("VTR", P.vtr)}${film ? F("Cargado por", R.loader) : F("Técnico de cámara / DIT", P.dit)}</div>
 
   ${cuerpoCams()}
@@ -5750,7 +5792,7 @@ function renderParte(soloLetra){
     <div><div class="rl">Recibido por (DIT / lab)</div><div class="box"></div>
       <div class="nm"><span>nombre y función</span><span>fecha</span></div></div>
   </div>
-  <div class="ffoot"><span>Wallio · Lens Grid Platform · Parte de cámara${pieCasa() ? " · " + esc(pieCasa()) : " · documento controlado"}</span>
+  <div class="ffoot"><span>Wallio · <span>Parte de cámara</span> · ${pieCasa() ? esc(pieCasa()) : "<span>documento controlado</span>"}</span>
     <span>${esc(parteId())} · ${ver}</span></div>`;
 }
 
@@ -5827,7 +5869,9 @@ const EN = {
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
-"Paso":"Gauge · perfs","Cargado por":"Loaded by",
+"Paso":"Gauge · perfs",
+"altura":"height","clips":"clips","documento controlado":"controlled document",
+"Parte de cámara · película y digital":"Camera report · film & digital","Cargado por":"Loaded by",
 "Contador al empezar":"Counter at start",
 "Revelado":"Processing","Positivado / escaneo":"Print / scan",
 "Forzado +1":"Push +1","Forzado +2":"Push +2","Retenido −1":"Pull −1","Retenido −2":"Pull −2",
@@ -6486,7 +6530,7 @@ const EN = {
 "Tomas":"Takes","+ Toma":"+ Take","+ Escena":"+ Scene","Borrar última":"Delete last",
 "«+ Toma» repite la anterior y sube el número: es lo que cambia de verdad entre toma y toma lo único que tienes que tocar. «+ Escena» empieza en toma 1.":
  "«+ Take» repeats the previous one and bumps the number: what actually changes between takes is all you have to touch. «+ Scene» starts at take 1.",
-"Escena":"Scene","Toma":"Take","Óptica · nº de serie":"Lens · serial no.","Diafragma T":"T-stop","falso":"fake","real":"real","CLIP FALSO":"FAKE CLIP","Marcar esta toma como clip falso (equivocación, prueba, no es material real)":"Mark this take as a fake clip (mistake, test, not real material)","Refrescar":"Refresh","actualizado":"updated","Pan":"Pan",
+"Escena":"Scene","Toma":"Take","Óptica · nº de serie":"Lens · serial no.","Diafragma T":"T-stop","falso":"false","real":"real","FALSO":"FALSE","CLIP FALSO":"FALSE CLIP","Marcar esta toma como clip falso (equivocación, prueba, no es material real)":"Mark this take as a fake clip (mistake, test, not real material)","Refrescar":"Refresh","actualizado":"updated","Pan":"Pan",
 "Refrescar":"Refresh","actualizado":"updated","Pan":"Pan",
 "Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado":"Redraws everything on screen without losing any data already entered",
 "Filtro":"Filter","Distancia de foco":"Focus distance","Timecode":"Timecode","Duración (s)":"Duration (s)",
