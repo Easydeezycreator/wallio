@@ -5526,6 +5526,7 @@ function nuevaToma(nuevaEscena){
   if (nuevaEscena){ t.sc = ""; t.tk = "1"; }
   else t.tk = String((parseInt(t.tk, 10) || 0) + 1);
   L.push(t); renderTomas();
+  if (typeof guardaYa === "function") guardaYa();
   setTimeout(() => { const e = document.querySelectorAll("#listaTomas .toma");
                      if (!e.length) return;
                      e[e.length-1].scrollIntoView({block:"center", behavior:"smooth"});
@@ -6994,7 +6995,16 @@ const CLAVE = "wallio.borrador.v1";
 let guardadoTimer = null;
 function autoguarda(){
   clearTimeout(guardadoTimer);
-    guardadoTimer = setTimeout(() => {
+  guardadoTimer = setTimeout(guardaYa, 600);
+}
+/* v89: guardar SIN esperar. Antes solo existía la espera de 0,6 s: si en ese hueco se
+   bloqueaba el iPhone, se cambiaba de app o se cerraba, lo último se perdía. Ahora se
+   guarda al instante al pasar a segundo plano/cerrar, y al crear o borrar una toma. */
+var WALLIO_ARRANCADO = false, WALLIO_SIN_BAK = false;
+function guardaYa(){
+  clearTimeout(guardadoTimer); guardadoTimer = null;
+  if (!WALLIO_ARRANCADO) return;
+    {
     try {
       const snap = JSON.stringify({t: Date.now(), s: S});
       /* v79: antes de fiarse del guardado, se verifica que el JSON generado
@@ -7003,12 +7013,17 @@ function autoguarda(){
          bueno anterior con algo roto */
       JSON.parse(snap);
       localStorage.setItem(CLAVE, snap);
-      localStorage.setItem(CLAVE + ".bak", snap);
+      if (!WALLIO_SIN_BAK) localStorage.setItem(CLAVE + ".bak", snap);
       const m = $("estadoGuardado");
       if (m) m.textContent = "· " + traduce("guardado") + " " + new Date().toTimeString().slice(0,5);
     } catch(e){ /* sin espacio o modo privado: se sigue trabajando igual */ }
-  }, 600);
+  }
 }
+function guardaSiPendiente(){ if (guardadoTimer) guardaYa(); }
+document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "hidden") guardaYa(); });
+window.addEventListener("pagehide", guardaYa);
+window.addEventListener("beforeunload", guardaYa);
+window.addEventListener("blur", guardaSiPendiente);
 function hayBorrador(){
   try { const b = JSON.parse(localStorage.getItem(CLAVE) || "null");
         if (b && b.s) return b; } catch(e){}
@@ -7438,7 +7453,9 @@ nbPinta();
 aplicaIdioma();
 /* v53: el trabajo vuelve SOLO al abrir — sin barra ni botones. La barra de
    rescate queda solo de respaldo por si algún día la restauración fallara. */
-if (hayBorrador()) retomaBorrador();
+try { if (hayBorrador()) retomaBorrador(); }
+catch(e){ WALLIO_SIN_BAK = true; /* si la restauración fallara, el respaldo bueno no se toca */ }
+WALLIO_ARRANCADO = true;   /* v89: hasta aquí no se guarda nada (nunca pisar el borrador con una hoja vacía) */
 if (NB.token && NB.casa) setTimeout(nbVaciaCola, 1200);
 
 /* ---------------- funcionar sin cobertura ----------------
