@@ -9,7 +9,7 @@
    service worker independiente y se maneja solo, para que un fallo de red
    dentro del parte jamás te devuelva a la página de inicio de la plataforma. */
 
-const VERSION = "wallio-v73";
+const VERSION = "wallio-v74";
 const FAMILIA = "wallio-v";
 const AJENA = "";
 const BASICOS = [
