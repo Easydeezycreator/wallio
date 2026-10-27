@@ -5944,7 +5944,7 @@ function descargar(texto, nombre, tipo){
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
 "Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only",
-"Compartir este parte":"Share this report","Proyecto nuevo":"New project","Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?":"The current report is saved on this device and a brand NEW project starts from scratch. Sure?","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Introduce el nombre del proyecto":"Enter the project name",
+"Compartir este parte":"Share this report","Proyecto nuevo":"New project","Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?":"The current report is saved on this device and a brand NEW project starts from scratch. Sure?","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Introduce el nombre del proyecto":"Enter the project name","EL PRIMER DÍA":"THE FIRST DAY",
 "Escribe primero el Proyecto en Producción.":"Fill in the Project in Production first.",
 "Escribe el nombre del proyecto.":"Type the project name.",
 "No hay ningún parte compartido de ese proyecto (¿alguien pulsó ya Compartir?).":"There is no shared report for that project (did anyone tap Share yet?).",
@@ -6740,7 +6740,7 @@ const EN = {
 ": cuando esa óptica tiene ficha WLG-02, la fila lo indica y post recupera su grid con ese mismo número. El código de verificación deja de cuadrar si se altera cualquier dato.":
  ": when that lens has a WLG-02 record, the row says so and post recovers its grid with that same number. The verification code stops matching if any data is altered.",
 "Verificado por":"Verified by","Aceptado por (post / VFX)":"Accepted by (post / VFX)",
-"Recibido por (DIT / lab)":"Received by (DIT / lab)","nombre y función":"name and role","fecha":"date",
+"Recibido por (DIT / lab)":"Received by (DIT / lab)","nombre y función":"name and role","nombre":"name","sin datos todavía":"no data yet","Nº de clips":"No. of clips","fecha":"date",
 "Wallio · Lens Grid Platform · Registro de calibración óptica · un registro por número de serie":
  "Wallio · Lens Grid Platform · Optical calibration record · one record per serial number",
 "Wallio · Lens Grid Platform · Parte de cámara · documento controlado":
@@ -6803,7 +6803,7 @@ function traduce(s){
   return s;
 }
 const RAICES = () => [document.querySelector("header"), document.querySelector("main"),
-                      document.querySelector("nav"), $("ficha"), $("parte"), $("albaran")].filter(Boolean);
+                      document.querySelector("nav"), $("ficha"), $("parte"), $("albaran"), $("pcPanel")].filter(Boolean);
 function pinta(nodo){
   const w = document.createTreeWalker(nodo, NodeFilter.SHOW_TEXT);
   let n; const lista = [];
@@ -7101,6 +7101,9 @@ function pcMioDe(l){ return { config: configDe(l), tomas: pcTomasDe(l) }; }
 function pcHoy(){ return new Date().toISOString().slice(0, 10); }
 function pcAyer(){ return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
 function pcClaveDe(nombre, fecha){ return nombre.trim() + "·" + fecha; }
+/* v89: la sincronización de fondo (cada 8 s) NUNCA pregunta el nombre: antes salía
+   una ventana sola en mitad del trabajo y se comía el toque (p. ej. «+ Toma»). */
+function pcQuienCallado(){ return PC.quien || (S.prod.ac2 || S.prod.ac || "").trim() || ""; }
 function pcQuien(){
   if (PC.quien) return PC.quien;
   const n = ((S.prod.ac2 || S.prod.ac || "").trim()) ||
@@ -7222,13 +7225,13 @@ async function pcTick(primera){
       for (const l of pcMisLetras()){
         const json = JSON.stringify(pcMioDe(l));
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-          p_letra: l, p_datos: JSON.parse(json), p_quien: pcQuien(),
+          p_letra: l, p_datos: JSON.parse(json), p_quien: pcQuienCallado(),
           p_prod: prodSube }, false);
         PC.firmas[l] = json; prodSube = null;
       }
       if (prodSube){
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-          p_letra: "A", p_datos: null, p_quien: pcQuien(), p_prod: prodSube }, false);
+          p_letra: "A", p_datos: null, p_quien: pcQuienCallado(), p_prod: prodSube }, false);
       }
       PC.firmaProd = prodLoc;
     } else {
@@ -7240,13 +7243,13 @@ async function pcTick(primera){
         if (!conDatos && !prodPend) continue;
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
           p_letra: l, p_datos: conDatos ? JSON.parse(json) : null,
-          p_quien: pcQuien(), p_prod: prodPend }, false);
+          p_quien: pcQuienCallado(), p_prod: prodPend }, false);
         if (conDatos) PC.firmas[l] = json;
         prodPend = null;
       }
       if (prodPend){
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-          p_letra: "A", p_datos: null, p_quien: pcQuien(), p_prod: prodPend }, false);
+          p_letra: "A", p_datos: null, p_quien: pcQuienCallado(), p_prod: prodPend }, false);
       }
       PC.firmaProd = prod;
       const d = await nbPide("/rest/v1/rpc/parte_baja_codigo",
