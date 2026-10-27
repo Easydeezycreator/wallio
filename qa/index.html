@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Wallio QA</title>
+<style>
+:root{--bg:#0b0e13;--tx:#eef1f5;--mu:#8b95a5;--ok:#3fb58c;--bad:#e5484d;--line:#232b37}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 -apple-system,system-ui,sans-serif;padding:16px}
+h1{font-size:22px;margin:0 0 4px}
+.mu{color:var(--mu);font-size:13px}
+button.go{font:600 18px -apple-system,system-ui,sans-serif;padding:16px 22px;border-radius:12px;border:0;background:var(--tx);color:#000;margin:14px 0;width:100%;max-width:420px}
+#verdict{font:800 26px -apple-system,system-ui,sans-serif;margin:12px 0}
+#verdict.ok{color:var(--ok)}#verdict.bad{color:var(--bad)}
+#log{font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word;border-top:1px solid var(--line);padding-top:10px}
+.e{color:var(--bad)}.g{color:var(--ok)}
+#stage{border:1px solid var(--line);margin-top:12px;overflow:hidden;background:#000}
+#stage iframe{border:0;display:block;height:760px}
+</style></head><body>
+<h1>Wallio · prueba completa</h1>
+<div class="mu" id="ua"></div>
+<div class="mu">Pulsa todos los botones de la app y de la plataforma en este navegador. La nube está bloqueada durante la prueba (no crea nada online) y lo que tengas guardado en este navegador se restaura al final.</div>
+<button class="go" id="go" onclick="corre()">Empezar prueba</button>
+<div id="verdict"></div>
+<div id="log"></div>
+<div id="stage"></div>
+<script>
+"use strict";
+document.getElementById("ua").textContent = navigator.userAgent;
+const LOG = document.getElementById("log");
+const errs = [], notes = [];
+function log(t, cls){ const d = document.createElement("div"); if (cls) d.className = cls; d.textContent = t; LOG.appendChild(d); }
+function err(t){ errs.push(t); log("✗ " + t, "e"); }
+function note(t){ notes.push(t); log("· " + t); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const BLOQ = /supabase\.co|workers\.dev/;
+const SKIP = /empezarDeCero|proyectoNuevo|borrar|Quita|pcSalir|nubeSalir|getElementById\('(partIn|fIn|bs_csv)'\)|olvidaMhl|cambiaIdioma|descarta/i;
+
+let F = null, CAP = null;
+function patch(w, tag){
+  if (!w || w.__qa) return; w.__qa = 1;
+  CAP = CAP || { blobs: [], printed: 0, alerts: [], opened: 0 };
+  w.addEventListener("error", e => err(tag + " JS: " + (e.message || e.error) + (e.filename ? " @" + String(e.filename).split("/").pop() + ":" + e.lineno : "")));
+  w.addEventListener("unhandledrejection", e => { const m = String(e.reason && (e.reason.message || e.reason)); if (!/qa-bloqueado/.test(m)) err(tag + " PROMESA: " + m); });
+  const ce = w.console.error.bind(w.console);
+  w.console.error = function(){ const m = [].map.call(arguments, String).join(" "); if (!/qa-bloqueado|Failed to load|NetworkError|Load failed/i.test(m)) err(tag + " CONSOLA: " + m.slice(0, 200)); ce.apply(null, arguments); };
+  const f0 = w.fetch.bind(w);
+  w.fetch = function(u, o){ const s = String(u && u.url || u); if (BLOQ.test(s)) return Promise.reject(new TypeError("qa-bloqueado")); return f0(u, o); };
+  const xo = w.XMLHttpRequest.prototype.open;
+  w.XMLHttpRequest.prototype.open = function(m, u){ if (BLOQ.test(String(u))) throw new TypeError("qa-bloqueado"); return xo.apply(this, arguments); };
+  w.print = () => { CAP.printed++; };
+  w.alert = m => { CAP.alerts.push(String(m)); };
+  w.confirm = () => false;
+  w.prompt = () => "Test";
+  w.open = () => { CAP.opened++; return null; };
+  const cu = w.URL.createObjectURL.bind(w.URL);
+  w.URL.createObjectURL = b => { CAP.blobs.push(b); return cu(b); };
+  const ac = w.HTMLAnchorElement.prototype.click;
+  w.HTMLAnchorElement.prototype.click = function(){ if (this.hasAttribute("download") || this.download) return; return ac.call(this); };
+}
+function carga(src, ancho, tag){
+  return new Promise((res, rej) => {
+    const st = document.getElementById("stage"); st.innerHTML = "";
+    F = document.createElement("iframe"); F.style.width = ancho ? ancho + "px" : "100%";
+    let hecho = false;
+    const vigila = setInterval(() => { try { const w = F.contentWindow; if (w && w.location.href.indexOf(src) >= 0) patch(w, tag); } catch(e){} }, 1);
+    F.onload = () => { if (hecho) return; hecho = true; clearInterval(vigila); try { patch(F.contentWindow, tag); } catch(e){} setTimeout(() => res(F.contentWindow), 900); };
+    setTimeout(() => { if (!hecho){ clearInterval(vigila); rej(new Error("no carga " + src)); } }, 30000);
+    F.src = src; st.appendChild(F);
+  });
+}
+function recarga(tag){
+  return new Promise(res => { const w = F.contentWindow; F.onload = () => { patch(F.contentWindow, tag); setTimeout(() => res(F.contentWindow), 900); };
+    const vig = setInterval(() => { try { if (F.contentWindow !== w || F.contentDocument.readyState === "loading") patch(F.contentWindow, tag); } catch(e){} }, 1);
+    setTimeout(() => clearInterval(vig), 8000); w.location.reload(); });
+}
+function desborde(w, ancho, tag, donde){
+  const d = w.document, W = ancho || F.clientWidth;
+  const sw = d.documentElement.scrollWidth;
+  if (sw > W + 2){
+    const anchos = [...d.querySelectorAll("main *, header *, nav *")].filter(e => { const b = e.getBoundingClientRect(); return b.width && b.right > W + 2 && w.getComputedStyle(e).position !== "fixed"; }).slice(0, 3).map(e => e.tagName + "." + String(e.className).slice(0, 24) + " «" + (e.textContent || "").trim().slice(0, 14) + "»");
+    err(tag + " " + donde + ": la página mide " + sw + "px en " + W + "px " + anchos.join(" | "));
+  }
+}
+function ev(e, v){ e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); e.dispatchEvent(new Event("change", { bubbles: true })); }
+async function clicaTodo(w, tag){
+  const d = w.document;
+  const lista = [...new Set([...d.querySelectorAll("[onclick]")].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.height && w.getComputedStyle(e).visibility !== "hidden"; }).map(e => e.getAttribute("onclick")))];
+  let n = 0;
+  for (const oc of lista){
+    if (SKIP.test(oc)) continue;
+    const antes = errs.length;
+    try { const e = [...d.querySelectorAll("[onclick]")].find(x => x.getAttribute("onclick") === oc); if (e) e.click(); }
+    catch(e){ err(tag + " CLIC " + oc.slice(0, 60) + ": " + e.message); }
+    await sleep(140);
+    try { d.body.className = d.body.className.replace(/\bpr-\S+/g, "").trim(); } catch(e){}
+    if (errs.length > antes) errs[errs.length - 1] += "   ← al pulsar " + oc.slice(0, 70);
+    n++;
+  }
+  return n;
+}
+async function limpia(lang){ document.getElementById("stage").innerHTML = ""; F = null; await sleep(400); localStorage.clear(); localStorage.setItem("wallio.idioma", lang); CAP = null; }
+async function blobTexto(b){ return b.text ? b.text() : new Response(b).text(); }
+
+async function pruebaParte(lang, ancho){
+  const tag = "APP " + lang + (ancho ? " " + ancho + "px" : "");
+  await limpia(lang);
+  let w = await carga("/parte/?qa=" + Date.now(), ancho, tag);
+  if (typeof w.eval("typeof S") !== "string" || w.eval("typeof S") !== "object" || !w.document.getElementById("listaTomas")) { err(tag + ": la app no arrancó"); return; }
+  desborde(w, ancho, tag, "vacía");
+  const d = w.document, set = (id, v) => { const e = d.getElementById(id); if (e) ev(e, v); };
+  for (const [k, v] of [["pp_proyecto", "QA Film"], ["pp_productora", "QA"], ["pp_director", "Ana"], ["pp_dop", "Garza"], ["pp_ac", "Waldo"], ["r_roll", "A001"], ["r_body", "ALEXA 35"], ["r_codec", "ARRIRAW"]]) set(k, v);
+  for (let i = 0; i < 4; i++){
+    const b = d.querySelector(i ? '[onclick="nuevaToma(false)"]' : '[onclick="nuevaToma(true)"]'); if (b) b.click(); else err(tag + ": no está el botón + toma");
+    await sleep(120);
+    if (!i){ const t = [...d.querySelectorAll("#listaTomas details.toma")].pop();
+      for (const [k, v] of [["sc", "1"], ["clip", "A001C001"], ["desc", "Wide"], ["focal", "50"], ["t", "2.8"]]){ const e = t && t.querySelector('.f[data-k="' + k + '"] input'); if (e) ev(e, v); } }
+  }
+  const ultimo = w.eval("S").parte.tomas[w.eval("S").parte.tomas.length - 1];
+  if (w.eval("S").parte.tomas.length !== 4) err(tag + ": se esperaban 4 tomas y hay " + w.eval("S").parte.tomas.length);
+  else if (!/C004$/.test(ultimo.clip || "")) err(tag + ": numeración de clip automática falló («" + ultimo.clip + "»)");
+  desborde(w, ancho, tag, "con tomas");
+  const n = await clicaTodo(w, tag);
+  desborde(w, ancho, tag, "después de pulsar todo");
+  for (let i = 0; i < 2; i++){ const e = d.querySelector('[onclick="cambiaIdioma()"]'); if (e) e.click(); await sleep(200); }
+  // CSV
+  CAP.blobs = []; try { w.parteCSV(); } catch(e){ err(tag + " CSV: " + e.message); }
+  await sleep(300);
+  if (!CAP.blobs.length) err(tag + " CSV: no se generó"); else { const filas = (await blobTexto(CAP.blobs[CAP.blobs.length - 1])).trim().split(/\n/).length; if (filas < 5) err(tag + " CSV: solo " + filas + " filas"); }
+  // guardar → abrir
+  CAP.blobs = []; const antes = w.eval("S").parte.tomas.length; try { w.guardarParte(); } catch(e){ err(tag + " GUARDAR: " + e.message); }
+  await sleep(300);
+  if (!CAP.blobs.length) err(tag + " GUARDAR: no se generó el archivo"); else {
+    const txt = await blobTexto(CAP.blobs[CAP.blobs.length - 1]);
+    w.eval("S").parte.tomas = []; w.renderTomas();
+    const inp = d.getElementById("partIn");
+    try { const dt = new w.DataTransfer(); dt.items.add(new w.File([txt], "p.json", { type: "application/json" })); inp.files = dt.files; inp.dispatchEvent(new Event("change", { bubbles: true })); }
+    catch(e){ err(tag + " ABRIR: " + e.message); }
+    await sleep(900);
+    if (w.eval("S").parte.tomas.length !== antes) err(tag + " GUARDAR/ABRIR: tomas " + antes + " → " + w.eval("S").parte.tomas.length);
+  }
+  // PDF en navegador (tras pulsar todo, se vuelve a la cámara A con su rollo)
+  try { w.cambiaCam("A"); } catch(e){}
+  set("r_roll", "A001"); set("r_body", "ALEXA 35"); await sleep(200);
+  const p0 = CAP.printed; CAP.alerts = [];
+  try { w.hacerParte(); } catch(e){ err(tag + " PDF: " + e.message); }
+  await sleep(600); w.document.body.className = "";
+  if (CAP.alerts.length) err(tag + " PDF: aviso «" + CAP.alerts[0] + "»");
+  else if (CAP.printed <= p0 && !w.pdfSinImprimir()) err(tag + " PDF: no abrió la impresión");
+  // PDF como en la app (iPhone/iPad/Mac): Capacitor simulado
+  const rec = {};
+  w.Capacitor = { isNativePlatform: () => true, getPlatform: () => "ios",
+    Plugins: { Filesystem: { writeFile: async o => { rec.datos = o.data; rec.path = o.path; return { uri: "file:///qa/" + o.path }; } },
+               Share: { share: async o => { rec.share = o; } } } };
+  try { w.hacerParte(); } catch(e){ err(tag + " PDF APP: " + e.message); }
+  for (let i = 0; i < 120 && !rec.share && !CAP.alerts.length; i++) await sleep(250);
+  if (CAP.alerts.length) err(tag + " PDF APP: aviso «" + CAP.alerts[0] + "»");
+  else if (!rec.share) err(tag + " PDF APP: no llegó a la hoja de compartir");
+  else { let ok = false; try { ok = atob(String(rec.datos).slice(0, 12)).indexOf("%PDF") === 0; } catch(e){} if (!ok) err(tag + " PDF APP: el archivo no es un PDF"); else note(tag + ": PDF de la app " + Math.round(String(rec.datos).length * 0.75 / 1024) + " KB → hoja de compartir");}
+  delete w.Capacitor; w.document.body.className = "";
+  // recargar conserva lo guardado
+  const t1 = w.eval("S").parte.tomas.length;
+  w = await recarga(tag);
+  const t2 = w.eval("typeof S") === "object" ? w.eval("S").parte.tomas.length : -1;
+  if (t2 < t1) err(tag + " AUTOGUARDADO: tomas " + t1 + " → " + t2);
+  note(tag + ": " + n + " botones pulsados, CSV, guardar/abrir, PDF, recarga " + t1 + "→" + t2);
+}
+async function pruebaPlataforma(lang, ancho){
+  const tag = "PLATAFORMA " + lang + (ancho ? " " + ancho + "px" : "");
+  await limpia(lang);
+  const w = await carga("/lensgrid/?qa=" + Date.now(), ancho, tag);
+  const d = w.document;
+  const tabs = [...d.querySelectorAll("nav button[data-v]")].map(b => b.dataset.v);
+  if (!tabs.length) { err(tag + ": no hay pestañas"); return; }
+  let n = 0;
+  for (const v of tabs){
+    d.querySelector('nav button[data-v="' + v + '"]').click(); await sleep(250);
+    desborde(w, ancho, tag, "pestaña " + v);
+    n += await clicaTodo(w, tag + " [" + v + "]");
+    const t = d.querySelector('nav button[data-v="' + v + '"]'); if (t) t.click();
+  }
+  note(tag + ": " + tabs.length + " pestañas, " + n + " botones pulsados");
+}
+async function corre(){
+  const go = document.getElementById("go"); go.disabled = true; go.textContent = "Probando… no cierres esta pestaña";
+  LOG.innerHTML = ""; errs.length = 0; notes.length = 0;
+  const V = document.getElementById("verdict"); V.className = ""; V.textContent = "";
+  const copia = {}; for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); copia[k] = localStorage.getItem(k); }
+  const t0 = Date.now();
+  const anchos = innerWidth >= 1100 ? [390, 834, 1280] : [0];
+  try {
+    for (const a of anchos) for (const l of ["es", "en"]){ await pruebaParte(l, a); await pruebaPlataforma(l, a); }
+  } catch(e){ err("FALLO DE LA PRUEBA: " + (e.message || e)); }
+  finally {
+    document.getElementById("stage").innerHTML = "";
+    localStorage.clear(); Object.keys(copia).forEach(k => localStorage.setItem(k, copia[k]));
+  }
+  const s = Math.round((Date.now() - t0) / 1000);
+  V.className = errs.length ? "bad" : "ok";
+  V.textContent = errs.length ? "✗ " + errs.length + " ERRORES" : "✓ TODO CORRECTO · 0 errores";
+  log("— " + notes.length + " pruebas en " + s + " s · " + (anchos[0] ? "anchos " + anchos.join("/") + " px" : "ancho real " + innerWidth + " px") + " · tus datos restaurados", errs.length ? "e" : "g");
+  go.disabled = false; go.textContent = "Repetir prueba";
+  scrollTo(0, 0);
+}
+</script>
+</body></html>
