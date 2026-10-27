@@ -6881,12 +6881,14 @@ const PC_CONF = "wallio.compartido.v1";
 let PC = { parte: "", clave: "", etiqueta: "", desde: "", quien: "", miLetra: "", sinAuto: "", mias: {}, firmas: {} };
 try { PC = Object.assign(PC, JSON.parse(localStorage.getItem(PC_CONF) || "{}")); } catch(e){}
 PC.timer = null; PC.ocupado = false; PC.pendiente = false; PC.vistos = {};
+/* v89: cámaras que la nube YA tiene con contenido — se recuerda entre latidos y recargas */
+PC.enNube = (PC.enNube && typeof PC.enNube === "object") ? PC.enNube : {};
 PC.mias = PC.mias || {}; PC.firmas = {};
 if (PC.miLetra && !Object.keys(PC.mias).length) PC.mias[PC.miLetra] = true;   /* v67: migración */
 PC.firmaMia = ""; PC.firmaProd = "";
 function pcGuarda(){ try { localStorage.setItem(PC_CONF, JSON.stringify(
   { parte: PC.parte, clave: PC.clave, etiqueta: PC.etiqueta, desde: PC.desde,
-    quien: PC.quien, sinAuto: PC.sinAuto, mias: PC.mias })); } catch(e){} }
+    quien: PC.quien, sinAuto: PC.sinAuto, mias: PC.mias, enNube: PC.enNube })); } catch(e){} }
 function pcTomasDe(l){ return S.parte.tomas.filter(t => (t.camLetra || "A") === l); }
 function pcEsMia(l){ return !!(PC.mias && PC.mias[l]); }
 function pcMisLetras(){ return Object.keys(PC.mias || {}); }
@@ -6970,7 +6972,7 @@ async function pcAbrir(nombre, silencioso){
       creado = true;
     }
     guarda();
-    PC.parte = id; PC.etiqueta = et; PC.desde = ""; PC.vistos = {};
+    PC.parte = id; PC.etiqueta = et; PC.desde = ""; PC.vistos = {}; PC.enNube = {};
     PC.firmaProd = ""; PC.firmas = {}; PC.mias = {};
     /* v67: el CREADOR es dueño de todas sus cámaras con contenido — suben TODAS;
        el que ENTRA es espectador y reclama la cámara que toque */
@@ -6989,7 +6991,7 @@ async function pcAbrir(nombre, silencioso){
 }
 function pcSalir(){ pcPara();
   PC.sinAuto = (S.prod.proyecto || "").trim();   /* v66: saliste a propósito — no re-conectar solo a ESTE */
-  PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; PC.mias = {}; PC.firmas = {}; pcGuarda(); pcEstado(); }
+  PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; PC.enNube = {}; PC.mias = {}; PC.firmas = {}; pcGuarda(); pcEstado(); }
 function pcArranca(){ pcPara(); PC.timer = setInterval(() => pcTick(false), 8000); }
 /* v66: el proyecto se comparte SOLO. El primero que le pone nombre lo crea en
    la nube (dueño) sin tocar nada; los demás teclean el nombre y entran.
@@ -7065,6 +7067,8 @@ function pcAplica(d, primera){
   const cams = (d && d.camaras) || {};
   Object.keys(cams).forEach(l => {
     PC.vistos[l] = { por: cams[l].por, cuando: cams[l].actualizado };
+    { const dd = cams[l].datos || {}, cc = dd.config || {};
+      if (String(cc.body || "").trim() || String(cc.roll || "").trim() || (dd.tomas || []).length) PC.enNube[l] = true; }
     const esMia = pcEsMia(l);
     const miaVacia = !pcTomasDe(l).length && !(configDe(l).body) && !(configDe(l).roll);
     if (esMia && !(primera && miaVacia)) return;      /* tu cámara manda en tu aparato */
@@ -7088,7 +7092,11 @@ function pcAplica(d, primera){
       String(srv.config.roll || "").trim())) || (srv.tomas || []).length));
     const locAlgo = !!(String(configDe(l).body || "").trim() ||
       String(configDe(l).roll || "").trim() || pcTomasDe(l).length);
-    if (locAlgo && !srvAlgo){ PC.mias[l] = true; PC.firmas[l] = ""; pcGuarda(); }
+    /* v89: la descarga de cada latido trae SOLO lo que cambió: «no viene» no es «no existe».
+       Antes, a los 8 s de entrar, el aparato se adueñaba de TODAS las cámaras y dos aparatos
+       acababan subiendo la misma cámara y pisándose. Ahora solo se aporta lo que la nube
+       nunca ha tenido. */
+    if (locAlgo && !srvAlgo && !PC.enNube[l]){ PC.mias[l] = true; PC.firmas[l] = ""; pcGuarda(); }
   });
   if (d && d.prod && Object.keys(d.prod).length){
     if (primera && !pcMisLetras().length){
@@ -7157,7 +7165,7 @@ enlazaProdParte(); enlazaLoaderProd(); fillProdParte(); pintaTira(); ptLista(); 
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
 if (!(S.prod.proyecto || "").trim()){ const dd = $("pp_bloque"); if (dd) dd.open = true; }
-if (PC.parte && PC.clave){ setTimeout(() => pcTick(false), 2500); pcArranca(); }
+if (PC.parte && PC.clave){ setTimeout(() => pcTick(true), 2500); pcArranca(); }   /* v89: al abrir, foto completa de la nube */
 else pcAutoProgramar();
 ["p_proyecto", "pp_proyecto"].forEach(function(id){
   const el = $(id); if (el) el.addEventListener("change", pcAutoProgramar);
