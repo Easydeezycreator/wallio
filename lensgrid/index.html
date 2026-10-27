@@ -5455,6 +5455,7 @@ function nuevaToma(nuevaEscena){
   if (nuevaEscena){ t.sc = ""; t.tk = "1"; }
   else t.tk = String((parseInt(t.tk, 10) || 0) + 1);
   L.push(t); renderTomas();
+  if (typeof guardaYa === "function") guardaYa();
   setTimeout(() => { const e = document.querySelectorAll("#listaTomas .toma");
                      if (!e.length) return;
                      e[e.length-1].scrollIntoView({block:"center", behavior:"smooth"});
@@ -6796,14 +6797,26 @@ const CLAVE = "wallio.borrador.v1";
 let guardadoTimer = null;
 function autoguarda(){
   clearTimeout(guardadoTimer);
-  guardadoTimer = setTimeout(() => {
+  guardadoTimer = setTimeout(guardaYa, 600);
+}
+/* v89: guardar SIN esperar al pasar a segundo plano/cerrar y al crear una toma */
+var WALLIO_ARRANCADO = false, WALLIO_SIN_BAK = false;
+function guardaYa(){
+  clearTimeout(guardadoTimer); guardadoTimer = null;
+  if (!WALLIO_ARRANCADO) return;
+  {
     try {
       localStorage.setItem(CLAVE, JSON.stringify({t: Date.now(), s: S}));
       const m = $("estadoGuardado");
       if (m) m.textContent = "· " + traduce("guardado") + " " + new Date().toTimeString().slice(0,5);
     } catch(e){ /* sin espacio o modo privado: se sigue trabajando igual */ }
-  }, 600);
+  }
 }
+function guardaSiPendiente(){ if (guardadoTimer) guardaYa(); }
+document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "hidden") guardaYa(); });
+window.addEventListener("pagehide", guardaYa);
+window.addEventListener("beforeunload", guardaYa);
+window.addEventListener("blur", guardaSiPendiente);
 function hayBorrador(){
   try { const b = JSON.parse(localStorage.getItem(CLAVE) || "null");
         return b && b.s ? b : null; } catch(e){ return null; }
@@ -6878,6 +6891,7 @@ function pcMioDe(l){ return { config: configDe(l), tomas: pcTomasDe(l) }; }
 function pcHoy(){ return new Date().toISOString().slice(0, 10); }
 function pcAyer(){ return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
 function pcClaveDe(nombre, fecha){ return nombre.trim() + "·" + fecha; }
+function pcQuienCallado(){ return PC.quien || (S.prod.ac2 || S.prod.ac || "").trim() || ""; }
 function pcQuien(){
   if (PC.quien) return PC.quien;
   const n = ((S.prod.ac2 || S.prod.ac || "").trim()) ||
@@ -6999,13 +7013,13 @@ async function pcTick(primera){
       for (const l of pcMisLetras()){
         const json = JSON.stringify(pcMioDe(l));
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-          p_letra: l, p_datos: JSON.parse(json), p_quien: pcQuien(),
+          p_letra: l, p_datos: JSON.parse(json), p_quien: pcQuienCallado(),
           p_prod: prodSube }, false);
         PC.firmas[l] = json; prodSube = null;
       }
       if (prodSube){
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-          p_letra: "A", p_datos: null, p_quien: pcQuien(), p_prod: prodSube }, false);
+          p_letra: "A", p_datos: null, p_quien: pcQuienCallado(), p_prod: prodSube }, false);
       }
       PC.firmaProd = prodLoc;
     } else {
@@ -7017,13 +7031,13 @@ async function pcTick(primera){
         if (!conDatos && !prodPend) continue;
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
           p_letra: l, p_datos: conDatos ? JSON.parse(json) : null,
-          p_quien: pcQuien(), p_prod: prodPend }, false);
+          p_quien: pcQuienCallado(), p_prod: prodPend }, false);
         if (conDatos) PC.firmas[l] = json;
         prodPend = null;
       }
       if (prodPend){
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
-          p_letra: "A", p_datos: null, p_quien: pcQuien(), p_prod: prodPend }, false);
+          p_letra: "A", p_datos: null, p_quien: pcQuienCallado(), p_prod: prodPend }, false);
       }
       PC.firmaProd = prod;
       const d = await nbPide("/rest/v1/rpc/parte_baja_codigo",
@@ -7230,7 +7244,9 @@ nbPinta();
 aplicaIdioma();
 /* v53: el trabajo vuelve SOLO al abrir — sin barra ni botones. La barra de
    rescate queda solo de respaldo por si algún día la restauración fallara. */
-if (hayBorrador()) retomaBorrador();
+try { if (hayBorrador()) retomaBorrador(); }
+catch(e){ WALLIO_SIN_BAK = true; }
+WALLIO_ARRANCADO = true;
 if (NB.token && NB.casa) setTimeout(nbVaciaCola, 1200);
 
 /* ---------------- funcionar sin cobertura ----------------
