@@ -5496,8 +5496,8 @@ function renderTomas(){
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
       </summary>
       <div class="row">${campos}${propios}<div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div>${restaurar}</div></details>`;
-  }).join("") : '<div class="empty" style="cursor:pointer" onclick="empezarPrimeraToma()">' +
-    traduce("Sin tomas todavía. Toca aquí para empezar.") + '</div>';
+  }).join("") : '<button class="ghost" style="width:100%" onclick="empezarPrimeraToma()">' +
+    traduce("Empezar la primera toma") + '</button>';
   $("listaTomas").classList.toggle("mc", esMulticam());
   resumenParte(); fillParte(); updateChip(); pintaCams();
 }
@@ -5575,10 +5575,13 @@ function nuevaToma(nuevaEscena){
   const L = S.parte.tomas;
   let u = null;
   for (let j = L.length - 1; j >= 0; j--){ if ((L[j].camLetra || "A") === camActiva()){ u = L[j]; break; } }
-  /* v73: +Escena arranca en blanco (claqueta nueva: nada se hereda de la
-     escena anterior); +Toma sigue clonando la última toma de esta escena —
-     conserva lo ya tecleado y solo avanza el número de toma */
-  const t = (!nuevaEscena && u) ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
+  /* v98: una escena nueva YA NO arranca en blanco -- hereda de la última
+     toma lo técnico (óptica, focal, T, foco, filtro, WB, CC, fps, obturador,
+     EI, LUT, resolución, altura/tilt/pan) para que el usuario no tenga que
+     volver a escribir todo desde cero; solo se limpia la identidad de
+     escena/toma y lo propio de cada toma (ver abajo). Si es la primerísima
+     toma del rollo (no hay "u"), sigue arrancando en blanco. */
+  const t = u ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
   t.camLetra = camActiva();
   if (typeof pcReclama === "function") pcReclama();
   if (typeof pcAutoProgramar === "function") pcAutoProgramar();
@@ -6034,7 +6037,7 @@ const EN = {
 "Varios auxiliares pueden trabajar el mismo parte: cada uno entra con su cuenta de la Nube en el mismo espacio, escribe el mismo nombre de parte y pulsa Conectar.":"Several assistants can work the same report: each signs in to the Cloud in the same space, types the same report name and taps Connect.",
 "Cada auxiliar trabaja su cámara (A, B, C o D) y las demás se refrescan solas cada pocos segundos. Tu cámara activa manda en tu aparato: nadie te la pisa.":"Each assistant works their own camera (A, B, C or D) and the others refresh on their own every few seconds. Your active camera rules on your device: nobody overwrites it.",
 "Si dos trabajan la misma letra a la vez, vale lo último que se subió. Salir deja de compartir pero no borra nada de tu aparato.":"If two people work the same letter at once, the last upload wins. Leave stops sharing but deletes nothing from your device.",
-"Sin tomas todavía. Toca aquí para empezar.":"No takes yet. Tap here to start.",
+"Empezar la primera toma":"Start the first take",
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
