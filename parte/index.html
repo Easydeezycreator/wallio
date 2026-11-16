@@ -1423,7 +1423,7 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <h2>Tomas</h2>
-    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div><div class="f"><label>Unidad de foco (lentes)</label><select id="prefUnidadFoco" onchange="cambiaUnidadFoco(this.value)"><option value="ft">Pies (ft)</option><option value="m">Metros (m)</option></select></div></div>
+    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
 <div class="btnrow presets"><button onclick="aplicaPresetCampos('digital')">Digital</button><button onclick="aplicaPresetCampos('pelicula')">Película</button><button onclick="aplicaPresetCampos('minimo')">Mínimo</button><button onclick="aplicaPresetCampos('completo')">Completo</button></div>
     <div class="grid"><div class="f"><label>Offset de timecode</label><input id="r_tcOffset" placeholder="00:00:00:00" autocomplete="off"></div></div>
         <div id="listaTomas"></div>
@@ -5268,8 +5268,46 @@ function durFilm(medida, R){
   const pies = ((R || {}).unidad === "m") ? medida / 0.3048 : medida;
   return durTexto(pies * (FPP[(R || {}).perf || "4"] || 16) / fps);
 }
-function unidadFocoPref(){ try { return localStorage.getItem("wallio.unidadFoco") || "ft"; } catch(e){ return "ft"; } }
-function cambiaUnidadFoco(v){ try { localStorage.setItem("wallio.unidadFoco", v); } catch(e){} if (typeof renderTomas === "function") renderTomas(); }
+/* v89: la unidad ft/m ya NO es una preferencia global -- cada OPTICA (por nº de
+   serie) recuerda su propia unidad, como corresponde: una lente puede venir
+   marcada en metros y otra en pies dentro del mismo set */
+function unidadDeOptica(serial){
+  try {
+    const clave = String(serial || "").trim().toLowerCase();
+    if (!clave) return "ft";
+    const mapa = JSON.parse(localStorage.getItem("wallio.unidadPorOptica") || "{}");
+    return mapa[clave] || "ft";
+  } catch(e){ return "ft"; }
+}
+function cambiaUnidadDeEstaOptica(i, unidad){
+  try {
+    const serial = (S.parte.tomas[i] || {}).serial;
+    const clave = String(serial || "").trim().toLowerCase();
+    if (!clave) return;
+    const mapa = JSON.parse(localStorage.getItem("wallio.unidadPorOptica") || "{}");
+    mapa[clave] = unidad;
+    localStorage.setItem("wallio.unidadPorOptica", JSON.stringify(mapa));
+  } catch(e){}
+  renderTomas();
+}
+/* v89: estilo "Smartfill" de Zoe Log -- estos campos normalmente NO cambian de
+   una toma a otra; si llegan vacíos (p. ej. al abrir escena nueva) se ofrece un
+   enlace discreto para repetir el último valor usado, en vez de copiarlo solo */
+const STICKY_TOMA = ["wb", "fps", "shutter", "lut"];
+function valorAnteriorToma(i, k){
+  const L = S.parte.tomas;
+  for (let j = i - 1; j >= 0; j--){
+    if ((L[j].camLetra || "A") === (L[i].camLetra || "A") && L[j][k]) return L[j][k];
+  }
+  return "";
+}
+function repiteAnterior(i, k){
+  guarda();
+  const v = valorAnteriorToma(i, k); if (!v) return;
+  S.parte.tomas[i][k] = v;
+  if (k === "wb"){ const vcc = valorAnteriorToma(i, "cc"); if (vcc) S.parte.tomas[i].cc = vcc; }
+  renderTomas();
+}
 
 const PRESETS_CAMPOS = {
   digital: ["dial","pies"],
@@ -5336,7 +5374,6 @@ function wireParte(){
 function fillParte(){
   const P = S.prod, R = S.parte.roll;
   migraResponsables();
-  const ePuf = $("prefUnidadFoco"); if (ePuf) ePuf.value = unidadFocoPref();
   R_CAMPOS.forEach(k => { const el = $("r_" + k); if (el) el.value = R[k] || ""; });
   if (!R.tipo) R.tipo = "digital";
   /* v72: unidad/perf/rev/copia YA NO se rellenan solos — quedan vacíos hasta
@@ -5374,22 +5411,36 @@ function fillParte(){
 function campoToma(i, k, etiqueta, lista, ancho){
   const v = esc(S.parte.tomas[i][k] || "");
   const l = lista ? ` list="${lista}"` : "";
-  const ph = (k === "foco") ? (unidadFocoPref() === "m" ? "2.40 m" : "8 ft") : "";
+  const ph = (k === "foco") ? (unidadDeOptica(S.parte.tomas[i].serial) === "m" ? "2.40 m" : "8 ft") : "";
   /* v76: cada campo de la toma lleva una x para quitarlo si no se usa --
      Escena y Toma quedan protegidos, son la identidad de la fila */
   const x = (k === "sc" || k === "tk") ? "" :
     ` <span style="cursor:pointer;opacity:.55" title="Quitar este campo" onclick="event.stopPropagation();ocultarCampoToma('${k}')">×</span>`;
+  /* v89: Smartfill -- repetir el ultimo valor usado en campos que casi nunca
+     cambian de toma a toma, solo cuando el campo llega vacio */
+  const repetir = (STICKY_TOMA.indexOf(k) >= 0 && !S.parte.tomas[i][k] && valorAnteriorToma(i, k))
+    ? ` <span style="cursor:pointer;opacity:.6;color:#7fd6a2" onclick="event.stopPropagation();repiteAnterior(${i},'${k}')">${esc(traduce("repetir anterior"))}</span>` : "";
+  /* v89: la unidad ft/m de la distancia de foco vive en la OPTICA, no en una
+     preferencia global -- un toque junto al nº de serie la cambia para esa lente */
+  if (k === "serial"){
+    const unidadActual = unidadDeOptica(S.parte.tomas[i].serial);
+    const toggleUnidad = v ? ` <span style="cursor:pointer;opacity:.6;font-size:.85em" title="${esc(traduce("Unidad de esta óptica"))}" onclick="event.stopPropagation();cambiaUnidadDeEstaOptica(${i},'${unidadActual === "m" ? "ft" : "m"}')">${unidadActual}</span>` : "";
+    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+      `<div style="display:flex;gap:6px;align-items:center">` +
+      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value" onchange="renderTomas()" autocomplete="off">` +
+      `${toggleUnidad}</div></div>`;
+  }
   /* v87: el tinte (CC) vive dentro del campo de balance de blancos, no como
      campo propio -- Waldo lo pidio asi: un solo bloque "wb" con dos inputs */
   if (k === "wb"){
     const vcc = esc(S.parte.tomas[i].cc || "");
-    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}${repetir}</label>` +
       `<div style="display:flex;gap:6px">` +
       `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value" onchange="renderTomas()" autocomplete="off">` +
       `<input value="${vcc}" list="dlCc" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" oninput="S.parte.tomas[${i}].cc=this.value" onchange="renderTomas()" autocomplete="off">` +
       `</div></div>`;
   }
-  return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+  return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}${repetir}</label>` +
                `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value" ` +
          `onchange="renderTomas()" autocomplete="off"></div>`;
 }
@@ -6621,6 +6672,7 @@ const EN = {
 "Formato de captura":"Capture format","Codec / emulsión":"Codec / stock",
 "Aspect ratio":"Aspect ratio","Resolución del proyecto":"Project resolution","CC (tinte)":"Tint CC","Director":"Director",
   "Unidad de foco (lentes)":"Lens focus unit","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
+  "repetir anterior":"repeat previous","Unidad de esta óptica":"This lens' unit",
   "Offset de timecode":"Timecode offset","Completo":"Complete",
 "Fotogramas por segundo":"FPS","EI / ISO":"EI / ISO","Obturador":"Shutter",
 "Temperatura de color":"White balance","LUT / look":"LUT / look","Filtros fijos":"Standing filters",
