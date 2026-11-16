@@ -5215,6 +5215,7 @@ function ponTipo(t){ guarda(); S.parte.roll.tipo = t;
      aparte; el usuario sigue pudiendo quitar/restaurar cualquier campo con
      su × o "+ Añadir campo" si quiere otra combinación. */
   S.parte.camposOcultos = (PRESETS_CAMPOS[film ? "pelicula" : "digital"] || []).slice();
+  S.parte.camposOcultosTipo = film ? "pelicula" : "digital";
   if (typeof materializaDefectos === "function") materializaDefectos();
   pintaTipo(); renderTomas(); }
 function otraCamara(){
@@ -5372,12 +5373,18 @@ function fillParte(){
      pero antes el ocultado de campos (Contador/Metraje en Digital; Nº de
      clips/LUT/Resolución en Película) SOLO se aplicaba al tocar el botón --
      en un parte nuevo, sin tocar nada, camposOcultos nunca se inicializaba y
-     todo se veía igual. Ahora se aplica una vez sola al cargar, según el tipo
-     ya puesto, sin pisar lo que el usuario haya quitado/restaurado a mano
-     después (ocultarCampoToma/ponTipo siempre dejan camposOcultos como un
-     array; aquí solo se entra si todavía NO es un array). */
-  if (!Array.isArray(S.parte.camposOcultos))
-    S.parte.camposOcultos = (PRESETS_CAMPOS[R.tipo === "film" ? "pelicula" : "digital"] || []).slice();
+     todo se veía igual. v105: eso también dejaba partes YA EMPEZADOS (de
+     antes de este cambio) con camposOcultos guardado a medias (ej. []) y
+     nunca se corregía solo. Ahora se compara con camposOcultosTipo: si el
+     tipo actual (Digital/Película) no es el mismo para el que se aplicó la
+     última vez, se vuelve a aplicar el preset correcto -- una sola vez por
+     cambio de tipo, sin pisar lo que el usuario quite/restaure a mano
+     DESPUÉS de eso, dentro del mismo tipo. */
+  const tipoClave = R.tipo === "film" ? "pelicula" : "digital";
+  if (!Array.isArray(S.parte.camposOcultos) || S.parte.camposOcultosTipo !== tipoClave){
+    S.parte.camposOcultos = (PRESETS_CAMPOS[tipoClave] || []).slice();
+    S.parte.camposOcultosTipo = tipoClave;
+  }
   /* v72: unidad/perf/rev/copia YA NO se rellenan solos — quedan vacíos hasta
      que Waldo los elige; solo se usa un valor por defecto al exportar/mostrar
      el reporte (ver resumenParte/PDF), nunca como dato guardado del rollo */
