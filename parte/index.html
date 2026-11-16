@@ -5868,10 +5868,10 @@ function hacerParte(sola){
   const n = sola ? S.parte.tomas.filter(t => (t.camLetra || "A") === sola).length : S.parte.tomas.length;
   if (!R.roll){ alert(traduce("Falta el número de rollo o magazine.")); show("parte"); return; }
   if (!n){ alert(traduce("El parte no tiene ninguna toma.")); show("parte"); return; }
-  /* v91: antes de generar el PDF, revisa TODOS los datos de producción del
-     encabezado (apartado "1. Producción" del parte) -- no solo el proyecto --
-     y si falta alguno, pregunta antes de seguir, en vez de sacar el PDF con
-     huecos en blanco sin avisar. */
+  /* v92: antes de generar el PDF, revisa TODOS los datos de producción del
+     encabezado (apartado "1. Producción" del parte) -- no solo el proyecto.
+     Da igual si se llenan al principio, a la mitad o al final del proyecto,
+     pero mientras falte alguno NO se genera el PDF -- sin opción de saltarlo. */
   const P = S.prod;
   const CAMPOS_ENCABEZADO = [
     ["proyecto", "Proyecto"], ["productora", "Productora / cliente"],
@@ -5879,10 +5879,8 @@ function hacerParte(sola){
   ];
   const faltan = CAMPOS_ENCABEZADO.filter(([k]) => !(P[k] || "").trim()).map(([, et]) => traduce(et));
   if (faltan.length){
-    if (!confirm(traduce("Faltan datos de producción en el encabezado: ") + faltan.join(", ") +
-                 ". " + traduce("¿Generar el PDF igual?"))){
-      abreProdParte(); return;
-    }
+    alert(traduce("Faltan datos de producción en el encabezado: ") + faltan.join(", ") + ".");
+    abreProdParte(); return;
   }
   renderParte(sola || undefined);
   if (typeof aplicaIdioma === "function") aplicaIdioma();
@@ -6627,7 +6625,6 @@ const EN = {
 "¿Quitar este parte? Sólo se borra de aquí; si lo has subido o exportado, eso no se toca.":
  "Remove this report? It is only deleted here; if you uploaded or exported it, that is not touched.",
 "Faltan datos de producción en el encabezado: ":"Missing production details in the header: ",
-"¿Generar el PDF igual?":"Generate the PDF anyway?",
 "Se guarda este parte y se empieza el siguiente rollo con la misma producción y los mismos ajustes de cámara. Las tomas se vacían.":
  "This report is saved and the next roll starts with the same production and the same camera settings. The takes are cleared.",
 "Rollo nuevo: ":"New roll: ","Rollo nuevo:":"New roll:",
