@@ -1424,14 +1424,9 @@ html.solo-parte .portada{display:none}
   <div class="card">
     <h2>Tomas</h2>
     <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
-<div class="btnrow presets"><button onclick="aplicaPresetCampos('digital')">Digital</button><button onclick="aplicaPresetCampos('pelicula')">Película</button><button onclick="aplicaPresetCampos('minimo')">Mínimo</button><button onclick="aplicaPresetCampos('completo')">Completo</button></div>
+<div class="btnrow presets"><button onclick="aplicaPresetCampos('digital')">Digital</button><button onclick="aplicaPresetCampos('pelicula')">Película</button></div>
     <div class="grid"><div class="f"><label>Offset de timecode</label><input id="r_tcOffset" placeholder="00:00:00:00" autocomplete="off"></div></div>
         <div id="listaTomas"></div>
-    <div class="btnrow">
-      <button onclick="nuevaToma(true)">+ Escena</button>
-      <button class="primary" onclick="nuevaToma(false)">+ Toma</button>
-      <button class="ghost" onclick="borrarToma(-1)">Borrar última</button>
-    </div>
     <div id="listaCampos"></div>
   </div>
 
@@ -5290,40 +5285,20 @@ function cambiaUnidadDeEstaOptica(i, unidad){
    óptica, descripción...); el segundo toque copia YA el resto de la toma
    anterior (óptica, focal, T, foco, filtro, altura, tilt, pan...). Nunca pisa
    un campo que ya tengas escrito -- solo rellena lo que está vacío. */
-const STICKY_TOMA = ["wb", "fps", "shutter", "lut"];
-function valorAnteriorToma(i, k){
-  const L = S.parte.tomas;
-  for (let j = i - 1; j >= 0; j--){
-    if ((L[j].camLetra || "A") === (L[i].camLetra || "A") && L[j][k]) return L[j][k];
-  }
-  return "";
-}
-function hayAnteriorEnCamara(i){
-  const L = S.parte.tomas;
-  for (let j = i - 1; j >= 0; j--) if ((L[j].camLetra || "A") === (L[i].camLetra || "A")) return true;
-  return false;
-}
+/* v94: Smartfill de un solo toque -- copia TODA la información de la toma
+   que se está trabajando a la toma siguiente, con el número consecutivo ya
+   puesto, y la deja abierta y editable por si hay que cambiar o borrar algo.
+   Es la misma acción que antes hacía "+Toma", ahora disparada desde aquí. */
 function smartfill(i){
-  guarda();
-  const t = S.parte.tomas[i];
-  if (!t._smartfillPaso){
-    STICKY_TOMA.concat(["cc"]).forEach(k => { if (!t[k]){ const v = valorAnteriorToma(i, k); if (v) t[k] = v; } });
-    t._smartfillPaso = 1;
-  } else {
-    T_CLAVES.forEach(k => {
-      if (k === "sc" || k === "tk") return; /* identidad de la fila, nunca se copia */
-      if (!t[k]){ const v = valorAnteriorToma(i, k); if (v) t[k] = v; }
-    });
-    t._smartfillPaso = 0;
-  }
-  renderTomas();
+  nuevaToma(false);
 }
 
+/* v95: se quitan los presets "Mínimo" y "Completo" -- por defecto aparecen
+   siempre los campos ya definidos (todos, como "Completo"); el usuario quita
+   o añade lo que quiera con la × de cada campo y "+ Añadir campo". */
 const PRESETS_CAMPOS = {
   digital: ["dial","pies"],
-  pelicula: ["nclip","lut","res"],
-  minimo: ["nclip","dial","pies","alt","tilt","pan","wb","fps","shutter","ei","lut","res","dur"],
-  completo: []
+  pelicula: ["nclip","lut","res"]
 };
 function aplicaPresetCampos(nombre){
   guarda();
@@ -5436,6 +5411,14 @@ function campoToma(i, k, etiqueta, lista, ancho){
       `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value" onchange="renderTomas()" autocomplete="off">` +
       `${toggleUnidad}</div></div>`;
   }
+  /* v94: al cambiar de Escena en la toma abierta, se guarda solo el parte en
+     "Tus partes" (sin descargar nada aparte) -- queda registrada la escena
+     que se acaba de terminar, de forma automática y discreta. */
+  if (k === "sc"){
+    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+      `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value" ` +
+      `onchange="renderTomas();if(typeof ptArchiva==='function')ptArchiva(false);" autocomplete="off"></div>`;
+  }
   /* v87: el tinte (CC) vive dentro del campo de balance de blancos, no como
      campo propio -- Waldo lo pidio asi: un solo bloque "wb" con dos inputs */
   if (k === "wb"){
@@ -5499,7 +5482,7 @@ function renderTomas(){
       <summary class="th">
         ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}</div>
-        ${hayAnteriorEnCamara(i) ? `<button class="${t._smartfillPaso ? "si" : ""}" title="${esc(traduce("Primer toque: rellena lo que casi nunca cambia (temperatura, FPS, obturador, LUT). Corrige lo que cambió. Segundo toque: copia el resto de la toma anterior."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill</button>` : ""}
+        ${abierta ? `<button title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill</button>` : ""}
         <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
         <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
         <button class="${t.notaEsp === 'PU' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='PU'?'':'PU');renderTomas()">PU</button>
@@ -5508,7 +5491,8 @@ function renderTomas(){
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
       </summary>
       <div class="row">${campos}${propios}<div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div>${restaurar}</div></details>`;
-  }).join("") : '<div class="empty">Sin tomas todavía. Pulsa «+ Toma».</div>';
+  }).join("") : '<div class="empty" style="cursor:pointer" onclick="empezarPrimeraToma()">' +
+    traduce("Sin tomas todavía. Toca aquí para empezar.") + '</div>';
   $("listaTomas").classList.toggle("mc", esMulticam());
   resumenParte(); fillParte(); updateChip(); pintaCams();
 }
@@ -5574,6 +5558,12 @@ function siguienteClip(clip, nclip){
   const u = c.match(/^(.*\D)?(\d+)(\D*)$/);
   if (u) return (u[1] || "") + sube(u[2]) + u[3];
   return "";
+}
+/* v94: ya no hay botones +Escena/+Toma/Borrar última -- la primera toma del
+   rollo se arranca tocando el aviso de "sin tomas todavía"; de ahí en
+   adelante, Smartfill va creando las siguientes. */
+function empezarPrimeraToma(){
+  nuevaToma(true);
 }
 function nuevaToma(nuevaEscena){
   guarda();
@@ -6039,7 +6029,7 @@ const EN = {
 "Varios auxiliares pueden trabajar el mismo parte: cada uno entra con su cuenta de la Nube en el mismo espacio, escribe el mismo nombre de parte y pulsa Conectar.":"Several assistants can work the same report: each signs in to the Cloud in the same space, types the same report name and taps Connect.",
 "Cada auxiliar trabaja su cámara (A, B, C o D) y las demás se refrescan solas cada pocos segundos. Tu cámara activa manda en tu aparato: nadie te la pisa.":"Each assistant works their own camera (A, B, C or D) and the others refresh on their own every few seconds. Your active camera rules on your device: nobody overwrites it.",
 "Si dos trabajan la misma letra a la vez, vale lo último que se subió. Salir deja de compartir pero no borra nada de tu aparato.":"If two people work the same letter at once, the last upload wins. Leave stops sharing but deletes nothing from your device.",
-"Sin tomas todavía. Pulsa «+ Toma».":"No takes yet. Press «+ Take».",
+"Sin tomas todavía. Toca aquí para empezar.":"No takes yet. Tap here to start.",
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
@@ -6699,9 +6689,7 @@ const EN = {
 "Director de fotografía":"Director of photography",
 "Esto se hereda en cada toma nueva. En el rodaje solo tocas lo que cambia.":
  "This is inherited by every new take. On set you only touch what changes.",
-"Tomas":"Takes","+ Toma":"+ Take","+ Escena":"+ Scene","Borrar última":"Delete last",
-"«+ Toma» repite la anterior y sube el número: es lo que cambia de verdad entre toma y toma lo único que tienes que tocar. «+ Escena» empieza en toma 1.":
- "«+ Take» repeats the previous one and bumps the number: what actually changes between takes is all you have to touch. «+ Scene» starts at take 1.",
+"Tomas":"Takes",
 "Escena":"Scene","Toma":"Take","Óptica · nº de serie":"Lens · serial no.","Diafragma T":"T-stop","falso":"false","real":"real","FALSO":"FALSE","CLIP FALSO":"FALSE CLIP","Marcar esta toma como clip falso (equivocación, prueba, no es material real)":"Mark this take as a fake clip (mistake, test, not real material)","Refrescar":"Refresh","actualizado":"updated","Pan":"Pan",
 "Refrescar":"Refresh","actualizado":"updated","Pan":"Pan",
 "Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado":"Redraws everything on screen without losing any data already entered",
