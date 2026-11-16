@@ -1396,7 +1396,7 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Cuerpo <span style="float:right;cursor:pointer" onclick="otraCamara()">+ otra cámara</span></label><input id="r_body" list="dlBodies" onfocus="this.select()" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Formato de captura</label><input id="r_fmt" list="dlFmts" onfocus="this.select()" placeholder="" autocomplete="off"></div>
             <div class="f"><label>Aspect ratio</label><input id="r_aspecto" list="dlAspecto" placeholder="" autocomplete="off"></div>
-      <div class="f"><label>Resolución del proyecto</label><input id="r_res" list="dlResProy" placeholder="4608x3164" autocomplete="off"></div>
+      <div class="f"><label>Resolución del proyecto</label><input id="r_res" list="dlResProy" placeholder="" autocomplete="off"></div>
       <div class="f"><label>LUT</label><input id="r_lut" list="dlLut" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Codec / emulsión</label><input id="r_codec" list="dlCodec" placeholder="" autocomplete="off"></div>
     </div>
@@ -5380,7 +5380,12 @@ function fillParte(){
   dl("dlCopia", ["Best light","One-light","Etalonado (timed)","Escaneo 2K","Escaneo 4K","Escaneo 4K HDR"].map(traduce));
   /* v70: catálogo fijo + lo que se haya escrito antes en cada campo */
   dl("dlAspecto", [...new Set(["1.33","1.66","1.78","1.85","2.00","2.35","2.39","Open Gate","4:3","16:9"].concat(mem("aspecto")))]);
-  dl("dlResProy", mem("res"));
+  /* v96: catálogo de resoluciones de proyecto más comunes + lo que ya se
+     haya escrito antes -- igual que aspecto, fps, etc.; ya no hay un valor
+     fijo de ejemplo que parecía un dato puesto permanentemente. */
+  dl("dlResProy", [...new Set(["1920x1080","2048x1080","2048x858","3840x2160",
+    "4096x2160","4096x2560","4608x3164","5120x2700","5120x2560","6144x3240",
+    "6144x4320","8192x4320"].concat(mem("res")))]);
   dl("dlCc", [...new Set(["+1","+2","+3","+4","-1","-2","-3","-4"].concat(mem("cc")))]);
   dl("dlCodec", mem("codec"));
   dl("dlLut", mem("lut"));
