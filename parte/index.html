@@ -5368,6 +5368,16 @@ function fillParte(){
   migraResponsables();
   R_CAMPOS.forEach(k => { const el = $("r_" + k); if (el) el.value = R[k] || ""; });
   if (!R.tipo) R.tipo = "digital";
+  /* v104: Digital ya viene elegido por defecto con solo mirar la pantalla,
+     pero antes el ocultado de campos (Contador/Metraje en Digital; Nº de
+     clips/LUT/Resolución en Película) SOLO se aplicaba al tocar el botón --
+     en un parte nuevo, sin tocar nada, camposOcultos nunca se inicializaba y
+     todo se veía igual. Ahora se aplica una vez sola al cargar, según el tipo
+     ya puesto, sin pisar lo que el usuario haya quitado/restaurado a mano
+     después (ocultarCampoToma/ponTipo siempre dejan camposOcultos como un
+     array; aquí solo se entra si todavía NO es un array). */
+  if (!Array.isArray(S.parte.camposOcultos))
+    S.parte.camposOcultos = (PRESETS_CAMPOS[R.tipo === "film" ? "pelicula" : "digital"] || []).slice();
   /* v72: unidad/perf/rev/copia YA NO se rellenan solos — quedan vacíos hasta
      que Waldo los elige; solo se usa un valor por defecto al exportar/mostrar
      el reporte (ver resumenParte/PDF), nunca como dato guardado del rollo */
@@ -5422,7 +5432,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
     const toggleUnidad = v ? ` <span style="cursor:pointer;opacity:.6;font-size:.85em" title="${esc(traduce("Unidad de esta óptica"))}" onclick="event.stopPropagation();cambiaUnidadDeEstaOptica(${i},'${unidadActual === "m" ? "ft" : "m"}')">${unidadActual}</span>` : "";
     return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div style="display:flex;gap:6px;align-items:center">` +
-      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value" onchange="renderTomas()" autocomplete="off">` +
+      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
       `${toggleUnidad}</div></div>`;
   }
   /* v94: al cambiar de Escena en la toma abierta, se guarda solo el parte en
@@ -5430,7 +5440,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
      que se acaba de terminar, de forma automática y discreta. */
   if (k === "sc"){
     return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
-      `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value" ` +
+      `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
       `onchange="renderTomas();if(typeof ptArchiva==='function')ptArchiva(false);" autocomplete="off"></div>`;
   }
   /* v87: el tinte (CC) vive dentro del campo de balance de blancos, no como
@@ -5439,12 +5449,15 @@ function campoToma(i, k, etiqueta, lista, ancho){
     const vcc = esc(S.parte.tomas[i].cc || "");
     return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div style="display:flex;gap:6px">` +
-      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value" onchange="renderTomas()" autocomplete="off">` +
-      `<input value="${vcc}" list="dlCc" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" oninput="S.parte.tomas[${i}].cc=this.value" onchange="renderTomas()" autocomplete="off">` +
+      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
+      `<input value="${vcc}" list="dlCc" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" oninput="S.parte.tomas[${i}].cc=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
       `</div></div>`;
   }
+  /* v102: cualquier corrección en una toma ya hecha (duración, toma, etc.)
+     se refleja al instante en el contador de arriba (Escenas/Tomas/Circle/
+     Duración), tecla a tecla -- sin esperar a salir del campo */
   return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
-               `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value" ` +
+               `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
          `onchange="renderTomas()" autocomplete="off"></div>`;
 }
 function renderTomas(){
@@ -5605,8 +5618,11 @@ function nuevaToma(nuevaEscena){
   t.ts = Date.now();
   t.ok = false; t.nota = ""; t.tc = ""; t.dur = "";
     t.clip = u ? siguienteClip(u.clip, u.nclip) : ""; t.nclip = ""; t.dial = ""; t.pies = ""; t.mos = false; t.falso = false; t.notaEsp = "";
-  if (nuevaEscena){ t.sc = ""; t.tk = "1"; }
-  else t.tk = String((parseInt(t.tk, 10) || 0) + 1);
+  /* v103: la Toma es un contador CONTINUO de todo el rollo -- ya no vuelve a
+     empezar en 1 al cambiar de escena. Solo se limpia la Escena (para que el
+     usuario escriba cuál es la nueva); el número de toma sigue la cuenta. */
+  if (nuevaEscena) t.sc = "";
+  t.tk = String((parseInt(t.tk, 10) || 0) + 1);
   L.push(t); renderTomas();
   if (typeof guardaYa === "function") guardaYa();
   setTimeout(() => { const e = document.querySelectorAll("#listaTomas .toma");
