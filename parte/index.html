@@ -1422,9 +1422,7 @@ html.solo-parte .portada{display:none}
   </div>
 
   <div class="card">
-    <h2>Tomas</h2>
     <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
-<div class="btnrow presets"><button onclick="aplicaPresetCampos('digital')">Digital</button><button onclick="aplicaPresetCampos('pelicula')">Película</button></div>
     <div class="grid"><div class="f"><label>Offset de timecode</label><input id="r_tcOffset" placeholder="00:00:00:00" autocomplete="off"></div></div>
         <div id="listaTomas"></div>
     <div id="listaCampos"></div>
@@ -1452,7 +1450,6 @@ html.solo-parte .portada{display:none}
   </div>
 
   <div class="card">
-    <h2>Entregas el parte</h2>
     <div class="btnrow">
       <button class="primary" onclick="hacerParte()">Parte en PDF</button>
     </div>
@@ -5212,6 +5209,13 @@ function ponTipo(t){ guarda(); S.parte.roll.tipo = t;
     .concat(film ? S.formats.map(f => f.fmt) : []));
   if (R.body && otrosB.has(R.body)) R.body = "";
   if (R.fmt && otrosF.has(R.fmt)) R.fmt = "";
+  /* v99: al elegir Digital/Película (arriba, en Cámara y rollo) se ocultan
+     solos los campos de Tomas que no aplican a ese modo -- Digital oculta
+     Contador y Metraje (son de película); Película oculta Nº de clips,
+     LUT y Resolución (son de digital). Ya no hace falta un botón de preset
+     aparte; el usuario sigue pudiendo quitar/restaurar cualquier campo con
+     su × o "+ Añadir campo" si quiere otra combinación. */
+  S.parte.camposOcultos = (PRESETS_CAMPOS[film ? "pelicula" : "digital"] || []).slice();
   if (typeof materializaDefectos === "function") materializaDefectos();
   pintaTipo(); renderTomas(); }
 function otraCamara(){
@@ -5295,16 +5299,13 @@ function smartfill(i){
 
 /* v95: se quitan los presets "Mínimo" y "Completo" -- por defecto aparecen
    siempre los campos ya definidos (todos, como "Completo"); el usuario quita
-   o añade lo que quiera con la × de cada campo y "+ Añadir campo". */
+   o añade lo que quiera con la × de cada campo y "+ Añadir campo".
+   v99: Digital/Película ya no son botones de preset aparte -- se aplican
+   solos al elegir Digital o Película arriba, en ponTipo(). */
 const PRESETS_CAMPOS = {
   digital: ["dial","pies"],
   pelicula: ["nclip","lut","res"]
 };
-function aplicaPresetCampos(nombre){
-  guarda();
-  S.parte.camposOcultos = (PRESETS_CAMPOS[nombre] || []).slice();
-  renderTomas(); autoguarda();
-}
 function sumaTC(tc, offset, fps){
   fps = Math.round(parseFloat(fps)) || 24;
   const total = 24 * 3600 * fps;
@@ -5334,6 +5335,13 @@ function wireParte(){
       if (k === "unidad") return cambiaUnidad(el.value);
       S.parte.roll[k] = el.value;
       if (k === "carga" || k === "dial0" || k === "perf") resumenParte(); };
+  });
+  /* v99: al poner o corregir el Rollo/Magazine, el parte se guarda ya bajo
+     ESE rollo (la identidad de "Tus partes" es fecha+rollo) -- así lo
+     tecleado no se queda huérfano en un rollo "sin-rollo" */
+  const erRoll = $("r_roll");
+  if (erRoll) erRoll.addEventListener("change", () => {
+    if (typeof ptArchiva === "function") ptArchiva(false);
   });
   const eb = $("r_body");
   if (eb) eb.onchange = () => {
@@ -5401,7 +5409,9 @@ function fillParte(){
 function campoToma(i, k, etiqueta, lista, ancho){
   const v = esc(S.parte.tomas[i][k] || "");
   const l = lista ? ` list="${lista}"` : "";
-  const ph = (k === "foco") ? (unidadDeOptica(S.parte.tomas[i].serial) === "m" ? "2.40 m" : "8 ft") : "";
+  /* v99: sin valor de ejemplo en Distancia de foco -- se deja vacío de
+     verdad, para que no se confunda con un dato ya puesto */
+  const ph = "";
   /* v76: cada campo de la toma lleva una x para quitarlo si no se usa --
      Escena y Toma quedan protegidos, son la identidad de la fila */
   const x = (k === "sc" || k === "tk") ? "" :
@@ -5441,6 +5451,17 @@ function campoToma(i, k, etiqueta, lista, ancho){
 function renderTomas(){
   if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
   const L = S.parte.tomas;
+  /* v99: ya no hay botón de "empezar la primera toma" -- si el rollo está
+     vacío (proyecto nuevo, rollo nuevo, jornada nueva), se materializa de
+     una vez la primera toma en blanco, lista para rellenar. El usuario
+     nunca ve un hueco vacío ni tiene que tocar nada para empezar. */
+  if (!L.length){
+    const t0 = tomaVacia();
+    t0.camLetra = camActiva();
+    t0.tk = "1";
+    t0.ts = Date.now();
+    L.push(t0);
+  }
   const dlE = $("dlEscenas");
   if (dlE) dlE.innerHTML = Array.from(new Set(L.filter(x => (x.camLetra || "A") === camActiva())
     .map(x => (x.sc || "").trim()).filter(Boolean)))
@@ -5496,8 +5517,7 @@ function renderTomas(){
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
       </summary>
       <div class="row">${campos}${propios}<div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div>${restaurar}</div></details>`;
-  }).join("") : '<button class="ghost" style="width:100%" onclick="empezarPrimeraToma()">' +
-    traduce("Empezar la primera toma") + '</button>';
+  }).join("") : "";
   $("listaTomas").classList.toggle("mc", esMulticam());
   resumenParte(); fillParte(); updateChip(); pintaCams();
 }
@@ -5564,12 +5584,9 @@ function siguienteClip(clip, nclip){
   if (u) return (u[1] || "") + sube(u[2]) + u[3];
   return "";
 }
-/* v94: ya no hay botones +Escena/+Toma/Borrar última -- la primera toma del
-   rollo se arranca tocando el aviso de "sin tomas todavía"; de ahí en
-   adelante, Smartfill va creando las siguientes. */
-function empezarPrimeraToma(){
-  nuevaToma(true);
-}
+/* v94: ya no hay botones +Escena/+Toma/Borrar última -- Smartfill va creando
+   las siguientes tomas. v99: la primera toma del rollo ya no hay que
+   "empezarla" -- renderTomas() la materializa sola en blanco. */
 function nuevaToma(nuevaEscena){
   guarda();
   const L = S.parte.tomas;
@@ -6037,7 +6054,6 @@ const EN = {
 "Varios auxiliares pueden trabajar el mismo parte: cada uno entra con su cuenta de la Nube en el mismo espacio, escribe el mismo nombre de parte y pulsa Conectar.":"Several assistants can work the same report: each signs in to the Cloud in the same space, types the same report name and taps Connect.",
 "Cada auxiliar trabaja su cámara (A, B, C o D) y las demás se refrescan solas cada pocos segundos. Tu cámara activa manda en tu aparato: nadie te la pisa.":"Each assistant works their own camera (A, B, C or D) and the others refresh on their own every few seconds. Your active camera rules on your device: nobody overwrites it.",
 "Si dos trabajan la misma letra a la vez, vale lo último que se subió. Salir deja de compartir pero no borra nada de tu aparato.":"If two people work the same letter at once, the last upload wins. Leave stops sharing but deletes nothing from your device.",
-"Empezar la primera toma":"Start the first take",
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
