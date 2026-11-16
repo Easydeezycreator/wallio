@@ -4941,8 +4941,10 @@ function proyectoNuevo(){
   if (typeof pintaTipo === "function") pintaTipo();
   if (typeof pintaCams === "function") pintaCams();
   updateChip(); pintaTira(); autoguarda(); ptLista();
-  const dd = $("pp_bloque"); if (dd) dd.open = true;
-  const p = $("pp_proyecto"); if (p) setTimeout(function(){ p.focus(); }, 120);
+  /* v110: ya NO se abre solo "Datos del proyecto" ni se roba el foco al
+     crear un proyecto nuevo -- lo primero que ve el usuario es la captura
+     de escenas/tomas; Datos del proyecto queda plegado, a un toque con el
+     botón "Datos" o la propia tarjeta, para cuando él quiera rellenarlo. */
 }
 function jornadaSiguiente(){
   if (!confirm(traduce("Se guarda el parte de esta jornada y se empieza la siguiente: la fecha pasa a hoy, el número de jornada sube uno y el rollo sigue la numeración. Las tomas se vacían; todo lo demás se conserva.")))
