@@ -5448,9 +5448,13 @@ function campoToma(i, k, etiqueta, lista, ancho){
      "Tus partes" (sin descargar nada aparte) -- queda registrada la escena
      que se acaba de terminar, de forma automática y discreta. */
   if (k === "sc"){
+    /* v109: al cambiar la Escena de una toma, la Toma se recalcula sola --
+       escena nueva (nadie más la tiene) arranca en 1; escena que ya existía
+       sigue desde la última toma de ESA escena. Sigue siendo editable a mano
+       después, como cualquier campo. */
     return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
-      `onchange="renderTomas();if(typeof ptArchiva==='function')ptArchiva(false);" autocomplete="off"></div>`;
+      `onchange="recalculaTomaPorEscena(${i});renderTomas();if(typeof ptArchiva==='function')ptArchiva(false);" autocomplete="off"></div>`;
   }
   /* v87: el tinte (CC) vive dentro del campo de balance de blancos, no como
      campo propio -- Waldo lo pidio asi: un solo bloque "wb" con dos inputs */
@@ -5612,6 +5616,23 @@ function siguienteClip(clip, nclip){
 /* v94: ya no hay botones +Escena/+Toma/Borrar última -- Smartfill va creando
    las siguientes tomas. v99: la primera toma del rollo ya no hay que
    "empezarla" -- renderTomas() la materializa sola en blanco. */
+function recalculaTomaPorEscena(i){
+  /* v109: la Toma de esta fila pasa a ser consecutiva DENTRO de su propia
+     Escena -- 1 si es una escena que nadie más tiene, o la siguiente si esa
+     escena ya traía tomas antes (incluso si no es la última de la lista). */
+  const L = S.parte.tomas, t = L[i]; if (!t) return;
+  const cam = t.camLetra || "A", sc = (t.sc || "").trim();
+  let max = 0;
+  for (let j = 0; j < L.length; j++){
+    if (j === i) continue;
+    const o = L[j];
+    if ((o.camLetra || "A") !== cam) continue;
+    if ((o.sc || "").trim() !== sc) continue;
+    const n = parseInt(o.tk, 10);
+    if (!isNaN(n) && n > max) max = n;
+  }
+  t.tk = String(max + 1);
+}
 function nuevaToma(nuevaEscena){
   guarda();
   const L = S.parte.tomas;
