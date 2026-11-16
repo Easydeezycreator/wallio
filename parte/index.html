@@ -1476,17 +1476,13 @@ html.solo-parte .portada{display:none}
   </div>
 
   <div class="card">
-    <h2>Por si acaso</h2>
+    <h2>Tus partes</h2>
     <div class="btnrow addmini">
-      <button onclick="guardarParte()">Guardar parte</button>
-      <button onclick="document.getElementById('partIn').click()">Abrir un parte guardado</button>
+      <button onclick="guardarParte()">+ Archivo</button>
+      <button onclick="document.getElementById('partIn').click()">Abrir archivo</button>
     </div>
     <input type="file" id="partIn" accept=".json,application/json" style="display:none">
     <div class="hint" id="pt_msg"></div>
-  </div>
-
-  <div class="card">
-    <h2>Partes de este dispositivo</h2>
     <div id="pt_lista"></div>
   </div>
 </section>
@@ -4879,18 +4875,14 @@ function modoParteSolo(){
   const wl = document.querySelector("header .wl");
   if (wl) wl.textContent = traduce("Parte de cámara");
   show("parte");
-  const dd = $("pp_bloque");
-  if (dd && !(S.prod.proyecto || "").trim()){
-    dd.open = true;
-    // empezar es escribir: la fecha ya está puesta y el cursor en Proyecto
-    if (!(S.prod.fecha || "").trim()){
-      S.prod.fecha = hoyLocal();
-      const f1 = $("pp_fecha"), f2 = $("p_fecha");
-      if (f1) f1.value = S.prod.fecha;
-      if (f2) f2.value = S.prod.fecha;
-    }
-    const p = $("pp_proyecto");
-    if (p) setTimeout(function(){ p.focus(); }, 300);
+  /* v91: se entra directo a capturar tomas, como en ZoeLog -- los datos del
+     proyecto ya NO se abren solos ni se reclama el foco; quedan ahí, plegados,
+     para cuando Waldo quiera abrirlos (botón "Datos" o la propia tarjeta). */
+  if (!(S.prod.fecha || "").trim()){
+    S.prod.fecha = hoyLocal();
+    const f1 = $("pp_fecha"), f2 = $("p_fecha");
+    if (f1) f1.value = S.prod.fecha;
+    if (f2) f2.value = S.prod.fecha;
   }
   const res = document.querySelector("#pp_bloque > summary");
   if (res) res.innerHTML = "<b>" + traduce("Datos del proyecto") + "</b> — <span>" +
@@ -5030,7 +5022,7 @@ function ptArchiva(aviso){
   if (i >= 0) l[i] = fila; else l.push(fila);
   ptEscribe(l);
   ptLista();
-  if (aviso) ptMsg(traduce("Guardado en este dispositivo: ") + (fila.proyecto || "—") +
+  if (aviso) ptMsg(traduce("Guardado: ") + (fila.proyecto || "—") +
                    " · " + (fila.roll || "—"), "good");
   return fila;
 }
@@ -5043,7 +5035,7 @@ function ptLista(){
   const l = ptLee().slice().sort(function(a, b){ return b.t - a.t; });
   if (!l.length){
     c.innerHTML = '<div class="empty">' +
-      traduce("Todavía no hay ningún parte guardado en este dispositivo.") + "</div>";
+      traduce("Aún no hay partes.") + "</div>";
     return;
   }
   const ahora = ptId();
@@ -5090,11 +5082,11 @@ function ptExporta(id){
 function ptQuita(id){
   const x = ptLee().find(function(y){ return y.id === id; });
   if (!x) return;
-  if (!confirm(traduce("¿Quitar este parte de este dispositivo? Sólo se borra de aquí; si lo has subido o exportado, eso no se toca.") +
+  if (!confirm(traduce("¿Quitar este parte? Sólo se borra de aquí; si lo has subido o exportado, eso no se toca.") +
                "\n\n" + (x.proyecto || "—") + " · " + (x.roll || "—"))) return;
   ptEscribe(ptLee().filter(function(y){ return y.id !== id; }));
   ptLista();
-  ptMsg(traduce("Quitado de este dispositivo."), "");
+  ptMsg(traduce("Quitado."), "");
 }
 /* sube el número de rollo conservando el formato: A001 → A002, R07 → R08 */
 function siguienteRollo(s){
@@ -5876,6 +5868,22 @@ function hacerParte(sola){
   const n = sola ? S.parte.tomas.filter(t => (t.camLetra || "A") === sola).length : S.parte.tomas.length;
   if (!R.roll){ alert(traduce("Falta el número de rollo o magazine.")); show("parte"); return; }
   if (!n){ alert(traduce("El parte no tiene ninguna toma.")); show("parte"); return; }
+  /* v91: antes de generar el PDF, revisa TODOS los datos de producción del
+     encabezado (apartado "1. Producción" del parte) -- no solo el proyecto --
+     y si falta alguno, pregunta antes de seguir, en vez de sacar el PDF con
+     huecos en blanco sin avisar. */
+  const P = S.prod;
+  const CAMPOS_ENCABEZADO = [
+    ["proyecto", "Proyecto"], ["productora", "Productora / cliente"],
+    ["unidad", "Unidad"], ["localizacion", "Localización"], ["casa", "Casa de renta"]
+  ];
+  const faltan = CAMPOS_ENCABEZADO.filter(([k]) => !(P[k] || "").trim()).map(([, et]) => traduce(et));
+  if (faltan.length){
+    if (!confirm(traduce("Faltan datos de producción en el encabezado: ") + faltan.join(", ") +
+                 ". " + traduce("¿Generar el PDF igual?"))){
+      abreProdParte(); return;
+    }
+  }
   renderParte(sola || undefined);
   if (typeof aplicaIdioma === "function") aplicaIdioma();
   document.body.className = "pr-parte";
@@ -6609,19 +6617,17 @@ const EN = {
  "One report per roll or magazine. Every take is tied to the serial number of the lens: the day that lens has a calibration record, post finds it by that same number.",
 "Sin proyecto":"No project","jornada ":"day ","jornada":"day","sin tomas":"no takes",
 "Datos":"Details",
-"Guardar en este dispositivo":"Save on this device",
+"Tus partes":"Your reports",
 "Empezar el rollo siguiente":"Start the next roll",
-"Partes de este dispositivo":"Reports on this device",
-"Cada vez que guardas o imprimes un parte queda aquí, en el propio teléfono, aunque no haya cobertura. Sirve para volver al rollo de ayer sin buscar archivos.":
- "Every time you save or print a report it stays here, on the phone itself, even with no signal. It is for going back to yesterday's roll without hunting for files.",
-"Todavía no hay ningún parte guardado en este dispositivo.":
- "There is no report saved on this device yet.",
+"Aún no hay partes.":"No reports yet.",
 "el de ahora":"the current one","abrir":"open","archivo":"file","quitar":"remove",
 "No hay nada que guardar todavía.":"There is nothing to save yet.",
-"Guardado en este dispositivo: ":"Saved on this device: ","Guardado en este dispositivo:":"Saved on this device:",
-"Abierto: ":"Opened: ","Abierto:":"Opened:","Quitado de este dispositivo.":"Removed from this device.",
-"¿Quitar este parte de este dispositivo? Sólo se borra de aquí; si lo has subido o exportado, eso no se toca.":
- "Remove this report from this device? It is only deleted here; if you uploaded or exported it, that is not touched.",
+"Guardado: ":"Saved: ","Guardado:":"Saved:",
+"Abierto: ":"Opened: ","Abierto:":"Opened:","Quitado.":"Removed.",
+"¿Quitar este parte? Sólo se borra de aquí; si lo has subido o exportado, eso no se toca.":
+ "Remove this report? It is only deleted here; if you uploaded or exported it, that is not touched.",
+"Faltan datos de producción en el encabezado: ":"Missing production details in the header: ",
+"¿Generar el PDF igual?":"Generate the PDF anyway?",
 "Se guarda este parte y se empieza el siguiente rollo con la misma producción y los mismos ajustes de cámara. Las tomas se vacían.":
  "This report is saved and the next roll starts with the same production and the same camera settings. The takes are cleared.",
 "Rollo nuevo: ":"New roll: ","Rollo nuevo:":"New roll:",
@@ -7439,7 +7445,9 @@ wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
 enlazaProdParte(); enlazaLoaderProd(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
-if (!(S.prod.proyecto || "").trim()){ const dd = $("pp_bloque"); if (dd) dd.open = true; }
+/* v91: ya no se abre sola "Datos del proyecto" aunque esté vacío -- se entra
+   directo a capturar, como en ZoeLog; la tarjeta queda plegada hasta que se
+   abra a mano. */
 if (PC.parte && PC.clave){ setTimeout(() => pcTick(true), 2500); pcArranca(); }   /* v89: al abrir, foto completa de la nube */
 else pcAutoProgramar();
 ["p_proyecto", "pp_proyecto"].forEach(function(id){
