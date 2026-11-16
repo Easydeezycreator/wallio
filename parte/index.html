@@ -5290,9 +5290,12 @@ function cambiaUnidadDeEstaOptica(i, unidad){
   } catch(e){}
   renderTomas();
 }
-/* v89: estilo "Smartfill" de Zoe Log -- estos campos normalmente NO cambian de
-   una toma a otra; si llegan vacíos (p. ej. al abrir escena nueva) se ofrece un
-   enlace discreto para repetir el último valor usado, en vez de copiarlo solo */
+/* v90: Smartfill, copiado tal cual lo hace Zoe Log -- un solo botón por toma,
+   de DOS toques: el primero rellena solo lo que casi nunca cambia (temperatura
+   de color + tinte, FPS, obturador, LUT); tú corriges lo que sí cambió (escena,
+   óptica, descripción...); el segundo toque copia YA el resto de la toma
+   anterior (óptica, focal, T, foco, filtro, altura, tilt, pan...). Nunca pisa
+   un campo que ya tengas escrito -- solo rellena lo que está vacío. */
 const STICKY_TOMA = ["wb", "fps", "shutter", "lut"];
 function valorAnteriorToma(i, k){
   const L = S.parte.tomas;
@@ -5301,11 +5304,24 @@ function valorAnteriorToma(i, k){
   }
   return "";
 }
-function repiteAnterior(i, k){
+function hayAnteriorEnCamara(i){
+  const L = S.parte.tomas;
+  for (let j = i - 1; j >= 0; j--) if ((L[j].camLetra || "A") === (L[i].camLetra || "A")) return true;
+  return false;
+}
+function smartfill(i){
   guarda();
-  const v = valorAnteriorToma(i, k); if (!v) return;
-  S.parte.tomas[i][k] = v;
-  if (k === "wb"){ const vcc = valorAnteriorToma(i, "cc"); if (vcc) S.parte.tomas[i].cc = vcc; }
+  const t = S.parte.tomas[i];
+  if (!t._smartfillPaso){
+    STICKY_TOMA.concat(["cc"]).forEach(k => { if (!t[k]){ const v = valorAnteriorToma(i, k); if (v) t[k] = v; } });
+    t._smartfillPaso = 1;
+  } else {
+    T_CLAVES.forEach(k => {
+      if (k === "sc" || k === "tk") return; /* identidad de la fila, nunca se copia */
+      if (!t[k]){ const v = valorAnteriorToma(i, k); if (v) t[k] = v; }
+    });
+    t._smartfillPaso = 0;
+  }
   renderTomas();
 }
 
@@ -5416,10 +5432,6 @@ function campoToma(i, k, etiqueta, lista, ancho){
      Escena y Toma quedan protegidos, son la identidad de la fila */
   const x = (k === "sc" || k === "tk") ? "" :
     ` <span style="cursor:pointer;opacity:.55" title="Quitar este campo" onclick="event.stopPropagation();ocultarCampoToma('${k}')">×</span>`;
-  /* v89: Smartfill -- repetir el ultimo valor usado en campos que casi nunca
-     cambian de toma a toma, solo cuando el campo llega vacio */
-  const repetir = (STICKY_TOMA.indexOf(k) >= 0 && !S.parte.tomas[i][k] && valorAnteriorToma(i, k))
-    ? ` <span style="cursor:pointer;opacity:.6;color:#7fd6a2" onclick="event.stopPropagation();repiteAnterior(${i},'${k}')">${esc(traduce("repetir anterior"))}</span>` : "";
   /* v89: la unidad ft/m de la distancia de foco vive en la OPTICA, no en una
      preferencia global -- un toque junto al nº de serie la cambia para esa lente */
   if (k === "serial"){
@@ -5434,13 +5446,13 @@ function campoToma(i, k, etiqueta, lista, ancho){
      campo propio -- Waldo lo pidio asi: un solo bloque "wb" con dos inputs */
   if (k === "wb"){
     const vcc = esc(S.parte.tomas[i].cc || "");
-    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}${repetir}</label>` +
+    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div style="display:flex;gap:6px">` +
       `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value" onchange="renderTomas()" autocomplete="off">` +
       `<input value="${vcc}" list="dlCc" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" oninput="S.parte.tomas[${i}].cc=this.value" onchange="renderTomas()" autocomplete="off">` +
       `</div></div>`;
   }
-  return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}${repetir}</label>` +
+  return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
                `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value" ` +
          `onchange="renderTomas()" autocomplete="off"></div>`;
 }
@@ -5493,6 +5505,7 @@ function renderTomas(){
       <summary class="th">
         ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}</div>
+        ${hayAnteriorEnCamara(i) ? `<button class="${t._smartfillPaso ? "si" : ""}" title="${esc(traduce("Primer toque: rellena lo que casi nunca cambia (temperatura, FPS, obturador, LUT). Corrige lo que cambió. Segundo toque: copia el resto de la toma anterior."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill</button>` : ""}
         <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
         <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
         <button class="${t.notaEsp === 'PU' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='PU'?'':'PU');renderTomas()">PU</button>
@@ -6672,7 +6685,7 @@ const EN = {
 "Formato de captura":"Capture format","Codec / emulsión":"Codec / stock",
 "Aspect ratio":"Aspect ratio","Resolución del proyecto":"Project resolution","CC (tinte)":"Tint CC","Director":"Director",
   "Unidad de foco (lentes)":"Lens focus unit","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
-  "repetir anterior":"repeat previous","Unidad de esta óptica":"This lens' unit",
+  "Unidad de esta óptica":"This lens' unit",
   "Offset de timecode":"Timecode offset","Completo":"Complete",
 "Fotogramas por segundo":"FPS","EI / ISO":"EI / ISO","Obturador":"Shutter",
 "Temperatura de color":"White balance","LUT / look":"LUT / look","Filtros fijos":"Standing filters",
