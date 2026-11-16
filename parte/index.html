@@ -4989,9 +4989,11 @@ function ptEscribe(l){
   try { localStorage.setItem(PT_CLAVE, JSON.stringify(l.slice(-60))); } catch(e){}
 }
 function ptId(){
-  const P = S.prod, R = (S.parte && S.parte.roll) || {};
-  return [slug(P.proyecto || "sin-proyecto"), P.fecha || "sin-fecha",
-          slug(R.roll || "sin-rollo")].join("|");
+  /* v93: la identidad del parte es la fecha + el rollo -- NO el nombre del
+     proyecto. Si luego se corrige el nombre, la productora, etc., debe
+     seguir siendo EL MISMO parte (se corrige en su sitio), no uno nuevo. */
+  const R = (S.parte && S.parte.roll) || {};
+  return [S.prod.fecha || "sin-fecha", slug(R.roll || "sin-rollo")].join("|");
 }
 function ptPaquete(){
   return {format: "wlg-03-parte", version: 3, prod: S.prod,
