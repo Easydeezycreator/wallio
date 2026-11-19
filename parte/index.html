@@ -21,7 +21,7 @@
  --ok:#2f8f63; --warn:#9a6c13; --err:#c4433d; --sel:#161a1f;
  /* v125: colores de cámara menos saturados -- siguen diferenciando A/B/C/D
     pero sin gritar ni distraer, misma intensidad (luminosidad) de antes */
- --camA:#b35a55; --camB:#658ccc; --camC:#9e8236; --camD:#3c7d55;
+ --camA:#b35a55; --camB:#658ccc; --camC:#9e8236; --camD:#3c7d55; --camE:#8b60a9; --camF:#468a91;
  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --tap:46px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -123,6 +123,8 @@ section{display:none}section.on{display:block}
 .toma.camB{--boxC:var(--camB);--boxBg:#f2f7ff;--boxLine:#cfe0fa}
 .toma.camC{--boxC:var(--camC);--boxBg:#fdf9ec;--boxLine:#f0ddab}
 .toma.camD{--boxC:var(--camD);--boxBg:#f1faf4;--boxLine:#c9ecd5}
+.toma.camE{--boxC:var(--camE);--boxBg:#f7f2fa;--boxLine:#e3d2ec}
+.toma.camF{--boxC:var(--camF);--boxBg:#eff8f9;--boxLine:#c7e6e9}
 .toma .row > .gsec{grid-column:1/-1;background:var(--boxBg);border:1px solid var(--boxLine);
   border-radius:7px;padding:10px 12px 8px;margin-bottom:10px}
 .toma .row > .gsec:last-child{margin-bottom:0}
@@ -146,6 +148,8 @@ body{--boxC:var(--camA);--boxBg:var(--panel);--boxLine:var(--line2)}
 body.camB{--boxC:var(--camB);--boxBg:#f2f7ff;--boxLine:#cfe0fa}
 body.camC{--boxC:var(--camC);--boxBg:#fdf9ec;--boxLine:#f0ddab}
 body.camD{--boxC:var(--camD);--boxBg:#f1faf4;--boxLine:#c9ecd5}
+body.camE{--boxC:var(--camE);--boxBg:#f7f2fa;--boxLine:#e3d2ec}
+body.camF{--boxC:var(--camF);--boxBg:#eff8f9;--boxLine:#c7e6e9}
 .card.cajaRoja{background:var(--boxBg);border:1px solid var(--boxLine);border-radius:7px;padding-top:1px}
 .card.cajaRoja h2{background:transparent;color:var(--boxC);padding:9px 11px 7px;margin-bottom:7px;
   border-bottom:1px solid var(--boxLine)}
@@ -575,16 +579,29 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 .camSel button.on[data-cam="C"]{background:var(--camC);color:#171200}
 .camSel button[data-cam="D"]{color:var(--camD);border-color:var(--camD)}
 .camSel button.on[data-cam="D"]{background:var(--camD);color:#04160e}
+.camSel button[data-cam="E"]{color:var(--camE);border-color:var(--camE)}
+.camSel button.on[data-cam="E"]{background:var(--camE);color:#fff}
+.camSel button[data-cam="F"]{color:var(--camF);border-color:var(--camF)}
+.camSel button.on[data-cam="F"]{background:var(--camF);color:#fff}
+.camSel button.mas{color:var(--tx3);border:1px dashed var(--line);font-weight:600;min-width:30px}
+#camRenombrar input{font:600 10px var(--mono);letter-spacing:.02em;color:var(--tx3);
+  border:none;border-bottom:1px dashed var(--line2);background:transparent;padding:4px 0;
+  margin-top:4px;min-height:0;max-width:220px}
+#camRenombrar input:focus{color:var(--tx);border-color:var(--boxC)}
 #listaTomas.mc .toma.camA{border-left:3px solid var(--camA)}
 #listaTomas.mc .toma.camB{border-left:3px solid var(--camB)}
 #listaTomas.mc .toma.camC{border-left:3px solid var(--camC)}
 #listaTomas.mc .toma.camD{border-left:3px solid var(--camD)}
+#listaTomas.mc .toma.camE{border-left:3px solid var(--camE)}
+#listaTomas.mc .toma.camF{border-left:3px solid var(--camF)}
 .camchip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
   min-width:22px;height:22px;border-radius:6px;font:800 12px/1 var(--mono);margin-right:2px}
 .camchip.camA{background:var(--camA);color:#fff}
 .camchip.camB{background:var(--camB);color:#fff}
 .camchip.camC{background:var(--camC);color:#171200}
 .camchip.camD{background:var(--camD);color:#04160e}
+.camchip.camE{background:var(--camE);color:#fff}
+.camchip.camF{background:var(--camF);color:#fff}
 html.pfilm .f:has(> #r_media),html.pfilm .f:has(> #r_codec),
 html.pfilm .f:has(> #r_wb),html.pfilm .f:has(> #r_lut){display:none}
 html.pfilm #listaTomas .f[data-k="clip"],html.pfilm #listaTomas .f[data-k="tc"],
@@ -715,11 +732,15 @@ html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){displ
 .camtag.camB{color:#1a5fb4;border-color:#1a5fb4}
 .camtag.camC{color:#8a6d00;border-color:#8a6d00}
 .camtag.camD{color:#15803d;border-color:#15803d}
+.camtag.camE{color:#7c3aa0;border-color:#7c3aa0}
+.camtag.camF{color:#1a7a85;border-color:#1a7a85}
 .camblock{border-left:2.2pt solid #adb4bf;padding-left:9px;margin:0 0 8px}
 .camblock.camA{border-left-color:#b3261e}
 .camblock.camB{border-left-color:#1a5fb4}
 .camblock.camC{border-left-color:#8a6d00}
 .camblock.camD{border-left-color:#15803d}
+.camblock.camE{border-left-color:#7c3aa0}
+.camblock.camF{border-left-color:#1a7a85}
 .rep td.camtd{font-weight:800;font-family:var(--sans)}
 tr.camA td.camtd{color:#b3261e}
 tr.camB td.camtd{color:#1a5fb4}
@@ -760,6 +781,8 @@ h4.salto{page-break-before:auto}
 .doc .fl .v,#parte .fl .v{margin-top:auto}
 .sum{page-break-inside:avoid;break-inside:avoid}
 tr.camD td.camtd{color:#15803d}
+tr.camE td.camtd{color:#7c3aa0}
+tr.camF td.camtd{color:#1a7a85}
 @page{size:A4;margin:18mm 20mm}
 
 .tg{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-top:1px solid var(--line);flex-wrap:wrap}
@@ -1483,12 +1506,8 @@ html.solo-parte .portada{display:none}
       <button id="tp_dig" class="primary" onclick="ponTipo('digital')">Digital</button>
       <button id="tp_film" class="ghost" onclick="ponTipo('film')">Película</button>
     </div>
-    <div class="btnrow camSel" id="camSelRollo">
-      <button data-cam="A" class="on" onclick="cambiaCam('A')">A</button>
-      <button data-cam="B" onclick="cambiaCam('B')">B</button>
-      <button data-cam="C" onclick="cambiaCam('C')">C</button>
-      <button data-cam="D" onclick="cambiaCam('D')">D</button>
-    </div>
+    <div class="btnrow camSel" id="camSelRollo"></div>
+    <div id="camRenombrar"></div>
     <div class="grid">
       <!-- v122: se quita el campo "Cámara" suelto (A/B/C/D ya se elige arriba
            con los botones de camSelRollo, era el mismo dato repetido dos
@@ -4938,6 +4957,7 @@ function cargaParte(file){
     if (d.prod) S.prod = Object.assign({}, S.prod, d.prod);
     S.parte = {roll: d.roll || {}, tomas: d.tomas || [],
                camActiva: d.camActiva || "A", camsGuardadas: d.camsGuardadas || {},
+               camasActivas: d.camasActivas || null, camNombres: d.camNombres || {},
                campos: d.campos || [], camposRollo: d.camposRollo || []};
     fillProd(); fillProdParte(); fillParte(); renderTomas();
     renderCampos(); renderRollExtra(); updateChip(); autoguarda();
@@ -5079,11 +5099,14 @@ function jornadaSiguiente(){
   if ((R.roll || "").trim()) R.roll = siguienteRollo(R.roll);
   let camsSig = {};
   try { camsSig = JSON.parse(JSON.stringify(S.parte.camsGuardadas || {})); } catch(e){}
+  const camasActivasSig = (S.parte.camasActivas || CAM_LETRAS.slice(0, 4)).slice();
+  const camNombresSig = Object.assign({}, S.parte.camNombres || {});
   S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
              camposRollo: (S.parte.camposRollo || []).slice(),
              camposOcultos: (S.parte.camposOcultos || []).slice(),
              camposOcultosManual: (S.parte.camposOcultosManual || []).slice(),
-             camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig};
+             camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig,
+             camasActivas: camasActivasSig, camNombres: camNombresSig};
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
   fillParte(); renderTomas();
@@ -5116,6 +5139,8 @@ function ptPaquete(){
           roll: (S.parte && S.parte.roll) || {},
           camActiva: (S.parte && S.parte.camActiva) || "A",
           camsGuardadas: (S.parte && S.parte.camsGuardadas) || {},
+          camasActivas: (S.parte && S.parte.camasActivas) || null,
+          camNombres: (S.parte && S.parte.camNombres) || {},
           campos: (S.parte && S.parte.campos) || [],
           camposRollo: (S.parte && S.parte.camposRollo) || [],
           tomas: (S.parte && S.parte.tomas) || []};
@@ -5177,6 +5202,7 @@ function ptAbre(id){
   if (d.prod) S.prod = Object.assign({}, S.prod, d.prod);
   S.parte = {roll: d.roll || {}, tomas: d.tomas || [],
              camActiva: d.camActiva || "A", camsGuardadas: d.camsGuardadas || {},
+             camasActivas: d.camasActivas || null, camNombres: d.camNombres || {},
              campos: d.campos || [], camposRollo: d.camposRollo || []};
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
@@ -5223,11 +5249,14 @@ function ptSiguienteRollo(){
   R.roll = siguienteRollo(R.roll);
   let camsSig = {};
   try { camsSig = JSON.parse(JSON.stringify(S.parte.camsGuardadas || {})); } catch(e){}
+  const camasActivasSig = (S.parte.camasActivas || CAM_LETRAS.slice(0, 4)).slice();
+  const camNombresSig = Object.assign({}, S.parte.camNombres || {});
   S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
              camposRollo: (S.parte.camposRollo || []).slice(),
              camposOcultos: (S.parte.camposOcultos || []).slice(),
              camposOcultosManual: (S.parte.camposOcultosManual || []).slice(),
-             camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig};
+             camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig,
+             camasActivas: camasActivasSig, camNombres: camNombresSig};
   fillParte(); renderTomas();
   if (typeof renderCampos === "function") renderCampos();
   if (typeof renderRollExtra === "function") renderRollExtra();
@@ -5300,7 +5329,48 @@ const FPP = {"4":16, "3":64/3, "2":32, "16":40, "65":12.8};
    de siempre sigue funcionando igual); las otras esperan con su configuración
    completa en S.parte.camsGuardadas. Cada toma queda marcada en t.camLetra.
    Con UNA sola cámara en uso el parte queda EXACTAMENTE como siempre. ---- */
-const CAM_LETRAS = ["A", "B", "C", "D"];
+const CAM_LETRAS = ["A", "B", "C", "D", "E", "F"];
+/* v130: A/B/C/D se ven siempre; E y F solo aparecen si el usuario realmente
+   agrega una cámara más con el "+" del selector -- y puede ponerle el
+   nombre que quiera (ej. "Dron", "GoPro"), la letra queda solo como id
+   interno para los colores/datos de siempre. */
+function camasActivas(){
+  S.parte.camasActivas = S.parte.camasActivas || CAM_LETRAS.slice(0, 4);
+  return S.parte.camasActivas;
+}
+function camNombres(){
+  S.parte.camNombres = S.parte.camNombres || {};
+  return S.parte.camNombres;
+}
+function nombreCam(l){ return (camNombres()[l] || "").trim() || l; }
+function agregarCamara(){
+  const activas = camasActivas();
+  const siguiente = CAM_LETRAS.find(l => activas.indexOf(l) < 0);
+  if (!siguiente) return;
+  guarda();
+  activas.push(siguiente);
+  cambiaCam(siguiente);
+  renderCamSel();
+}
+function renombrarCamaraActiva(nombre){
+  camNombres()[camActiva()] = (nombre || "").trim();
+  const btn = document.querySelector('#camSelRollo button[data-cam="' + camActiva() + '"]');
+  if (btn) btn.textContent = nombreCam(camActiva());
+}
+function renderCamSel(){
+  const activas = camasActivas();
+  const cont = $("camSelRollo");
+  if (cont) cont.innerHTML = activas.map(l =>
+    `<button data-cam="${l}" class="${l === camActiva() ? "on" : ""}" onclick="cambiaCam('${l}')">${esc(nombreCam(l))}</button>`
+  ).join("") + (activas.length < CAM_LETRAS.length
+    ? `<button class="mas" title="${esc(traduce("Añadir otra cámara"))}" onclick="agregarCamara()">+</button>` : "");
+  const ren = $("camRenombrar");
+  if (ren) ren.innerHTML = activas.length > 1
+    ? `<input type="text" id="camNombreInput" placeholder="${esc(traduce("nombre de esta cámara…"))}"
+        value="${esc(camNombres()[camActiva()] || "")}" autocomplete="off"
+        oninput="renombrarCamaraActiva(this.value)" onblur="renderTomas()">`
+    : "";
+}
 function camActiva(){ return (S.parte && S.parte.camActiva) || "A"; }
 function configDe(letra){
   if (letra === camActiva()) return S.parte.roll || {};
@@ -5333,8 +5403,9 @@ function cambiaCam(letra){
   if (PC.parte) setTimeout(() => pcTick(false), 400);
 }
 function pintaCams(){
+  renderCamSel();
   document.querySelectorAll(".camSel").forEach(caja => {
-    caja.querySelectorAll("button").forEach(b =>
+    caja.querySelectorAll("button[data-cam]").forEach(b =>
       b.classList.toggle("on", b.getAttribute("data-cam") === camActiva()));
   });
   /* v125: las cajas de nivel rollo (Cámara y rollo, Laboratorio) también
@@ -5342,9 +5413,9 @@ function pintaCams(){
      cajas por rubro dentro de cada toma. Misma lógica: una clase cam{B,C,D}
      en <body> que las variables CSS de .card.cajaRoja heredan igual que
      .toma. */
-  document.body.classList.remove("camB", "camC", "camD");
+  document.body.classList.remove("camB", "camC", "camD", "camE", "camF");
   const l = camActiva();
-  if (l === "B" || l === "C" || l === "D") document.body.classList.add("cam" + l);
+  if (l !== "A") document.body.classList.add("cam" + l);
 }
 function esFilm(){ return ((S.parte.roll || {}).tipo || "digital") === "film"; }
 function pasoTexto(p){ return {"4":"35 mm · 4 perf","3":"35 mm · 3 perf","2":"35 mm · 2 perf",
@@ -5819,6 +5890,20 @@ function campoToma(i, k, etiqueta, lista, ancho){
 }
 function renderTomas(){
   if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
+  /* v130: el panel "+ Añadir campo" de cada toma ya NO se cierra solo al
+     restaurar/agregar un campo -- antes, cada "+" volvía a dibujar toda la
+     lista de tomas desde cero y el <details> perdía su estado abierto,
+     obligando a abrir el panel de nuevo por cada campo. Ahora se recuerda
+     (por toma, usando su data-i) qué paneles estaban abiertos ANTES de
+     redibujar, y se vuelven a abrir después -- así se pueden agregar varios
+     campos de una sola vez, sin que la ventana se cierre entre uno y otro.
+     Solo se cierra cuando el usuario toca fuera del panel (comportamiento
+     normal de <details>) o aprieta de nuevo el "+ Añadir campo". */
+  const agregarAbiertos = new Set();
+  document.querySelectorAll("#listaTomas .toma[data-i]").forEach(el => {
+    const d = el.querySelector(":scope > details.agregar");
+    if (d && d.open) agregarAbiertos.add(el.getAttribute("data-i"));
+  });
   const L = S.parte.tomas;
   /* v99: ya no hay botón de "empezar la primera toma" -- si el rollo está
      vacío (proyecto nuevo, rollo nuevo, jornada nueva), se materializa de
@@ -5964,9 +6049,9 @@ function renderTomas(){
           <button class="${t.falso ? "mal" : ""}" title="${esc(traduce("Marcar esta toma como clip falso (equivocación, prueba, no es material real)"))}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].falso=!S.parte.tomas[${i}].falso;renderTomas()">${traduce("FALSO")}</button>
           <button class="${t.ok ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
         </div>` : "";
-        return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}"${abierta ? " open" : ""}>
+        return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}" data-i="${i}"${abierta ? " open" : ""}>
       <summary class="th">
-        ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
+        ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${esc(nombreCam(t.camLetra || "A"))}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}${avisoFalta}</div>
         ${smartfillBtn}
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
@@ -5976,6 +6061,10 @@ function renderTomas(){
       ${accionesBtn}</details>`;
   }).join("") : "";
   $("listaTomas").classList.toggle("mc", esMulticam());
+  agregarAbiertos.forEach(idx => {
+    const d = document.querySelector('#listaTomas .toma[data-i="' + idx + '"] > details.agregar');
+    if (d) d.open = true;
+  });
   renderGruposCampos();
   resumenParte(); fillParte(); updateChip(); pintaCams();
 }
@@ -5999,6 +6088,7 @@ function renderRollExtra(){
      un panel discreto con los nombres que el dueño ya ha usado antes (se
      agregan con un toque) + un campo para escribir uno nuevo. */
   const p = $("rollAddPanel"); if (!p) return;
+  const abiertoAntes = !!p.querySelector("details.agregar[open]");
   const pref = prefCampos();
   const sugeridos = CAMPOS_ROLLO_CATALOGO.filter(n => cs.indexOf(n) < 0);
   const chipsSugeridos = sugeridos.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoRolloNombre(this.dataset.n)">+ ${esc(traduce(n))}</button>`).join("");
@@ -6010,6 +6100,9 @@ function renderRollExtra(){
     <div class="agNuevo"><input type="text" id="rollNuevoInput" placeholder="${esc(traduce("o escribe uno nuevo…"))}">
       <button class="chip" onclick="event.preventDefault();addCampoRolloNombre($('rollNuevoInput').value);$('rollNuevoInput').value=''">${esc(traduce("Añadir"))}</button></div>
   </details>`;
+  /* v130: mismo arreglo que en las tomas -- no se cierra solo al agregar un
+     campo, para poder meter varios de una vez sin reabrir el panel. */
+  if (abiertoAntes){ const d = p.querySelector("details.agregar"); if (d) d.open = true; }
 }
 function addCampoRolloNombre(n){
   n = (n || "").trim(); if (!n) return;
@@ -6543,6 +6636,7 @@ function parteCSV(){
 function guardarParte(){
   const data = {format:"wlg-03-parte", version:3, prod:S.prod, roll:S.parte.roll,
                 camActiva:camActiva(), camsGuardadas:S.parte.camsGuardadas || {},
+                camasActivas:S.parte.camasActivas || null, camNombres:S.parte.camNombres || {},
                 campos:S.parte.campos || [], camposRollo:S.parte.camposRollo || [],
                 tomas:S.parte.tomas,
                 emitido:new Date().toISOString().slice(0,10)};
@@ -6577,7 +6671,7 @@ const EN = {
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Exposición":"Exposure","Tiempos":"Timing","Cargado por":"Loaded by","Altura de óptica":"Lens height","Tilt":"Tilt","Pan":"Pan",
 "ocultar":"hide","mostrar":"show","Personalizados":"Custom","Agregar":"Add",
-"Modo de sensor":"Sensor mode","Espacio de color":"Color space","Tinte de balance de blancos":"White balance tint","Formato de audio":"Audio format","ISO base":"Base ISO","Añadir campo del rollo":"Add roll field","Añadir campo":"Add field","o escribe uno nuevo…":"or type a new one…","Añadir":"Add",
+"Modo de sensor":"Sensor mode","Espacio de color":"Color space","Tinte de balance de blancos":"White balance tint","Formato de audio":"Audio format","ISO base":"Base ISO","Añadir campo del rollo":"Add roll field","Añadir campo":"Add field","o escribe uno nuevo…":"or type a new one…","Añadir":"Add","Añadir otra cámara":"Add another camera","nombre de esta cámara…":"name of this camera…",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Paso":"Gauge · perfs",
