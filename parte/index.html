@@ -153,21 +153,28 @@ section{display:none}section.on{display:block}
 
 /* v123: panel único "+ Agregar" -- discreto, estilo dashed, agrupa por
    rubro en chips; reemplaza las cajas vacías con botones "+" sueltos. */
-.toma details.agregar{margin:8px 0 2px}
-.toma details.agregar > summary{list-style:none;cursor:pointer;display:inline-block;
+details.agregar{margin:8px 0 2px}
+details.agregar > summary{list-style:none;cursor:pointer;display:inline-block;
   background:transparent;border:1px dashed var(--line);color:var(--tx3);
   font:600 10px var(--mono);letter-spacing:.03em;padding:7px 12px;border-radius:5px}
-.toma details.agregar > summary::-webkit-details-marker{display:none}
-.toma details.agregar[open] > summary{color:var(--boxC);border-color:var(--boxC);margin-bottom:10px}
-.toma details.agregar .agGrupo{background:var(--boxBg);border:1px solid var(--boxLine);
+details.agregar > summary::-webkit-details-marker{display:none}
+details.agregar[open] > summary{color:var(--camA);border-color:var(--camA);margin-bottom:10px}
+.toma details.agregar[open] > summary{color:var(--boxC);border-color:var(--boxC)}
+details.agregar .agGrupo{background:var(--panel);border:1px solid var(--line2);
   border-radius:7px;padding:10px 12px 8px;margin-bottom:8px}
-.toma details.agregar .agGrupo:last-child{margin-bottom:0}
-.toma details.agregar .agNombre{font:700 9px var(--mono);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--boxC);margin-bottom:7px}
-.toma details.agregar .chip{display:inline-block;margin:0 5px 5px 0;background:#fff;
+.toma details.agregar .agGrupo{background:var(--boxBg);border-color:var(--boxLine)}
+details.agregar .agGrupo:last-child{margin-bottom:8px}
+details.agregar .agNombre{font:700 9px var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--camA);margin-bottom:7px}
+.toma details.agregar .agNombre{color:var(--boxC)}
+details.agregar .chip{display:inline-block;margin:0 5px 5px 0;background:#fff;
   border:1px solid var(--line);color:var(--tx2);font:600 10px var(--mono);padding:5px 8px;
-  border-radius:4px}
+  border-radius:4px;cursor:pointer}
+details.agregar .chip:active{color:var(--camA);border-color:var(--camA)}
 .toma details.agregar .chip:active{color:var(--boxC);border-color:var(--boxC)}
+details.agregar .agNuevo{display:flex;gap:8px;align-items:center;padding-top:2px}
+details.agregar .agNuevo input{flex:1;min-height:0;font-size:12px;padding:5px 0}
+details.agregar .agNuevo .chip{white-space:nowrap}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
 input,select,textarea{width:100%;min-height:31px;background:transparent;color:var(--tx);
@@ -1509,7 +1516,7 @@ html.solo-parte .portada{display:none}
       <div class="f"><label>Contador al empezar</label><input id="r2_dial0" inputmode="numeric" placeholder="" autocomplete="off"></div>
     </div>
     <div id="rollExtra"></div>
-    <div class="btnrow addmini"><button onclick="addCampoRollo()">+ Añadir campo del rollo</button></div>
+    <div id="rollAddPanel"></div>
   </div>
 
   <div class="card">
@@ -5032,13 +5039,17 @@ function proyectoNuevo(){
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
   S.prod = { };
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
-  /* v122: LUT y Resolución de la toma vienen ocultos por defecto -- ya
-     están en "Cámara y rollo" (una sola vez para todo el rollo) y casi
-     nunca cambian toma a toma; si alguna vez sí cambian, el "+ LUT" /
-     "+ Resolución" de la caja de Exposición los deja agregar igual. */
+  /* v124: ya no se parte siempre de la misma lista fija -- un proyecto
+     nuevo nace con los campos que el dueño ya demostró que usa (recordados
+     en S.prefCampos, que vive fuera de S.parte y nunca se borra), tanto
+     los de rubro (Óptica/Exposición/Película) como los personalizados que
+     agregó con "+ Añadir campo". Solo si nunca ha usado nada especial
+     arranca con la lista por defecto (todo oculto salvo lo esencial). */
+  const pref = prefCampos();
+  const oc = camposOcultosIniciales();
   S.parte = { roll: { tipo: "digital" },
-              tomas: [], campos: [], camposRollo: [],
-              camposOcultos: ["serial","focal","t","foco","filt","alt","tilt","pan","wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"], camposOcultosManual: ["serial","focal","t","foco","filt","alt","tilt","pan","wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"],
+              tomas: [], campos: pref.propios.slice(), camposRollo: pref.propiosRollo.slice(),
+              camposOcultos: oc.camposOcultos, camposOcultosManual: oc.camposOcultosManual,
               camActiva: "A", camsGuardadas: {} };
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
@@ -5488,6 +5499,32 @@ const GRUPOS_CAMPOS = {
   "Película": ["dial","pies","nclip","clip"],
   "Tiempos": ["tc","dur"]
 };
+/* v124: lista de campos que empiezan ocultos en un proyecto NUEVO, sin
+   ninguna preferencia aprendida todavía (Tiempos/tc/dur queda fuera, ese
+   sigue siendo solo-PDF para siempre). */
+const CAMPOS_OCULTOS_DEFAULT = ["serial","focal","t","foco","filt","alt","tilt","pan",
+  "wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"];
+/* v124: "la app aprende" -- memoria PERSISTENTE a nivel de dueño del
+   aparato, no por proyecto. Si en cualquier toma restaura un campo con un
+   "+", ese campo queda marcado como que SÍ lo usa, y los proyectos nuevos
+   que cree después ya nacen con ese campo visible, sin tener que volver a
+   agregarlo cada vez. Lo mismo con los campos personalizados (nombre
+   libre) que añade con "+ Añadir campo" / "+ Añadir campo del rollo": el
+   nombre se recuerda y aparece como sugerencia instantánea (sin escribirlo
+   de nuevo) en cualquier proyecto futuro. S.prefCampos vive en la raíz de
+   S (no en S.parte), así que un "Proyecto nuevo" nunca la borra. */
+function prefCampos(){
+  S.prefCampos = S.prefCampos || { visibles: [], propios: [], propiosRollo: [] };
+  S.prefCampos.visibles = S.prefCampos.visibles || [];
+  S.prefCampos.propios = S.prefCampos.propios || [];
+  S.prefCampos.propiosRollo = S.prefCampos.propiosRollo || [];
+  return S.prefCampos;
+}
+function camposOcultosIniciales(){
+  const pref = prefCampos();
+  const ocultos = CAMPOS_OCULTOS_DEFAULT.filter(k => pref.visibles.indexOf(k) < 0);
+  return { camposOcultos: ocultos.slice(), camposOcultosManual: ocultos.slice() };
+}
 function toggleGrupoCampos(nombre){
   const claves = GRUPOS_CAMPOS[nombre] || []; if (!claves.length) return;
   guarda();
@@ -5828,8 +5865,20 @@ function renderTomas(){
         <datalist id="${idProp}">${opcionesProp.map(o => `<option value="${esc(o)}">`).join("")}</datalist>
       </div>`;
     }).join("");
-    const cajaPersonalizados = `<div class="gsec">` +
-      `<div class="row">${propios}</div><div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div></div>`;
+    /* v124: ya no hay un rectángulo fijo "+ Añadir campo" siempre visible,
+       ni un prompt() emergente -- si no hay campos propios todavía, solo
+       queda el mismo botón chico "+" de siempre; al tocarlo aparecen como
+       chips los nombres que ya ha usado antes (recordados entre proyectos)
+       + un campo para escribir uno nuevo. */
+    const pref = prefCampos();
+    const propiosDisp = pref.propios.filter(n => (S.parte.campos || []).indexOf(n) < 0);
+    const chipsProp = propiosDisp.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoNombre(this.dataset.n)">+ ${esc(n)}</button>`).join("");
+    const panelAddCampo = `<details class="agregar"><summary>+ ${esc(traduce("Añadir campo"))}</summary>
+      ${chipsProp ? `<div class="agGrupo">${chipsProp}</div>` : ""}
+      <div class="agNuevo"><input type="text" id="nuevoCampoInput_${i}" placeholder="${esc(traduce("o escribe uno nuevo…"))}">
+        <button class="chip" onclick="event.preventDefault();addCampoNombre($('nuevoCampoInput_${i}').value)">${esc(traduce("Añadir"))}</button></div>
+    </details>`;
+    const cajaPersonalizados = (propios ? `<div class="gsec"><div class="row">${propios}</div></div>` : "") + panelAddCampo;
         const abierta = i === ultimoIdx;
         /* v123: Smartfill vuelve a ser chico y discreto, en la esquina de la
            cabecera, en rojo apagado -- ya no ocupa toda la fila. Los demás
@@ -5867,23 +5916,37 @@ function renderRollExtra(){
         onclick="quitarCampoRollo(${i})">×</span></label>
       <input value="${esc(S.parte.roll.extra[n] || "")}"
         oninput="S.parte.roll.extra['${esc(n)}']=this.value" autocomplete="off"></div>`).join("") + '</div>' : "";
+  /* v124: ya no hay un prompt() emergente -- "+ Añadir campo del rollo" es
+     un panel discreto con los nombres que el dueño ya ha usado antes (se
+     agregan con un toque) + un campo para escribir uno nuevo. */
+  const p = $("rollAddPanel"); if (!p) return;
+  const pref = prefCampos();
+  const disponibles = pref.propiosRollo.filter(n => cs.indexOf(n) < 0);
+  const chips = disponibles.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoRolloNombre(this.dataset.n)">+ ${esc(n)}</button>`).join("");
+  p.innerHTML = `<details class="agregar"><summary>+ ${esc(traduce("Añadir campo del rollo"))}</summary>
+    ${chips ? `<div class="agGrupo">${chips}</div>` : ""}
+    <div class="agNuevo"><input type="text" id="rollNuevoInput" placeholder="${esc(traduce("o escribe uno nuevo…"))}">
+      <button class="chip" onclick="event.preventDefault();addCampoRolloNombre($('rollNuevoInput').value);$('rollNuevoInput').value=''">${esc(traduce("Añadir"))}</button></div>
+  </details>`;
 }
-function addCampoRollo(){
-  const n = (prompt(traduce("Nombre del campo nuevo del rollo (aparece una vez, en el apartado 3 del parte):")) || "").trim();
-  if (!n) return;
+function addCampoRolloNombre(n){
+  n = (n || "").trim(); if (!n) return;
   S.parte.camposRollo = S.parte.camposRollo || [];
-  if (S.parte.camposRollo.indexOf(n) >= 0) return;
-  guarda(); S.parte.camposRollo.push(n); renderRollExtra();
+  if (S.parte.camposRollo.indexOf(n) < 0){ guarda(); S.parte.camposRollo.push(n); }
+  const pref = prefCampos();
+  if (pref.propiosRollo.indexOf(n) < 0) pref.propiosRollo.push(n);
+  renderRollExtra();
 }
 function quitarCampoRollo(i){
   guarda(); const n = S.parte.camposRollo.splice(i, 1)[0];
   if (S.parte.roll.extra) delete S.parte.roll.extra[n];
   renderRollExtra();
 }
-function addCampo(){
-  const n = (prompt(traduce("Nombre del campo nuevo (aparecerá en cada toma, en el PDF y en el CSV):")) || "").trim();
-  if (!n) return;
+function addCampoNombre(n){
+  n = (n || "").trim(); if (!n) return;
   S.parte.campos = S.parte.campos || [];
+  const pref = prefCampos();
+  if (pref.propios.indexOf(n) < 0) pref.propios.push(n);
   if (S.parte.campos.indexOf(n) >= 0) return;
   guarda(); S.parte.campos.push(n); renderTomas(); renderCampos();
 }
@@ -5895,11 +5958,19 @@ function ocultarCampoToma(k){
   if (S.parte.camposOcultos.indexOf(k) < 0) S.parte.camposOcultos.push(k);
   S.parte.camposOcultosManual = S.parte.camposOcultosManual || [];
   if (S.parte.camposOcultosManual.indexOf(k) < 0) S.parte.camposOcultosManual.push(k);
+  /* v124: si lo vuelve a ocultar, deja de recordarlo como "siempre visible"
+     para los próximos proyectos */
+  const pref = prefCampos();
+  pref.visibles = pref.visibles.filter(x => x !== k);
   renderTomas();
 }
 function restaurarCampoToma(k){
   guarda(); S.parte.camposOcultos = (S.parte.camposOcultos || []).filter(x => x !== k);
   S.parte.camposOcultosManual = (S.parte.camposOcultosManual || []).filter(x => x !== k);
+  /* v124: la app aprende -- este campo ya nace visible en los proyectos
+     nuevos que cree de ahora en adelante */
+  const pref = prefCampos();
+  if (pref.visibles.indexOf(k) < 0) pref.visibles.push(k);
   renderTomas();
 }
 function renderCampos(){
