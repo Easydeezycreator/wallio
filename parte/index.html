@@ -1422,7 +1422,7 @@ html.solo-parte .portada{display:none}
     <!-- v71: Rollo/magazine, FPS, EI, Obturador, WB, LUT y Filtros se registran
          por Toma (estructura de claqueta: Rollo -> Escena -> Toma), no aquí -->
     <div class="grid" id="filmRollo">
-      <div class="f"><label>Laboratorio</label><input id="r2_lab" placeholder="" autocomplete="off"></div>
+      <div class="f"><label>Laboratorio</label><input id="r2_lab" list="dlLab" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Nº de magazine</label><input id="r2_mag" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Emulsión</label><input id="r2_emul" list="dlEmul" placeholder="" autocomplete="off" onfocus="this.select()"></div>
       <div class="f"><label>Lote / batch</label><input id="r2_lote" placeholder="" autocomplete="off"></div>
@@ -1433,7 +1433,7 @@ html.solo-parte .portada{display:none}
         <option value="" selected>—</option><option value="4">35 mm · 4 perf</option><option value="3">35 mm · 3 perf</option>
         <option value="2">35 mm · 2 perf</option><option value="16">16 mm</option>
         <option value="65">65 mm · 5 perf</option></select></div>
-      <div class="f"><label>Cargado por</label><input id="r2_loader" autocomplete="off"></div>
+      <div class="f"><label>Cargado por</label><input id="r2_loader" list="dlLoader" autocomplete="off"></div>
       <div class="f"><label>Contador al empezar</label><input id="r2_dial0" inputmode="numeric" placeholder="" autocomplete="off"></div>
     </div>
     <div id="rollExtra"></div>
@@ -1518,6 +1518,8 @@ html.solo-parte .portada{display:none}
       <datalist id="dlAlt"></datalist>
       <datalist id="dlTilt"></datalist>
       <datalist id="dlPan"></datalist>
+      <datalist id="dlLab"></datalist>
+      <datalist id="dlLoader"></datalist>
       <datalist id="dlCc"></datalist>
 <datalist id="dlCodec"></datalist>
 <datalist id="dlLut"></datalist>
@@ -5464,6 +5466,12 @@ function wireParte(){
         guarda(); S.memCampos[k].unshift(v); S.memCampos[k] = S.memCampos[k].slice(0, 30); fillParte(); }
     };
   });
+  /* v113: Laboratorio y Cargado por se repiten jornada tras jornada en la
+     misma producción -- también aprenden lo que ya se escribió */
+  ["lab","loader"].forEach(k => {
+    const el = $("r2_" + k); if (!el) return;
+    el.onchange = () => aprendeCampo(k, el.value);
+  });
 }
 function fillParte(){
   const P = S.prod, R = S.parte.roll;
@@ -5535,6 +5543,10 @@ function fillParte(){
   dl("dlAlt", mem("alt"));
   dl("dlTilt", mem("tilt"));
   dl("dlPan", mem("pan"));
+  /* v113: igual, solo memoria real -- el laboratorio y quién carga suelen
+     ser siempre los mismos dentro de una misma producción */
+  dl("dlLab", mem("lab"));
+  dl("dlLoader", mem("loader"));
 }
 
 function campoToma(i, k, etiqueta, lista, ancho){
