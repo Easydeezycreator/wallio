@@ -117,9 +117,9 @@ section{display:none}section.on{display:block}
 .toma .row > .gsec{grid-column:1/-1;background:var(--panel);border:1px solid var(--line2);
   padding:10px 12px 8px;margin-bottom:10px}
 .toma .row > .gsec:last-child{margin-bottom:0}
-.gsec .ghead{display:flex;align-items:center;justify-content:space-between;
-  font:700 9.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--camA);
-  padding-bottom:7px;margin-bottom:9px;border-bottom:1px solid var(--line2)}
+.gsec .ghead{display:flex;align-items:center;justify-content:flex-end;
+  padding-bottom:5px;margin-bottom:7px;border-bottom:1px solid var(--line2)}
+.gsec .ghead.soloToggle{justify-content:flex-end}
 .gsec .ghead .oculta{font:500 10px/1 var(--mono);letter-spacing:0;text-transform:none;
   color:var(--tx3);opacity:.75;cursor:pointer}
 .gsec .ghead .oculta:active{color:var(--camA)}
@@ -5429,9 +5429,13 @@ function deshacerSmartfill(){
    o añade lo que quiera con la × de cada campo y "+ Añadir campo".
    v99: Digital/Película ya no son botones de preset aparte -- se aplican
    solos al elegir Digital o Película arriba, en ponTipo(). */
+/* v120: Timecode y Duración se quitan de la pantalla de la toma (ya no
+   hace falta tecleárselos ahí, estorbaban) -- siguen existiendo en el PDF
+   si alguna vez se llenan, igual que cualquier otro campo oculto por
+   preset; con esto el grupo "Tiempos" deja de aparecer en pantalla. */
 const PRESETS_CAMPOS = {
-  digital: ["dial","pies"],
-  pelicula: ["nclip","lut","res"]
+  digital: ["dial","pies","tc","dur"],
+  pelicula: ["nclip","lut","res","tc","dur"]
 };
 /* v111: grupos de campos para ocultar/restaurar varios de una vez -- usa el
    mismo mecanismo de siempre (camposOcultos/camposOcultosManual, la × de
@@ -5745,8 +5749,10 @@ function renderTomas(){
         `</div>` : "";
       if (!visibles && !restaurarGrupo) return "";
       const todoOculto = togglable && GRUPOS_CAMPOS[nombre].every(k => camposOcultos.indexOf(k) >= 0);
-      const toggleBtn = togglable ? `<span class="oculta" onclick="toggleGrupoCampos('${nombre}')">${esc(traduce(todoOculto ? "mostrar" : "ocultar"))}</span>` : "";
-      return `<div class="gsec"><div class="ghead"><span>${esc(traduce(nombre))}</span>${toggleBtn}</div>` +
+      /* v120: se quitan los títulos de cada caja (Toma/Óptica/Exposición...)
+         -- solo queda el control de ocultar/mostrar, discreto, sin nombre */
+      const toggleBtn = togglable ? `<div class="ghead soloToggle"><span class="oculta" onclick="toggleGrupoCampos('${nombre}')">${esc(traduce(todoOculto ? "mostrar" : "ocultar"))}</span></div>` : "";
+      return `<div class="gsec">${toggleBtn}` +
         `<div class="row">${visibles}</div>${restaurarGrupo}</div>`;
     }
     /* v118: "Película" es SOLO para cuando el rollo es de película -- nunca
@@ -5771,7 +5777,7 @@ function renderTomas(){
         <datalist id="${idProp}">${opcionesProp.map(o => `<option value="${esc(o)}">`).join("")}</datalist>
       </div>`;
     }).join("");
-    const cajaPersonalizados = `<div class="gsec"><div class="ghead"><span>${esc(traduce("Personalizados"))}</span></div>` +
+    const cajaPersonalizados = `<div class="gsec">` +
       `<div class="row">${propios}</div><div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div></div>`;
         const abierta = i === ultimoIdx;
         /* v118: Smartfill queda SOLO, como acción principal justo bajo la
