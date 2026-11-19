@@ -113,24 +113,31 @@ section{display:none}section.on{display:block}
 
 /* v117: cada grupo de campos (Toma/Óptica/Exposición/Película/Tiempos) en
    su propia caja de borde rojo muy pálido -- aprobado por Waldo para este
-   rediseño, es la única excepción a "nada de cajas" de toda la app */
-.toma .row > .gsec{grid-column:1/-1;background:var(--panel);border:1px solid var(--line2);
-  padding:10px 12px 8px;margin-bottom:10px}
+   rediseño, es la única excepción a "nada de cajas" de toda la app.
+   v121: en multicámara, el color de la caja sigue al color de la cámara
+   de esa toma (A rojo, B azul, C amarillo, D verde) -- mismas variables
+   --camA/B/C/D que ya usaba el selector de cámara de siempre. */
+.toma{--boxC:var(--camA);--boxBg:var(--panel);--boxLine:var(--line2)}
+.toma.camB{--boxC:var(--camB);--boxBg:#f2f7ff;--boxLine:#cfe0fa}
+.toma.camC{--boxC:var(--camC);--boxBg:#fdf9ec;--boxLine:#f0ddab}
+.toma.camD{--boxC:var(--camD);--boxBg:#f1faf4;--boxLine:#c9ecd5}
+.toma .row > .gsec{grid-column:1/-1;background:var(--boxBg);border:1px solid var(--boxLine);
+  border-radius:7px;padding:10px 12px 8px;margin-bottom:10px}
 .toma .row > .gsec:last-child{margin-bottom:0}
 .gsec .ghead{display:flex;align-items:center;justify-content:flex-end;
-  padding-bottom:5px;margin-bottom:7px;border-bottom:1px solid var(--line2)}
+  padding-bottom:5px;margin-bottom:7px;border-bottom:1px solid var(--boxLine)}
 .gsec .ghead.soloToggle{justify-content:flex-end}
 .gsec .ghead .oculta{font:500 10px/1 var(--mono);letter-spacing:0;text-transform:none;
   color:var(--tx3);opacity:.75;cursor:pointer}
-.gsec .ghead .oculta:active{color:var(--camA)}
+.gsec .ghead .oculta:active{color:var(--boxC)}
 .gsec .row{grid-column:1/-1}
 .f.restaurar{display:flex;gap:6px;flex-wrap:wrap;padding-top:6px}
 .f.restaurar button{border-style:dashed;color:var(--tx3);font-size:9.5px;padding:5px 9px}
-.f.restaurar button:active{color:var(--camA);border-color:var(--camA)}
+.f.restaurar button:active{color:var(--boxC);border-color:var(--boxC)}
 
 /* v118: "Cámara y rollo" y "Laboratorio" llevan la misma caja roja discreta
    que los grupos de la toma, para que todo el parte se vea consistente */
-.card.cajaRoja{background:var(--panel);border:1px solid var(--line2);padding-top:1px}
+.card.cajaRoja{background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding-top:1px}
 .card.cajaRoja h2{background:transparent;color:var(--camA);padding:9px 11px 7px;margin-bottom:7px;
   border-bottom:1px solid var(--line2)}
 
@@ -139,9 +146,9 @@ section{display:none}section.on{display:block}
    los demás botones, que ahora van en su propia fila al fondo de la toma).
    El número de Escena/Toma se ve más grande. */
 .toma .th .sl{font:800 19px/1 var(--mono);letter-spacing:-.02em;color:var(--tx)}
-.toma > button.smartfill{display:block;width:100%;background:var(--camA);border-color:var(--camA);
-  color:#fff;font-weight:700;letter-spacing:.03em;margin:8px 0 10px}
-.toma > button.smartfill:active{background:#b82e27}
+.toma > button.smartfill{display:block;width:100%;background:var(--boxC);border-color:var(--boxC);
+  border-radius:7px;color:#fff;font-weight:700;letter-spacing:.03em;margin:8px 0 10px}
+.toma > button.smartfill:active{filter:brightness(.85)}
 .btnrow.acciones{margin-top:10px}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
