@@ -5576,9 +5576,12 @@ function fillParte(){
   /* v96: catálogo de resoluciones de proyecto más comunes + lo que ya se
      haya escrito antes -- igual que aspecto, fps, etc.; ya no hay un valor
      fijo de ejemplo que parecía un dato puesto permanentemente. */
-  dl("dlResProy", [...new Set(["1920x1080","2048x1080","2048x858","3840x2160",
-    "4096x2160","4096x2560","4608x3164","5120x2700","5120x2560","6144x3240",
-    "6144x4320","8192x4320"].concat(mem("res")))]);
+  dl("dlResProy", [...new Set([
+    "1920x1080 (2K HD)", "2048x1080 (2K DCI)", "2048x858 (2K Scope)",
+    "3840x2160 (4K UHD)", "4096x2160 (4K DCI)", "4096x2560 (4K 1.6:1)",
+    "4608x3164 (4.5K)", "5120x2700 (5K)", "5120x2560 (5K 2:1)",
+    "6144x3240 (6K)", "6144x4320 (6K 1.42:1)", "8192x4320 (8K)"
+  ].concat(mem("res")))]);
   dl("dlCc", [...new Set(["+1","+2","+3","+4","-1","-2","-3","-4"].concat(mem("cc")))]);
   dl("dlCodec", mem("codec"));
   dl("dlLut", mem("lut"));
@@ -7830,8 +7833,16 @@ materializaDefectos();
       '<div class="op">' + x.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</div>").join("");
     const r = inp.getBoundingClientRect();
     caja.style.left = (r.left + scrollX) + "px";
-    caja.style.top = (r.bottom + scrollY + 2) + "px";
     caja.style.minWidth = r.width + "px";
+    /* v119: si el campo queda en la mitad de abajo de la pantalla, el
+       desplegable (hasta 42vh de alto) se abría hacia abajo y se salía del
+       borde inferior -- el usuario no podía ver ni tocar las opciones de
+       más abajo sin antes deslizar la página a mano. Si no cabe debajo,
+       se abre hacia ARRIBA del campo en su lugar. */
+    const alto = Math.min(caja.scrollHeight || 300, window.innerHeight * 0.42);
+    const cabeAbajo = (r.bottom + 2 + alto) <= window.innerHeight;
+    if (cabeAbajo) caja.style.top = (r.bottom + scrollY + 2) + "px";
+    else caja.style.top = (r.top + scrollY - alto - 2) + "px";
     caja.hidden = false; activo = inp; abiertoEn = Date.now();
     [...caja.children].forEach(d => d.onclick = () => {
       inp.value = d.textContent;
@@ -7856,7 +7867,9 @@ materializaDefectos();
      bajo el campo; un scroll deliberado más tarde sí lo cierra (v42) */
   const recoloca = () => { if (!activo) return; const r = activo.getBoundingClientRect();
     caja.style.left = (r.left + scrollX) + "px";
-    caja.style.top = (r.bottom + scrollY + 2) + "px"; };
+    const alto = Math.min(caja.scrollHeight || 300, window.innerHeight * 0.42);
+    const cabeAbajo = (r.bottom + 2 + alto) <= window.innerHeight;
+    caja.style.top = cabeAbajo ? (r.bottom + scrollY + 2) + "px" : (r.top + scrollY - alto - 2) + "px"; };
   window.addEventListener("scroll", e => {
     if (caja.contains(e.target)) return;
     if (activo && document.activeElement === activo && Date.now() - abiertoEn < 700){ recoloca(); return; }
