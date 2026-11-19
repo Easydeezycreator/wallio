@@ -5600,7 +5600,7 @@ const GRUPOS_CAMPOS = {
 const CAMPOS_SOLO_DIGITAL_GLOBAL = ["lut", "res"];
 /* y del catálogo de nombres libres (ND, Espacio de color, etc.) los que
    son puramente de sensor/color digital -- no se usan en análogo */
-const CATALOGO_SOLO_DIGITAL_GLOBAL = ["Espacio de color", "Gamma", "Tinte de balance de blancos", "Firmware", "ISO base"];
+const CATALOGO_SOLO_DIGITAL_GLOBAL = ["Espacio de color", "Gamma", "Firmware", "ISO base"];
 /* v124: lista de campos que empiezan ocultos en un proyecto NUEVO, sin
    ninguna preferencia aprendida todavía (Tiempos/tc/dur queda fuera, ese
    sigue siendo solo-PDF para siempre). */
@@ -5758,9 +5758,64 @@ function wireParte(){
     el.onchange = () => aprendeCampo(k, el.value);
   });
 }
+/* v139: migración de datos YA guardados -- proyectos que se crearon antes de
+   este arreglo pueden traer, dentro de S.parte.campos / camposRollo / los
+   "extra" de rollo y tomas / S.prefCampos / S.memExtra, el campo viejo
+   "Formato de audio" (ahora se llama "FPS") o el campo "Tinte de balance de
+   blancos" (eliminado -- el balance de blancos real va en el campo nativo
+   de "Cámara y rollo"). Esto corrige esos datos ya guardados, no solo los
+   nuevos, para que no se quede algo roto en un parte que ya estaba en uso. */
+const CATALOGO_RENOMBRA = {"Formato de audio": "FPS"};
+const CATALOGO_ELIMINA = ["Tinte de balance de blancos"];
+function migraCatalogoRollo(){
+  function fijaLista(arr){
+    if (!Array.isArray(arr)) return arr;
+    const vistos = new Set(); const out = [];
+    arr.forEach(n => {
+      const nn = CATALOGO_RENOMBRA[n] || n;
+      if (CATALOGO_ELIMINA.indexOf(nn) >= 0) return;
+      const k = nn.toLowerCase();
+      if (vistos.has(k)) return;
+      vistos.add(k); out.push(nn);
+    });
+    return out;
+  }
+  function fijaExtra(obj){
+    if (!obj) return;
+    Object.keys(CATALOGO_RENOMBRA).forEach(viejo => {
+      if (obj[viejo] !== undefined){
+        const nuevo = CATALOGO_RENOMBRA[viejo];
+        if (obj[nuevo] === undefined) obj[nuevo] = obj[viejo];
+        delete obj[viejo];
+      }
+    });
+    CATALOGO_ELIMINA.forEach(n => { delete obj[n]; });
+  }
+  if (S.parte){
+    S.parte.campos = fijaLista(S.parte.campos);
+    S.parte.camposRollo = fijaLista(S.parte.camposRollo);
+    fijaExtra(S.parte.roll && S.parte.roll.extra);
+    (S.parte.tomas || []).forEach(t => fijaExtra(t.extra));
+  }
+  if (S.prefCampos){
+    S.prefCampos.propios = fijaLista(S.prefCampos.propios);
+    S.prefCampos.propiosRollo = fijaLista(S.prefCampos.propiosRollo);
+  }
+  if (S.memExtra){
+    Object.keys(CATALOGO_RENOMBRA).forEach(viejo => {
+      if (S.memExtra[viejo]){
+        const nuevo = CATALOGO_RENOMBRA[viejo];
+        S.memExtra[nuevo] = [...new Set((S.memExtra[nuevo] || []).concat(S.memExtra[viejo]))];
+        delete S.memExtra[viejo];
+      }
+    });
+    CATALOGO_ELIMINA.forEach(n => { delete S.memExtra[n]; });
+  }
+}
 function fillParte(){
   const P = S.prod, R = S.parte.roll;
   migraResponsables();
+  migraCatalogoRollo();
   R_CAMPOS.forEach(k => { const el = $("r_" + k); if (el) el.value = R[k] || ""; });
   if (!R.tipo) R.tipo = "digital";
   /* v104: Digital ya viene elegido por defecto con solo mirar la pantalla,
@@ -6131,15 +6186,19 @@ function renderTomas(){
    ya hubiera escrito antes), así que la primera vez no mostraba nada para
    elegir. Ahora siempre hay un grupo de sugerencias comunes de cámara
    listas para agregar con un toque, además de lo que el dueño ya usó. */
+/* v139: "Tinte de balance de blancos" se ELIMINA del catálogo -- el balance
+   de blancos real ya vive en "Cámara y rollo" como el campo nativo de
+   siempre (temperatura + CC +/-), tal como lo pidió Waldo; no debe existir
+   un segundo campo de catálogo inventado para lo mismo. */
 const CAMPOS_ROLLO_CATALOGO = ["Modo de sensor","ND","Espacio de color","Gamma",
-  "Tinte de balance de blancos","FPS","Firmware","ISO base"];
+  "FPS","Firmware","ISO base"];
 /* v131: a qué rubro de la TOMA cae cada uno de esos mismos campos cuando se
    agrega desde el panel de "+ Añadir campo" de la toma (no del rollo) --
    "Modo de sensor" se deja fuera (ese es de cuerpo/rollo completo, no
    cambia toma a toma). */
 const GRUPO_DEL_CATALOGO = {
   "ND": "Exposición", "Espacio de color": "Exposición", "Gamma": "Exposición",
-  "Tinte de balance de blancos": "Exposición", "ISO base": "Exposición",
+  "ISO base": "Exposición",
   "Firmware": "Película"
   /* "FPS" se deja FUERA de este mapeo a propósito: en la TOMA ya existe el
      campo fijo "FPS" de siempre (con su + restaurar de toda la vida); este
@@ -6169,8 +6228,6 @@ const SUGERENCIAS_CATALOGO = {
   "Espacio de color": ["Rec.709", "Rec.2020", "P3-D65", "ACES", "S-Gamut3.Cine",
          "V-Gamut", "ARRI Wide Gamut", "Log-C4"],
   "Gamma": ["Rec.709", "S-Log3", "C-Log3", "V-Log", "Log-C4", "HLG", "PQ", "Natural"],
-  "Tinte de balance de blancos": ["0", "G1", "G2", "G3", "G4", "G5", "G6",
-         "M1", "M2", "M3", "M4", "M5", "M6"],
   /* v136: este catálogo era "Formato de audio" -- corregido, era "FPS" (el
      fps nominal de "Cámara y rollo"), con los mismos valores que ya usa el
      FPS de toda la vida (dlFps). */
