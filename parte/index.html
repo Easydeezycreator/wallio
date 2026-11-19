@@ -99,6 +99,14 @@ section{display:none}section.on{display:block}
 
 /* ---- campos: planos, cuadrados, etiqueta arriba ---- */
 .f{padding:3px 0}
+/* v111: campo copiado por Smartfill de la toma anterior, aún sin tocar en
+   esta -- solo una atenuación discreta del texto, nada de caja ni color de
+   aviso; basta tocarlo para que se vea como cualquier otro campo */
+.f.heredado input,input.heredado{color:var(--tx2)}
+.avisoFalta{color:var(--warn);margin-left:6px}
+#avisoSmartfill{font:500 12px/1.3 var(--mono);color:var(--ok);padding:2px 11px 6px}
+#avisoSmartfill .deshacer{cursor:pointer;text-decoration:underline}
+#avisoSmartfill[hidden]{display:none}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
 input,select,textarea{width:100%;min-height:31px;background:transparent;color:var(--tx);
@@ -1434,6 +1442,8 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
+        <div id="avisoSmartfill" hidden></div>
+        <div id="gruposCampos"></div>
         <div id="listaTomas"></div>
     <div id="listaCampos"></div>
   </div>
@@ -5139,6 +5149,10 @@ const T_CLAVES = T_CAMPOS.map(c => c[0]);
    sugerencia para la próxima vez (igual que fps/ei/obturador a nivel de
    rollo) -- sigue siendo texto libre, solo se SUGIERE, nunca se obliga */
 const APRENDE_TOMA = ["res","focal","nclip"];
+/* v111: campos sin los que un 1er AC no puede dar la toma por buena --
+   si faltan (y están visibles, no ocultados con la ×), se avisa con un
+   texto discreto junto a la toma, sin bloquear el guardado ni usar cajas */
+const CAMPOS_CLAVE = ["focal","t"];
 function aprendeCampo(k, v){
   v = (v || "").trim(); if (!v) return;
   S.memCampos = S.memCampos || {};
@@ -5320,8 +5334,30 @@ function cambiaUnidadDeEstaOptica(i, unidad){
    que se está trabajando a la toma siguiente, con el número consecutivo ya
    puesto, y la deja abierta y editable por si hay que cambiar o borrar algo.
    Es la misma acción que antes hacía "+Toma", ahora disparada desde aquí. */
+let ULTIMO_SMARTFILL_IDX = -1;
 function smartfill(i){
   nuevaToma(false);
+  ULTIMO_SMARTFILL_IDX = S.parte.tomas.length - 1;
+  avisaSmartfill();
+}
+/* v111: aviso discreto (texto, no ventana emergente) de que el Smartfill
+   copió la toma anterior, con un "Deshacer" que la quita si fue sin querer.
+   Desaparece solo a los pocos segundos. */
+let AVISO_SMARTFILL_TO = null;
+function avisaSmartfill(){
+  const a = $("avisoSmartfill"); if (!a) return;
+  a.innerHTML = `${esc(traduce("Smartfill aplicado"))} · <span class="deshacer" onclick="deshacerSmartfill()">${esc(traduce("Deshacer"))}</span>`;
+  a.hidden = false;
+  clearTimeout(AVISO_SMARTFILL_TO);
+  AVISO_SMARTFILL_TO = setTimeout(() => { a.hidden = true; }, 6000);
+}
+function deshacerSmartfill(){
+  const a = $("avisoSmartfill");
+  if (ULTIMO_SMARTFILL_IDX >= 0 && S.parte.tomas[ULTIMO_SMARTFILL_IDX]){
+    borrarToma(ULTIMO_SMARTFILL_IDX);
+  }
+  ULTIMO_SMARTFILL_IDX = -1;
+  if (a) a.hidden = true;
 }
 
 /* v95: se quitan los presets "Mínimo" y "Completo" -- por defecto aparecen
@@ -5333,6 +5369,41 @@ const PRESETS_CAMPOS = {
   digital: ["dial","pies"],
   pelicula: ["nclip","lut","res"]
 };
+/* v111: grupos de campos para ocultar/restaurar varios de una vez -- usa el
+   mismo mecanismo de siempre (camposOcultos/camposOcultosManual, la × de
+   cada campo), solo que de golpe por bloque en vez de uno por uno */
+const GRUPOS_CAMPOS = {
+  "Óptica": ["serial","focal","t","foco","filt","alt","tilt","pan"],
+  "Exposición": ["wb","ei","shutter","fps","lut","res"],
+  "Película": ["dial","pies","nclip","clip"],
+  "Tiempos": ["tc","dur"]
+};
+function toggleGrupoCampos(nombre){
+  const claves = GRUPOS_CAMPOS[nombre] || []; if (!claves.length) return;
+  guarda();
+  S.parte.camposOcultos = S.parte.camposOcultos || [];
+  S.parte.camposOcultosManual = S.parte.camposOcultosManual || [];
+  const todoOculto = claves.every(k => S.parte.camposOcultos.indexOf(k) >= 0);
+  claves.forEach(k => {
+    if (todoOculto){
+      S.parte.camposOcultos = S.parte.camposOcultos.filter(x => x !== k);
+      S.parte.camposOcultosManual = S.parte.camposOcultosManual.filter(x => x !== k);
+    } else {
+      if (S.parte.camposOcultos.indexOf(k) < 0) S.parte.camposOcultos.push(k);
+      if (S.parte.camposOcultosManual.indexOf(k) < 0) S.parte.camposOcultosManual.push(k);
+    }
+  });
+  renderTomas();
+}
+function renderGruposCampos(){
+  const c = $("gruposCampos"); if (!c) return;
+  const camposOcultos = S.parte.camposOcultos || [];
+  c.innerHTML = `<div class="f grupos">` + Object.keys(GRUPOS_CAMPOS).map(nombre => {
+    const claves = GRUPOS_CAMPOS[nombre];
+    const todoOculto = claves.every(k => camposOcultos.indexOf(k) >= 0);
+    return `<span style="cursor:pointer;opacity:.6;font-size:.85em;margin-right:12px" onclick="toggleGrupoCampos('${nombre}')">${todoOculto ? "+" : "−"} ${esc(traduce(nombre))}</span>`;
+  }).join("") + `</div>`;
+}
 function sumaTC(tc, offset, fps){
   fps = Math.round(parseFloat(fps)) || 24;
   const total = 24 * 3600 * fps;
@@ -5466,14 +5537,20 @@ function campoToma(i, k, etiqueta, lista, ancho){
      Escena y Toma quedan protegidos, son la identidad de la fila */
   const x = (k === "sc" || k === "tk") ? "" :
     ` <span style="cursor:pointer;opacity:.55" title="Quitar este campo" onclick="event.stopPropagation();ocultarCampoToma('${k}')">×</span>`;
+  /* v111: campo copiado de la toma anterior por el Smartfill, sin tocar
+     todavía en esta toma -- se ve atenuado; basta tocarlo para que se vea
+     normal (quitaHeredado lo marca como tocado sin forzar un rerender) */
+  const heredado = (S.parte.tomas[i]._heredados || []).indexOf(k) >= 0;
+  const claseHer = heredado ? " heredado" : "";
+  const quitaHeredado = `if(S.parte.tomas[${i}]._heredados)S.parte.tomas[${i}]._heredados=S.parte.tomas[${i}]._heredados.filter(x=>x!=='${k}');this.closest('.f').classList.remove('heredado');`;
   /* v89: la unidad ft/m de la distancia de foco vive en la OPTICA, no en una
      preferencia global -- un toque junto al nº de serie la cambia para esa lente */
   if (k === "serial"){
     const unidadActual = unidadDeOptica(S.parte.tomas[i].serial);
     const toggleUnidad = v ? ` <span style="cursor:pointer;opacity:.6;font-size:.85em" title="${esc(traduce("Unidad de esta óptica"))}" onclick="event.stopPropagation();cambiaUnidadDeEstaOptica(${i},'${unidadActual === "m" ? "ft" : "m"}')">${unidadActual}</span>` : "";
-    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+    return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div style="display:flex;gap:6px;align-items:center">` +
-      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
+      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
       `${toggleUnidad}</div></div>`;
   }
   /* v94: al cambiar de Escena en la toma abierta, se guarda solo el parte en
@@ -5492,10 +5569,12 @@ function campoToma(i, k, etiqueta, lista, ancho){
      campo propio -- Waldo lo pidio asi: un solo bloque "wb" con dos inputs */
   if (k === "wb"){
     const vcc = esc(S.parte.tomas[i].cc || "");
-    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+    const herCc = (S.parte.tomas[i]._heredados || []).indexOf("cc") >= 0;
+    const quitaHerCc = `if(S.parte.tomas[${i}]._heredados)S.parte.tomas[${i}]._heredados=S.parte.tomas[${i}]._heredados.filter(x=>x!=='cc');this.classList.remove('heredado');`;
+    return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div style="display:flex;gap:6px">` +
-      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
-      `<input value="${vcc}" list="dlCc" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" oninput="S.parte.tomas[${i}].cc=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
+      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
+      `<input value="${vcc}" list="dlCc" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" class="${herCc ? "heredado" : ""}" oninput="${quitaHerCc}S.parte.tomas[${i}].cc=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
       `</div></div>`;
   }
   /* v102: cualquier corrección en una toma ya hecha (duración, toma, etc.)
@@ -5505,8 +5584,8 @@ function campoToma(i, k, etiqueta, lista, ancho){
      escrito queda guardado como sugerencia para la próxima toma -- sigue
      siendo texto libre, esto solo alimenta la lista de sugerencias */
   const aprende = APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : "";
-  return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
-               `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
+  return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+               `<input value="${v}"${l} placeholder="${ph}" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
          `onchange="${aprende}renderTomas()" autocomplete="off"></div>`;
 }
 function renderTomas(){
@@ -5553,6 +5632,14 @@ function renderTomas(){
                   t.foco, t.tc, horaReal, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
                  .filter(Boolean).join("  ·  ") || "sin datos todavía";
     const camposOcultos = S.parte.camposOcultos || [];
+    /* v111: aviso discreto (sin bloquear nada) de qué dato clave falta en
+       esta toma -- solo si el campo está visible y la toma no es MOS/falso
+       (ahí no hace falta esa info) */
+    const claveFaltan = (t.mos || t.falso) ? [] : CAMPOS_CLAVE.filter(k =>
+      camposOcultos.indexOf(k) < 0 && !(t[k] || "").toString().trim());
+    const avisoFalta = claveFaltan.length ? `<span class="avisoFalta">${esc(traduce("falta"))} ` +
+      claveFaltan.map(k => { const c = T_CAMPOS.find(c => c[0] === k); return esc(c ? c[1] : k); }).join(", ") +
+      `</span>` : "";
     const campos = T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0 && k !== "cc").map(([k, et, , extra]) =>
       campoToma(i, k, et, T_LISTAS[k] || null, extra === "w")).join("");
     const camposOcultosManual = S.parte.camposOcultosManual || [];
@@ -5570,7 +5657,7 @@ function renderTomas(){
         return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}"${abierta ? " open" : ""}>
       <summary class="th">
         ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
-        <div class="meta">${esc(meta)}</div>
+        <div class="meta">${esc(meta)}${avisoFalta}</div>
         ${abierta ? `<button title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill</button>` : ""}
         <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
         <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
@@ -5582,6 +5669,7 @@ function renderTomas(){
       <div class="row">${campos}${propios}<div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div>${restaurar}</div></details>`;
   }).join("") : "";
   $("listaTomas").classList.toggle("mc", esMulticam());
+  renderGruposCampos();
   resumenParte(); fillParte(); updateChip(); pintaCams();
 }
 function renderRollExtra(){
@@ -5694,6 +5782,13 @@ function nuevaToma(nuevaEscena){
      usuario escriba cuál es la nueva); el número de toma sigue la cuenta. */
   if (nuevaEscena) t.sc = "";
   t.tk = String((parseInt(t.tk, 10) || 0) + 1);
+  /* v111: campos que quedaron copiados tal cual de la toma anterior (sin que
+     el usuario los haya tocado todavía en ESTA toma) se marcan para pintarse
+     atenuados -- en cuanto se toca uno, deja de estar "heredado" y se ve
+     normal; sigue siendo el mismo dato editable de siempre, esto es solo
+     una señal visual de qué es nuevo y qué viene de la toma anterior. */
+  const RESET_KEYS_HEREDA = ["tk","sc","clip","nclip","dial","pies","mos","falso","notaEsp","ok","nota","tc","dur"];
+  t._heredados = u ? T_CLAVES.concat(["cc"]).filter(k => RESET_KEYS_HEREDA.indexOf(k) < 0 && (t[k] || "") !== "") : [];
   L.push(t); renderTomas();
   if (typeof guardaYa === "function") guardaYa();
   setTimeout(() => { const e = document.querySelectorAll("#listaTomas .toma");
