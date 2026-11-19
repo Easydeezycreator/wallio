@@ -5991,12 +5991,28 @@ function renderTomas(){
        dentro del panel (no como cajas aparte). Tiempos (tc/dur) se deja
        fuera a propósito: ese sigue siendo solo-PDF, sin botón de agregar. */
     const RUBROS_AGREGAR = esFilm() ? ["Óptica","Exposición","Película"] : ["Óptica","Exposición"];
+    /* v131: el catálogo de campos del ROLLO (ND, Espacio de color, Gamma,
+       Tinte de balance de blancos, Formato de audio, Firmware, ISO base --
+       los mismos que ya existían en "+ Añadir campo del rollo") también
+       aparece aquí, en el panel de cada TOMA, que es lo que más usa -- cada
+       uno cae directo en su rubro de siempre (no sueltos en
+       "Personalizados"), junto con FPS/WB/etc. */
+    const camposTomaCatalogo = (S.parte.campos || []);
+    const catalogoPorGrupo = {};
+    RUBROS_AGREGAR.forEach(nombre => { catalogoPorGrupo[nombre] = []; });
+    CAMPOS_ROLLO_CATALOGO.forEach(n => {
+      const grupo = GRUPO_DEL_CATALOGO[n];
+      if (!grupo || RUBROS_AGREGAR.indexOf(grupo) < 0 || camposTomaCatalogo.indexOf(n) >= 0) return;
+      catalogoPorGrupo[grupo].push(n);
+    });
     const agregarGrupos = RUBROS_AGREGAR.map(nombre => {
       const ocultas = GRUPOS_CAMPOS[nombre].filter(k => camposOcultos.indexOf(k) >= 0 && camposOcultosManual.indexOf(k) >= 0);
-      if (!ocultas.length) return "";
-      const chips = ocultas.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
+      const chipsOcultas = ocultas.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
         return `<button class="chip" onclick="event.preventDefault();restaurarCampoToma('${k}')">+ ${esc(traduce(c ? c[1] : k))}</button>`; }).join("");
-      return `<div class="agGrupo"><div class="agNombre">${esc(traduce(nombre))}</div>${chips}</div>`;
+      const chipsCatalogo = (catalogoPorGrupo[nombre] || []).map(n =>
+        `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoNombre(this.dataset.n)">+ ${esc(traduce(n))}</button>`).join("");
+      if (!chipsOcultas && !chipsCatalogo) return "";
+      return `<div class="agGrupo"><div class="agNombre">${esc(traduce(nombre))}</div>${chipsOcultas}${chipsCatalogo}</div>`;
     }).join("");
     /* v126: un solo botón "+ Añadir campo" por toma -- antes había dos
        paneles separados (uno para los campos predeterminados del rubro,
@@ -6011,7 +6027,7 @@ function renderTomas(){
        siempre) y los personalizados llaman a addCampoNombre (caja de
        Personalizados). */
     const pref = prefCampos();
-    const propiosDisp = pref.propios.filter(n => (S.parte.campos || []).indexOf(n) < 0);
+    const propiosDisp = pref.propios.filter(n => (S.parte.campos || []).indexOf(n) < 0 && CAMPOS_ROLLO_CATALOGO.indexOf(n) < 0);
     const chipsProp = propiosDisp.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoNombre(this.dataset.n)">+ ${esc(n)}</button>`).join("");
     const grupoPersonalizados = chipsProp ? `<div class="agGrupo"><div class="agNombre">${esc(traduce("Personalizados"))}</div>${chipsProp}</div>` : "";
     const panelAgregar = (agregarGrupos || grupoPersonalizados) ? `<details class="agregar"><summary>+ ${esc(traduce("Añadir campo"))}</summary>
@@ -6075,6 +6091,15 @@ function renderTomas(){
    listas para agregar con un toque, además de lo que el dueño ya usó. */
 const CAMPOS_ROLLO_CATALOGO = ["Modo de sensor","ND","Espacio de color","Gamma",
   "Tinte de balance de blancos","Formato de audio","Firmware","ISO base"];
+/* v131: a qué rubro de la TOMA cae cada uno de esos mismos campos cuando se
+   agrega desde el panel de "+ Añadir campo" de la toma (no del rollo) --
+   "Modo de sensor" se deja fuera (ese es de cuerpo/rollo completo, no
+   cambia toma a toma). */
+const GRUPO_DEL_CATALOGO = {
+  "ND": "Exposición", "Espacio de color": "Exposición", "Gamma": "Exposición",
+  "Tinte de balance de blancos": "Exposición", "ISO base": "Exposición",
+  "Formato de audio": "Película", "Firmware": "Película"
+};
 function renderRollExtra(){
   const c = $("rollExtra"); if (!c) return;
   const cs = S.parte.camposRollo || [];
