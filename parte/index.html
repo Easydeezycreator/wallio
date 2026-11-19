@@ -5166,6 +5166,18 @@ function aprendeCampo(k, v){
     guarda(); S.memCampos[k].unshift(v); S.memCampos[k] = S.memCampos[k].slice(0, 30); fillParte();
   }
 }
+/* v115: igual que aprendeCampo, pero para los campos propios (nombre libre,
+   añadidos con "+ Añadir campo") -- se guarda por el NOMBRE del campo, el
+   índice solo sirve para encontrarlo sin arriesgarse a comillas/acentos */
+function aprendeExtra(pi, v){
+  const n = (S.parte.campos || [])[pi]; if (!n) return;
+  v = (v || "").trim(); if (!v) return;
+  S.memExtra = S.memExtra || {};
+  S.memExtra[n] = S.memExtra[n] || [];
+  if (!S.memExtra[n].includes(v)){
+    guarda(); S.memExtra[n].unshift(v); S.memExtra[n] = S.memExtra[n].slice(0, 30); renderTomas();
+  }
+}
 function tomaVacia(){
   const t = {}; T_CLAVES.forEach(k => t[k] = "");
   T_CAMPOS.forEach(([k,,hereda]) => { if (hereda && S.parte.roll[hereda]) t[k] = S.parte.roll[hereda]; });
@@ -5671,11 +5683,19 @@ function renderTomas(){
       camposOcultosVisibles.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
         return `<button class="ghost" onclick="restaurarCampoToma('${k}')">+ ${esc(traduce(c ? c[1] : k))}</button>`; }).join(" ") +
       `</div>` : "";
-    const propios = (S.parte.campos || []).map(n =>
-      `<div class="f"><label>${esc(n)}</label>
-        <input value="${esc((t.extra || {})[n] || "")}"
+    /* v115: los campos propios que cada quien añade con "+ Añadir campo"
+       también aprenden y sugieren lo ya escrito -- usan el índice del campo
+       (no el nombre) para no romperse si el nombre lleva comillas o acentos */
+    const propios = (S.parte.campos || []).map((n, pi) => {
+      const idProp = "dlProp_" + pi;
+      const opcionesProp = (S.memExtra && S.memExtra[n]) || [];
+      return `<div class="f" data-k="prop_${pi}"><label>${esc(n)}</label>
+        <input value="${esc((t.extra || {})[n] || "")}" list="${idProp}"
           oninput="if(!S.parte.tomas[${i}].extra)S.parte.tomas[${i}].extra={};S.parte.tomas[${i}].extra['${esc(n)}']=this.value"
-          onchange="renderTomas()" autocomplete="off"></div>`).join("");
+          onchange="aprendeExtra(${pi},this.value)" autocomplete="off">
+        <datalist id="${idProp}">${opcionesProp.map(o => `<option value="${esc(o)}">`).join("")}</datalist>
+      </div>`;
+    }).join("");
         const abierta = i === ultimoIdx;
         return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}"${abierta ? " open" : ""}>
       <summary class="th">
