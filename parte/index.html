@@ -28,7 +28,18 @@ html,body{margin:0;background:var(--bg);color:var(--tx);
     mandando de vuelta a la pagina anterior en el historial (la plataforma).
     touch-action:pan-y bloquea el paneo horizontal a nivel de pagina, asi el
     gesto de "atras" nunca se dispara dentro del Camera Report. */
- touch-action:pan-y;overscroll-behavior-x:none}
+ touch-action:pan-y;overscroll-behavior-x:none;
+ /* v110: al tocar un campo para rellenarlo, el teclado del móvil aparece y
+    el propio navegador decide reencuadrar el campo -- sin scroll-padding-top
+    ese reencuadre lo deja TAPADO bajo la cabecera fija, así que el navegador
+    hace un segundo salto para corregirlo (el "desplazamiento" molesto).
+    Con scroll-padding-top reservando la altura de la cabecera, el primer
+    reencuadre ya es el correcto y no hace falta un segundo salto. */
+ scroll-padding-top:70px;
+ /* overflow-anchor:none evita que el navegador reancle el scroll a algún
+    elemento que cambió de tamaño en otra parte de la página (p.ej. al
+    aparecer una sugerencia) mientras el usuario sigue escribiendo */
+ overflow-anchor:none}
 body{padding-bottom:calc(58px + env(safe-area-inset-bottom))}
 
 /* ---- cabecera: el documento, no una app ---- */
@@ -1492,6 +1503,8 @@ html.solo-parte .portada{display:none}
 <datalist id="dlFmts"></datalist>
 <datalist id="dlAspecto"></datalist>
       <datalist id="dlResProy"></datalist>
+      <datalist id="dlFocal"></datalist>
+      <datalist id="dlNclip"></datalist>
       <datalist id="dlCc"></datalist>
 <datalist id="dlCodec"></datalist>
 <datalist id="dlLut"></datalist>
@@ -5122,6 +5135,18 @@ const T_CAMPOS = [
   ["tc","Timecode"], ["dur","Duración (s)"], ["nota","Notas",null,"w"]
 ];
 const T_CLAVES = T_CAMPOS.map(c => c[0]);
+/* v110: campos de la toma que, al escribirse, quedan recordados como
+   sugerencia para la próxima vez (igual que fps/ei/obturador a nivel de
+   rollo) -- sigue siendo texto libre, solo se SUGIERE, nunca se obliga */
+const APRENDE_TOMA = ["res","focal","nclip"];
+function aprendeCampo(k, v){
+  v = (v || "").trim(); if (!v) return;
+  S.memCampos = S.memCampos || {};
+  S.memCampos[k] = S.memCampos[k] || [];
+  if (!S.memCampos[k].includes(v)){
+    guarda(); S.memCampos[k].unshift(v); S.memCampos[k] = S.memCampos[k].slice(0, 30); fillParte();
+  }
+}
 function tomaVacia(){
   const t = {}; T_CLAVES.forEach(k => t[k] = "");
   T_CAMPOS.forEach(([k,,hereda]) => { if (hereda && S.parte.roll[hereda]) t[k] = S.parte.roll[hereda]; });
@@ -5424,6 +5449,11 @@ function fillParte(){
   const ndBase = ["ND .3","ND .6","ND .9","ND 1.2","ND 1.5","ND 1.8","ND 2.1"];
   const ndVariantes = ndBase.concat(ndBase.map(n => n + " INT")).concat(ndBase.map(n => n + " EXT"));
   dl("dlFiltros", [...new Set(ndVariantes.concat(["Black Pro-Mist 1/8","Black Pro-Mist 1/4","Black Pro-Mist 1/2","Black Pro-Mist 1","Glimmerglass 1/4","Polarizador","Diopter +0.5","Diopter +1","Diopter +2","Diopter +3","Hollywood Black Magic 1/4","Soft FX 1/2","Rota-Pola","Clear / UV"]).concat(mem("filt")))]);
+  /* v110: Resolución de la toma usa el mismo catálogo + memoria que la
+     Resolución del proyecto (dlResProy) -- es el mismo dato, visto en dos
+     sitios. Focal y Nº de clips son catálogos propios de la toma. */
+  dl("dlFocal", [...new Set(["14","16","18","21","24","27","32","35","40","50","65","75","85","100","135","150","180","200","300"].concat(mem("focal")))]);
+  dl("dlNclip", [...new Set(["1","2","3","4","5"].concat(mem("nclip")))]);
 }
 
 function campoToma(i, k, etiqueta, lista, ancho){
@@ -5471,9 +5501,13 @@ function campoToma(i, k, etiqueta, lista, ancho){
   /* v102: cualquier corrección en una toma ya hecha (duración, toma, etc.)
      se refleja al instante en el contador de arriba (Escenas/Tomas/Circle/
      Duración), tecla a tecla -- sin esperar a salir del campo */
+  /* v110: en los campos de APRENDE_TOMA, además de refrescar la fila, lo
+     escrito queda guardado como sugerencia para la próxima toma -- sigue
+     siendo texto libre, esto solo alimenta la lista de sugerencias */
+  const aprende = APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : "";
   return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
                `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
-         `onchange="renderTomas()" autocomplete="off"></div>`;
+         `onchange="${aprende}renderTomas()" autocomplete="off"></div>`;
 }
 function renderTomas(){
   if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
@@ -5504,7 +5538,8 @@ function renderTomas(){
   for (let j = 0; j < L.length; j++) if ((L[j].camLetra || "A") === camActiva()) idxCam.push(j);
   const ultimoIdx = idxCam.length ? idxCam[idxCam.length - 1] : -1;
   const T_LISTAS = { sc: "dlEscenas", serial: "dlSeries", t: "dlT", filt: "dlFiltros",
-                     wb: "dlWb", cc: "dlCc", fps: "dlFps", shutter: "dlShutter", ei: "dlEi", lut: "dlLut" };
+                     wb: "dlWb", cc: "dlCc", fps: "dlFps", shutter: "dlShutter", ei: "dlEi", lut: "dlLut",
+                     res: "dlResProy", focal: "dlFocal", nclip: "dlNclip" };
   let escenaAnterior = null;
   $("listaTomas").innerHTML = idxCam.length ? idxCam.map(i => {
     const t = L[i];
