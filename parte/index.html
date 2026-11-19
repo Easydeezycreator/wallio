@@ -13,10 +13,13 @@
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
- --bg:#0b0d10; --panel:#12151a; --band:#000; --line:#242a33; --line2:#171c23;
- --tx:#e8ebf0; --tx2:#8b95a5; --tx3:#5c6675;
- --ok:#3f9e73; --warn:#b8891f; --err:#c4544b; --sel:#e8ebf0;
- --camA:#e5484d; --camB:#3b82f6; --camC:#f5c518; --camD:#22b060;
+ /* v117: rediseño aprobado por Waldo -- fondo blanco, cada grupo de campos
+    en una caja de borde rojo muy pálido (--panel/--line2), con --camA un
+    poco más saturado que antes para que siga leyéndose bien sobre blanco */
+ --bg:#ffffff; --panel:#fdf6f5; --band:#000; --line:#dde1e6; --line2:#f1cfcd;
+ --tx:#161a1f; --tx2:#5c6670; --tx3:#8a93a0;
+ --ok:#2f8f63; --warn:#9a6c13; --err:#c4433d; --sel:#161a1f;
+ --camA:#d9372f; --camB:#3b82f6; --camC:#c9960b; --camD:#22974f;
  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --tap:46px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -107,6 +110,30 @@ section{display:none}section.on{display:block}
 #avisoSmartfill{font:500 12px/1.3 var(--mono);color:var(--ok);padding:2px 11px 6px}
 #avisoSmartfill .deshacer{cursor:pointer;text-decoration:underline}
 #avisoSmartfill[hidden]{display:none}
+
+/* v117: cada grupo de campos (Toma/Óptica/Exposición/Película/Tiempos) en
+   su propia caja de borde rojo muy pálido -- aprobado por Waldo para este
+   rediseño, es la única excepción a "nada de cajas" de toda la app */
+.toma .row > .gsec{grid-column:1/-1;background:var(--panel);border:1px solid var(--line2);
+  padding:10px 12px 8px;margin-bottom:10px}
+.toma .row > .gsec:last-child{margin-bottom:0}
+.gsec .ghead{display:flex;align-items:center;justify-content:space-between;
+  font:700 9.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--camA);
+  padding-bottom:7px;margin-bottom:9px;border-bottom:1px solid var(--line2)}
+.gsec .ghead .oculta{font:500 10px/1 var(--mono);letter-spacing:0;text-transform:none;
+  color:var(--tx3);opacity:.75;cursor:pointer}
+.gsec .ghead .oculta:active{color:var(--camA)}
+.gsec .row{grid-column:1/-1}
+.f.restaurar{display:flex;gap:6px;flex-wrap:wrap;padding-top:6px}
+.f.restaurar button{border-style:dashed;color:var(--tx3);font-size:9.5px;padding:5px 9px}
+.f.restaurar button:active{color:var(--camA);border-color:var(--camA)}
+
+/* v117: Smartfill pasa a ser la acción principal de la toma -- botón sólido
+   en rojo, junto al número de Escena/Toma que ahora se ve más grande */
+.toma .th .sl{font:800 19px/1 var(--mono);letter-spacing:-.02em;color:var(--tx)}
+.toma .th button.smartfill{background:var(--camA);border-color:var(--camA);color:#fff;
+  font-weight:700;letter-spacing:.03em}
+.toma .th button.smartfill:active{background:#b82e27}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
 input,select,textarea{width:100%;min-height:31px;background:transparent;color:var(--tx);
@@ -537,8 +564,12 @@ html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){displ
   .toma .th{flex-wrap:wrap;row-gap:7px}
   .toma .th .meta{min-width:0}
   .toma .th::after{content:"";order:1;flex:0 0 100%;height:0}
-  .toma .th button{order:2;flex:1 1 0;min-width:0;padding:0 3px}
+  .toma .th button{order:3;flex:1 1 0;min-width:0;padding:0 3px}
   .toma .th button.x{flex:0 0 36px}
+  /* v117: Smartfill es la acción principal -- en móvil ocupa su propia
+     línea completa, antes que el resto de botones secundarios */
+  .toma .th button.smartfill{order:2;flex:0 0 100%;min-height:38px;font-size:11px;
+    white-space:nowrap}
   .btnrow.presets button{padding-left:2px;padding-right:2px;letter-spacing:.04em}
 }
 .toma .row{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
@@ -983,13 +1014,15 @@ input[spellcheck=false],textarea[spellcheck=false],
 @media screen{
 
 :root{
-  --acc:#6fd3a6;              /* verde instrumento: lo que está bien */
-  --acc2:#4a8cff;             /* azul frío: la luz de arriba */
-  --amb:#e0a94a;              /* ámbar: falta algo */
-  --rojo:#e0736b;             /* rojo: no vale */
-  --v1:rgba(255,255,255,.035);
-  --v2:rgba(255,255,255,.012);
-  --borde:rgba(232,235,240,.10);
+  --acc:#2f8f63;              /* verde instrumento: lo que está bien */
+  --acc2:#2f6fe0;             /* azul frío: la luz de arriba */
+  --amb:#9a6c13;              /* ámbar: falta algo */
+  --rojo:#c4433d;             /* rojo: no vale */
+  /* v117: fondo blanco -- los relieves ahora son un matiz oscuro muy
+     tenue sobre blanco, no un brillo blanco sobre negro */
+  --v1:rgba(22,26,31,.035);
+  --v2:rgba(22,26,31,.012);
+  --borde:rgba(22,26,31,.12);
 }
 
 /* ---------------- el fondo ----------------
@@ -997,22 +1030,24 @@ input[spellcheck=false],textarea[spellcheck=false],
    batería. Dos luces muy tenues arriba y un degradado casi negro: la
    pantalla deja de ser una pared plana sin quitarle ni un punto de
    contraste al texto.                                                  */
-html{background:#080a0d}
+/* v117: mismo fondo blanco que el resto de la app -- ya no hace falta
+   ningún degradado oscuro de fondo */
+html{background:#ffffff}
 body{background:transparent;position:relative}
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:
-    radial-gradient(130% 62% at 50% -12%, rgba(74,140,255,.13), rgba(74,140,255,0) 62%),
-    radial-gradient(80% 44% at 102% -4%, rgba(111,211,166,.09), rgba(111,211,166,0) 58%),
-    linear-gradient(180deg,#0d1117 0%,#0a0d11 52%,#080a0d 100%)}
+    radial-gradient(130% 62% at 50% -12%, rgba(74,140,255,.06), rgba(74,140,255,0) 62%),
+    radial-gradient(80% 44% at 102% -4%, rgba(47,143,99,.05), rgba(47,143,99,0) 58%),
+    linear-gradient(180deg,#ffffff 0%,#ffffff 52%,#ffffff 100%)}
 
-/* ---------------- cabecera y barra: cristal ---------------- */
-header{background:linear-gradient(180deg,rgba(16,21,28,.92),rgba(10,13,17,.80));
+/* ---------------- cabecera y barra: cristal (en claro) ---------------- */
+header{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,255,255,.88));
   -webkit-backdrop-filter:saturate(150%) blur(14px);
   backdrop-filter:saturate(150%) blur(14px);
-  border-bottom:1px solid rgba(232,235,240,.16);
-  box-shadow:0 10px 26px -22px #000}
-header svg{filter:drop-shadow(0 0 10px rgba(111,211,166,.28))}
-header .wm{background:linear-gradient(180deg,#ffffff,#c9d2de);-webkit-background-clip:text;
+  border-bottom:1px solid rgba(22,26,31,.14);
+  box-shadow:0 10px 26px -22px rgba(22,26,31,.25)}
+header svg{filter:invert(1) brightness(.32)}
+header .wm{background:linear-gradient(180deg,#161a1f,#3a4452);-webkit-background-clip:text;
   background-clip:text;color:transparent}
 header .st b{color:var(--acc)}
 /* Los botones se quedan arriba con la marca; el «guardado» y la cobertura
@@ -1020,35 +1055,35 @@ header .st b{color:var(--acc)}
    «guardado» delante y empujaba los botones abajo, que es lo que se toca. */
 header .sv{order:8} header .st{order:9}
 
-nav{background:linear-gradient(180deg,rgba(13,17,23,.90),rgba(8,10,13,.97));
+nav{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.98));
   -webkit-backdrop-filter:saturate(150%) blur(14px);
   backdrop-filter:saturate(150%) blur(14px);
-  border-top:1px solid rgba(232,235,240,.16);
-  box-shadow:0 -12px 28px -24px #000}
-nav button{position:relative;border-right-color:rgba(232,235,240,.07)}
-nav button.on{background:linear-gradient(180deg,#f3f6fa,#dde3ec);color:#0a0d11}
+  border-top:1px solid rgba(22,26,31,.14);
+  box-shadow:0 -12px 28px -24px rgba(22,26,31,.3)}
+nav button{position:relative;border-right-color:rgba(22,26,31,.08)}
+nav button.on{background:linear-gradient(180deg,#2a3340,#161a1f);color:#fff}
 nav button.on::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;
   background:linear-gradient(90deg,var(--acc),var(--acc2))}
-nav button i.ok{color:var(--acc)} nav button.on i.ok{color:#1c6a49}
+nav button i.ok{color:var(--acc)} nav button.on i.ok{color:#8fe3bb}
 
 /* ---------------- bandas de sección ----------------
    Antes era una raya negra de lado a lado. Ahora el color se apaga hacia
    la derecha y queda una marca a la izquierda: se ve dónde empieza cada
    bloque sin que la pantalla parezca un código de barras.               */
 .card h2{color:var(--tx);
-  background:linear-gradient(90deg,rgba(111,211,166,.15) 0%,rgba(20,26,34,.92) 24%,
-    rgba(11,14,18,.35) 72%,rgba(11,14,18,0) 100%);
+  background:linear-gradient(90deg,rgba(47,143,99,.10) 0%,rgba(244,246,248,.92) 24%,
+    rgba(249,250,251,.35) 72%,rgba(249,250,251,0) 100%);
   border-left:2px solid var(--acc);
-  border-top:1px solid rgba(232,235,240,.07);
-  border-bottom:1px solid rgba(232,235,240,.05)}
-.card{border-bottom-color:rgba(232,235,240,.07)}
+  border-top:1px solid rgba(22,26,31,.06);
+  border-bottom:1px solid rgba(22,26,31,.05)}
+.card{border-bottom-color:rgba(22,26,31,.08)}
 
 /* ---------------- avisos ---------------- */
 .note{border-left:2px solid transparent;
-  border-image:linear-gradient(180deg,var(--acc),rgba(111,211,166,.15)) 1;
-  background:linear-gradient(90deg,rgba(111,211,166,.055),rgba(111,211,166,0) 62%);
+  border-image:linear-gradient(180deg,var(--acc),rgba(47,143,99,.15)) 1;
+  background:linear-gradient(90deg,rgba(47,143,99,.06),rgba(47,143,99,0) 62%);
   padding:9px 10px 9px 12px;border-radius:0 4px 4px 0}
-.note b{color:#fff}
+.note b{color:var(--tx)}
 .hint.good{color:var(--acc)} .hint.bad{color:var(--rojo)}
 
 /* ---------------- superficies con relieve ---------------- */
@@ -1059,7 +1094,7 @@ nav button i.ok{color:var(--acc)} nav button.on i.ok{color:#1c6a49}
 .stat{border-color:var(--borde);border-radius:6px;overflow:hidden}
 .rescate{border-radius:6px;border-left:2px solid var(--amb)}
 .inv .kpi.ok b{color:var(--acc)} .inv .kpi.med b{color:var(--amb)} .inv .kpi.mal b{color:var(--rojo)}
-.inv .kpi b{background:linear-gradient(180deg,#ffffff,#cfd6e0);-webkit-background-clip:text;
+.inv .kpi b{background:linear-gradient(180deg,#161a1f,#3a4452);-webkit-background-clip:text;
   background-clip:text;color:transparent}
 .inv .kpi.ok b,.inv .kpi.med b,.inv .kpi.mal b{background:none;-webkit-background-clip:border-box;
   background-clip:border-box}
@@ -1081,30 +1116,30 @@ nav button i.ok{color:var(--acc)} nav button.on i.ok{color:#1c6a49}
 
 /* ---------------- botones ---------------- */
 button{border-color:var(--borde);
-  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012))}
-button:active{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.04))}
-button.primary{color:#0a0d11;border-color:rgba(255,255,255,.85);
-  background:linear-gradient(180deg,#f6f9fc,#dde3ec);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 10px 22px -16px rgba(111,211,166,.55)}
-button.ghost{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.008))}
-button.danger{border-color:rgba(224,115,107,.35);color:var(--rojo);
-  background:linear-gradient(180deg,rgba(224,115,107,.08),rgba(224,115,107,.02))}
+  background:linear-gradient(180deg,rgba(22,26,31,.025),rgba(22,26,31,.008))}
+button:active{background:linear-gradient(180deg,rgba(22,26,31,.08),rgba(22,26,31,.03))}
+button.primary{color:#fff;border-color:var(--tx);
+  background:linear-gradient(180deg,#2a3340,#161a1f);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 22px -16px rgba(47,143,99,.45)}
+button.ghost{background:linear-gradient(180deg,rgba(22,26,31,.02),rgba(22,26,31,.006))}
+button.danger{border-color:rgba(196,67,61,.4);color:var(--rojo);
+  background:linear-gradient(180deg,rgba(196,67,61,.08),rgba(196,67,61,.02))}
 .btnrow{border-color:var(--borde)}
 .btnrow button{border-right-color:var(--borde)}
 
 /* ---------------- campos: el foco, en color ---------------- */
 input:focus,select:focus,textarea:focus{border-bottom-color:var(--acc);
-  box-shadow:0 1px 0 0 var(--acc),0 6px 14px -12px rgba(111,211,166,.8)}
-input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
+  box-shadow:0 1px 0 0 var(--acc),0 6px 14px -12px rgba(47,143,99,.5)}
+input,select,textarea{border-bottom-color:rgba(22,26,31,.18)}
 
 /* ---------------- la tira del parte ---------------- */
-.tira{background:linear-gradient(180deg,rgba(15,20,27,.94),rgba(10,13,17,.86));
+.tira{background:linear-gradient(180deg,rgba(253,246,245,.9),rgba(255,255,255,.96));
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(232,235,240,.12)}
-.tira b{background:linear-gradient(180deg,#ffffff,#cdd5e0);-webkit-background-clip:text;
+  border-bottom:1px solid rgba(22,26,31,.1)}
+.tira b{background:linear-gradient(180deg,#161a1f,#3a4452);-webkit-background-clip:text;
   background-clip:text;color:transparent}
-.tira.vacia{border-bottom-color:rgba(224,169,74,.5);
-  background:linear-gradient(180deg,rgba(45,32,16,.55),rgba(10,13,17,.86))}
+.tira.vacia{border-bottom-color:rgba(154,108,19,.5);
+  background:linear-gradient(180deg,rgba(251,243,226,.9),rgba(255,255,255,.96))}
 .tira.vacia b{background:none;-webkit-background-clip:border-box;background-clip:border-box;
   color:var(--amb)}
 
@@ -1123,7 +1158,7 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 .pick.on .box{background:linear-gradient(180deg,#f6f9fc,#dde3ec);border-color:#e8ebf0}
 .inv .l input[type=checkbox]:checked{background:linear-gradient(180deg,#f6f9fc,#dde3ec);
   border-color:#e8ebf0}
-.cellrow,.fila,.inv .l,.selfmt,.pick{border-bottom-color:rgba(232,235,240,.06)}
+.cellrow,.fila,.inv .l,.selfmt,.pick{border-bottom-color:rgba(22,26,31,.09)}
 .cellrow.mov{animation:mov2 1.2s ease-out}
 @keyframes mov2{0%{background:rgba(111,211,166,.22)}100%{background:transparent}}
 
@@ -1144,7 +1179,7 @@ input,select,textarea{border-bottom-color:rgba(232,235,240,.14)}
 html.solo-parte .portada{display:none}
 
 /* ---- el aviso de jornada nueva, en la tira del parte ---- */
-.tira button.jsig{border-color:rgba(111,211,166,.5);color:#6fd3a6;margin-right:8px}
+.tira button.jsig{border-color:rgba(47,143,99,.5);color:var(--acc);margin-right:8px}
 
 /* ---- la guía: el manual dentro de la app ---- */
 #v-guia p{margin:9px 11px;font-size:13px;line-height:1.65;color:var(--tx2)}
@@ -1196,7 +1231,7 @@ html.solo-parte .portada{display:none}
   <div><div class="wm">WALLIO</div><div class="wl">Lens Grid Platform</div></div>
   <div class="sp"></div>
   <span id="estadoGuardado" class="sv"></span>
-  <button id="btnNueva" class="lang" onclick="aplicaActualizacion()" hidden style="color:#7fd6a2;border-color:rgba(127,214,162,.5)">Actualizar</button>
+  <button id="btnNueva" class="lang" onclick="aplicaActualizacion()" hidden style="color:#1c6a49;border-color:rgba(47,143,99,.5)">Actualizar</button>
   <button id="btnProyNuevo" class="lang" onclick="proyectoNuevo()">Proyecto nuevo</button>
   <button id="btnCompartir" class="lang" onclick="pcPanel()">Compartir</button>
     <button id="btnRefrescar" class="lang" title="Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado" onclick="refrescarTodo()">Refrescar</button>
@@ -5419,14 +5454,13 @@ function toggleGrupoCampos(nombre){
   });
   renderTomas();
 }
+/* v117: el toggle de cada grupo ahora vive dentro de su propia caja
+   ("ocultar"/"mostrar" en el título de cada sección), así que la fila
+   suelta de enlaces de arriba ya no hace falta -- se deja la función
+   vacía por si algo más la llama, pero no pinta nada */
 function renderGruposCampos(){
   const c = $("gruposCampos"); if (!c) return;
-  const camposOcultos = S.parte.camposOcultos || [];
-  c.innerHTML = `<div class="f grupos">` + Object.keys(GRUPOS_CAMPOS).map(nombre => {
-    const claves = GRUPOS_CAMPOS[nombre];
-    const todoOculto = claves.every(k => camposOcultos.indexOf(k) >= 0);
-    return `<span style="cursor:pointer;opacity:.6;font-size:.85em;margin-right:12px" onclick="toggleGrupoCampos('${nombre}')">${todoOculto ? "+" : "−"} ${esc(traduce(nombre))}</span>`;
-  }).join("") + `</div>`;
+  c.innerHTML = "";
 }
 function sumaTC(tc, offset, fps){
   fps = Math.round(parseFloat(fps)) || 24;
@@ -5683,14 +5717,35 @@ function renderTomas(){
     const avisoFalta = claveFaltan.length ? `<span class="avisoFalta">${esc(traduce("falta"))} ` +
       claveFaltan.map(k => { const c = T_CAMPOS.find(c => c[0] === k); return esc(traduce(c ? c[1] : k)); }).join(", ") +
       `</span>` : "";
-    const campos = T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0 && k !== "cc").map(([k, et, , extra]) =>
-      campoToma(i, k, et, T_LISTAS[k] || null, extra === "w")).join("");
+    /* v117: los campos ya no se listan sueltos -- cada uno va dentro de la
+       caja de su grupo (GRUPOS_CAMPOS), con los "+ campo" de esa categoría
+       al pie de SU propia caja, no todos revueltos al final de la toma */
     const camposOcultosManual = S.parte.camposOcultosManual || [];
-    const camposOcultosVisibles = camposOcultos.filter(k => k !== "cc" && camposOcultosManual.indexOf(k) >= 0);
-    const restaurar = camposOcultosVisibles.length ? `<div class="f restaurar">` +
-      camposOcultosVisibles.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
-        return `<button class="ghost" onclick="restaurarCampoToma('${k}')">+ ${esc(traduce(c ? c[1] : k))}</button>`; }).join(" ") +
-      `</div>` : "";
+    const keyHtml = {};
+    T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0 && k !== "cc").forEach(([k, et, , extra]) => {
+      keyHtml[k] = campoToma(i, k, et, T_LISTAS[k] || null, extra === "w");
+    });
+    const clavesAgrupadas = {};
+    Object.keys(GRUPOS_CAMPOS).forEach(nombre => GRUPOS_CAMPOS[nombre].forEach(k => { clavesAgrupadas[k] = true; }));
+    const clavesToma = T_CLAVES.filter(k => k !== "cc" && !clavesAgrupadas[k]);
+    function cajaGrupo(nombre, claves, togglable){
+      const visibles = claves.map(k => keyHtml[k]).filter(Boolean).join("");
+      const ocultasGrupo = claves.filter(k => camposOcultos.indexOf(k) >= 0 && camposOcultosManual.indexOf(k) >= 0);
+      const restaurarGrupo = ocultasGrupo.length ? `<div class="f restaurar">` +
+        ocultasGrupo.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
+          return `<button class="ghost" onclick="restaurarCampoToma('${k}')">+ ${esc(traduce(c ? c[1] : k))}</button>`; }).join(" ") +
+        `</div>` : "";
+      if (!visibles && !restaurarGrupo) return "";
+      const todoOculto = togglable && GRUPOS_CAMPOS[nombre].every(k => camposOcultos.indexOf(k) >= 0);
+      const toggleBtn = togglable ? `<span class="oculta" onclick="toggleGrupoCampos('${nombre}')">${esc(traduce(todoOculto ? "mostrar" : "ocultar"))}</span>` : "";
+      return `<div class="gsec"><div class="ghead"><span>${esc(traduce(nombre))}</span>${toggleBtn}</div>` +
+        `<div class="row">${visibles}</div>${restaurarGrupo}</div>`;
+    }
+    const cajas = cajaGrupo("Toma", clavesToma, false) +
+      cajaGrupo("Óptica", GRUPOS_CAMPOS["Óptica"], true) +
+      cajaGrupo("Exposición", GRUPOS_CAMPOS["Exposición"], true) +
+      cajaGrupo("Película", GRUPOS_CAMPOS["Película"], true) +
+      cajaGrupo("Tiempos", GRUPOS_CAMPOS["Tiempos"], true);
     /* v115: los campos propios que cada quien añade con "+ Añadir campo"
        también aprenden y sugieren lo ya escrito -- usan el índice del campo
        (no el nombre) para no romperse si el nombre lleva comillas o acentos */
@@ -5704,12 +5759,14 @@ function renderTomas(){
         <datalist id="${idProp}">${opcionesProp.map(o => `<option value="${esc(o)}">`).join("")}</datalist>
       </div>`;
     }).join("");
+    const cajaPersonalizados = `<div class="gsec"><div class="ghead"><span>${esc(traduce("Personalizados"))}</span></div>` +
+      `<div class="row">${propios}</div><div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div></div>`;
         const abierta = i === ultimoIdx;
         return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}"${abierta ? " open" : ""}>
       <summary class="th">
         ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}${avisoFalta}</div>
-        ${abierta ? `<button title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill</button>` : ""}
+        ${abierta ? `<button class="smartfill" title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill →</button>` : ""}
         <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
         <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
         <button class="${t.notaEsp === 'PU' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='PU'?'':'PU');renderTomas()">PU</button>
@@ -5717,7 +5774,7 @@ function renderTomas(){
         <button class="${t.ok ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
       </summary>
-      <div class="row">${campos}${propios}<div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div>${restaurar}</div></details>`;
+      <div class="row">${cajas}${cajaPersonalizados}</div></details>`;
   }).join("") : "";
   $("listaTomas").classList.toggle("mc", esMulticam());
   renderGruposCampos();
@@ -6288,6 +6345,7 @@ const EN = {
 "Si dos trabajan la misma letra a la vez, vale lo último que se subió. Salir deja de compartir pero no borra nada de tu aparato.":"If two people work the same letter at once, the last upload wins. Leave stops sharing but deletes nothing from your device.",
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Exposición":"Exposure","Tiempos":"Timing","Cargado por":"Loaded by","Altura de óptica":"Lens height","Tilt":"Tilt","Pan":"Pan",
+"ocultar":"hide","mostrar":"show","Personalizados":"Custom",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Paso":"Gauge · perfs",
