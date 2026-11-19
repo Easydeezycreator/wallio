@@ -5661,7 +5661,7 @@ function renderTomas(){
     const claveFaltan = (t.mos || t.falso) ? [] : CAMPOS_CLAVE.filter(k =>
       camposOcultos.indexOf(k) < 0 && !(t[k] || "").toString().trim());
     const avisoFalta = claveFaltan.length ? `<span class="avisoFalta">${esc(traduce("falta"))} ` +
-      claveFaltan.map(k => { const c = T_CAMPOS.find(c => c[0] === k); return esc(c ? c[1] : k); }).join(", ") +
+      claveFaltan.map(k => { const c = T_CAMPOS.find(c => c[0] === k); return esc(traduce(c ? c[1] : k)); }).join(", ") +
       `</span>` : "";
     const campos = T_CAMPOS.filter(([k]) => camposOcultos.indexOf(k) < 0 && k !== "cc").map(([k, et, , extra]) =>
       campoToma(i, k, et, T_LISTAS[k] || null, extra === "w")).join("");
@@ -5669,7 +5669,7 @@ function renderTomas(){
     const camposOcultosVisibles = camposOcultos.filter(k => k !== "cc" && camposOcultosManual.indexOf(k) >= 0);
     const restaurar = camposOcultosVisibles.length ? `<div class="f restaurar">` +
       camposOcultosVisibles.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
-        return `<button class="ghost" onclick="restaurarCampoToma('${k}')">+ ${c ? c[1] : k}</button>`; }).join(" ") +
+        return `<button class="ghost" onclick="restaurarCampoToma('${k}')">+ ${esc(traduce(c ? c[1] : k))}</button>`; }).join(" ") +
       `</div>` : "";
     const propios = (S.parte.campos || []).map(n =>
       `<div class="f"><label>${esc(n)}</label>
@@ -6259,6 +6259,7 @@ const EN = {
 "Cada auxiliar trabaja su cámara (A, B, C o D) y las demás se refrescan solas cada pocos segundos. Tu cámara activa manda en tu aparato: nadie te la pisa.":"Each assistant works their own camera (A, B, C or D) and the others refresh on their own every few seconds. Your active camera rules on your device: nobody overwrites it.",
 "Si dos trabajan la misma letra a la vez, vale lo último que se subió. Salir deja de compartir pero no borra nada de tu aparato.":"If two people work the same letter at once, the last upload wins. Leave stops sharing but deletes nothing from your device.",
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
+"Exposición":"Exposure","Tiempos":"Timing","Cargado por":"Loaded by","Altura de óptica":"Lens height","Tilt":"Tilt","Pan":"Pan",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Paso":"Gauge · perfs",
