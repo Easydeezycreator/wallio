@@ -5306,11 +5306,21 @@ function aprendeCampo(k, v){
    índice solo sirve para encontrarlo sin arriesgarse a comillas/acentos */
 function aprendeExtra(pi, v){
   const n = (S.parte.campos || [])[pi]; if (!n) return;
+  aprendeExtra2(n, v);
+}
+/* v134: misma memoria (S.memExtra) pero por NOMBRE directo, para los
+   campos personalizados del ROLLO (que no viven en S.parte.campos sino en
+   S.parte.camposRollo) -- así ND/Espacio de color/etc. aprenden igual sin
+   importar si se usaron en una toma o en "Cámara y rollo". */
+function aprendeExtra2(n, v){
+  if (!n) return;
   v = (v || "").trim(); if (!v) return;
   S.memExtra = S.memExtra || {};
   S.memExtra[n] = S.memExtra[n] || [];
   if (!S.memExtra[n].includes(v)){
-    guarda(); S.memExtra[n].unshift(v); S.memExtra[n] = S.memExtra[n].slice(0, 30); renderTomas();
+    guarda(); S.memExtra[n].unshift(v); S.memExtra[n] = S.memExtra[n].slice(0, 30);
+    if (typeof renderTomas === "function") renderTomas();
+    if (typeof renderRollExtra === "function") renderRollExtra();
   }
 }
 function tomaVacia(){
@@ -6076,7 +6086,7 @@ function renderTomas(){
        (no el nombre) para no romperse si el nombre lleva comillas o acentos */
     const propios = (S.parte.campos || []).map((n, pi) => {
       const idProp = "dlProp_" + pi;
-      const opcionesProp = (S.memExtra && S.memExtra[n]) || [];
+      const opcionesProp = opcionesPara(n);
       return `<div class="f" data-k="prop_${pi}"><label>${esc(n)}</label>
         <input value="${esc((t.extra || {})[n] || "")}" list="${idProp}"
           oninput="if(!S.parte.tomas[${i}].extra)S.parte.tomas[${i}].extra={};S.parte.tomas[${i}].extra['${esc(n)}']=this.value"
@@ -6133,15 +6143,52 @@ const GRUPO_DEL_CATALOGO = {
   "Tinte de balance de blancos": "Exposición", "ISO base": "Exposición",
   "Formato de audio": "Película", "Firmware": "Película"
 };
+/* v134: TODOS los campos personalizados (los del catálogo -- ND, Espacio de
+   color, Gamma, etc. -- y cualquier otro que el dueño escriba a mano, tanto
+   en la TOMA como en el ROLLO) deben ofrecer opciones múltiples apenas se
+   usan, igual que ya pasa con FPS/EI/Obturador/WB de siempre -- no hace
+   falta esperar a que el dueño los escriba una primera vez para que
+   empiecen a sugerir algo. Estas son las sugerencias de fábrica; además de
+   estas, se suman las que el dueño mismo vaya escribiendo (memExtra),
+   exactamente igual que antes. */
+const SUGERENCIAS_CATALOGO = {
+  "ND": ["ND 0.3 (1 stop)", "ND 0.6 (2 stops)", "ND 0.9 (3 stops)", "ND 1.2 (4 stops)",
+         "ND 1.5 (5 stops)", "ND 1.8 (6 stops)", "ND 2.1 (7 stops)", "ND 2.4 (8 stops)",
+         "ND 2.7 (9 stops)", "ND 3.0 (10 stops)"],
+  "Espacio de color": ["Rec.709", "Rec.2020", "P3-D65", "ACES", "S-Gamut3.Cine",
+         "V-Gamut", "ARRI Wide Gamut", "Log-C4"],
+  "Gamma": ["Rec.709", "S-Log3", "C-Log3", "V-Log", "Log-C4", "HLG", "PQ", "Natural"],
+  "Tinte de balance de blancos": ["0", "G1", "G2", "G3", "G4", "G5", "G6",
+         "M1", "M2", "M3", "M4", "M5", "M6"],
+  "Formato de audio": ["WAV 48kHz/24bit", "WAV 48kHz/16bit", "BWF 48kHz/24bit", "Poly (embebido)"],
+  "ISO base": ["100", "160", "200", "320", "400", "500", "640", "800"],
+  "Modo de sensor": ["Open Gate", "S35 4:3", "S35 16:9", "Full Frame", "S16", "Anamórfico 2x"]
+};
+function opcionesPara(n){
+  const propias = SUGERENCIAS_CATALOGO[n] || [];
+  const aprendidas = (S.memExtra && S.memExtra[n]) || [];
+  const vistas = new Set();
+  return propias.concat(aprendidas).filter(o => {
+    const k = o.toLowerCase();
+    if (vistas.has(k)) return false;
+    vistas.add(k); return true;
+  });
+}
 function renderRollExtra(){
   const c = $("rollExtra"); if (!c) return;
   const cs = S.parte.camposRollo || [];
   S.parte.roll.extra = S.parte.roll.extra || {};
-  c.innerHTML = cs.length ? '<div class="grid">' + cs.map((n, i) =>
-    `<div class="f"><label>${esc(n)} <span style="float:right;cursor:pointer"
+  c.innerHTML = cs.length ? '<div class="grid">' + cs.map((n, i) => {
+    const idRoll = "dlRollProp_" + i;
+    const opcionesRoll = opcionesPara(n);
+    return `<div class="f"><label>${esc(n)} <span style="float:right;cursor:pointer"
         onclick="quitarCampoRollo(${i})">×</span></label>
-      <input value="${esc(S.parte.roll.extra[n] || "")}"
-        oninput="S.parte.roll.extra['${esc(n)}']=this.value" autocomplete="off"></div>`).join("") + '</div>' : "";
+      <input value="${esc(S.parte.roll.extra[n] || "")}" list="${idRoll}"
+        oninput="S.parte.roll.extra['${esc(n)}']=this.value"
+        onchange="aprendeExtra2('${esc(n)}',this.value)" autocomplete="off">
+      <datalist id="${idRoll}">${opcionesRoll.map(o => `<option value="${esc(o)}">`).join("")}</datalist>
+    </div>`;
+  }).join("") + '</div>' : "";
   /* v124: ya no hay un prompt() emergente -- "+ Añadir campo del rollo" es
      un panel discreto con los nombres que el dueño ya ha usado antes (se
      agregan con un toque) + un campo para escribir uno nuevo. */
