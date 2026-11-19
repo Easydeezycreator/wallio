@@ -6036,8 +6036,7 @@ function renderTomas(){
        uno cae directo en su rubro de siempre (no sueltos en
        "Personalizados"), junto con FPS/WB/etc. */
     /* v132: en Película NO se ofrecen opciones que son solo de digital --
-       ND y Formato de audio sí se usan en cualquier formato (filtro físico
-       / grabador aparte) y se dejan. */
+       ND sí se usa en cualquier formato (filtro físico) y se deja. */
     const camposTomaCatalogo = (S.parte.campos || []);
     const catalogoPorGrupo = {};
     RUBROS_AGREGAR.forEach(nombre => { catalogoPorGrupo[nombre] = []; });
@@ -6133,7 +6132,7 @@ function renderTomas(){
    elegir. Ahora siempre hay un grupo de sugerencias comunes de cámara
    listas para agregar con un toque, además de lo que el dueño ya usó. */
 const CAMPOS_ROLLO_CATALOGO = ["Modo de sensor","ND","Espacio de color","Gamma",
-  "Tinte de balance de blancos","Formato de audio","Firmware","ISO base"];
+  "Tinte de balance de blancos","FPS","Firmware","ISO base"];
 /* v131: a qué rubro de la TOMA cae cada uno de esos mismos campos cuando se
    agrega desde el panel de "+ Añadir campo" de la toma (no del rollo) --
    "Modo de sensor" se deja fuera (ese es de cuerpo/rollo completo, no
@@ -6141,7 +6140,12 @@ const CAMPOS_ROLLO_CATALOGO = ["Modo de sensor","ND","Espacio de color","Gamma",
 const GRUPO_DEL_CATALOGO = {
   "ND": "Exposición", "Espacio de color": "Exposición", "Gamma": "Exposición",
   "Tinte de balance de blancos": "Exposición", "ISO base": "Exposición",
-  "Formato de audio": "Película", "Firmware": "Película"
+  "Firmware": "Película"
+  /* "FPS" se deja FUERA de este mapeo a propósito: en la TOMA ya existe el
+     campo fijo "FPS" de siempre (con su + restaurar de toda la vida); este
+     "FPS" del catálogo es solo para "Cámara y rollo" (el fps nominal del
+     proyecto/mag), para no mostrar dos "+ FPS" duplicados en el panel de
+     la toma. */
 };
 /* v134: TODOS los campos personalizados (los del catálogo -- ND, Espacio de
    color, Gamma, etc. -- y cualquier otro que el dueño escriba a mano, tanto
@@ -6163,7 +6167,10 @@ const SUGERENCIAS_CATALOGO = {
   "Gamma": ["Rec.709", "S-Log3", "C-Log3", "V-Log", "Log-C4", "HLG", "PQ", "Natural"],
   "Tinte de balance de blancos": ["0", "G1", "G2", "G3", "G4", "G5", "G6",
          "M1", "M2", "M3", "M4", "M5", "M6"],
-  "Formato de audio": ["WAV 48kHz/24bit", "WAV 48kHz/16bit", "BWF 48kHz/24bit", "Poly (embebido)"],
+  /* v136: este catálogo era "Formato de audio" -- corregido, era "FPS" (el
+     fps nominal de "Cámara y rollo"), con los mismos valores que ya usa el
+     FPS de toda la vida (dlFps). */
+  "FPS": ["23.976", "24", "25", "29.97", "30", "48", "50", "60", "75", "90", "96", "120"],
   "ISO base": ["100", "160", "200", "320", "400", "500", "640", "800"],
   "Modo de sensor": ["Open Gate", "S35 4:3", "S35 16:9", "Full Frame", "S16", "Anamórfico 2x"]
 };
@@ -6779,7 +6786,7 @@ const EN = {
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Exposición":"Exposure","Tiempos":"Timing","Cargado por":"Loaded by","Altura de óptica":"Lens height","Tilt":"Tilt","Pan":"Pan",
 "ocultar":"hide","mostrar":"show","Personalizados":"Custom","Agregar":"Add",
-"Modo de sensor":"Sensor mode","Espacio de color":"Color space","Tinte de balance de blancos":"White balance tint","Formato de audio":"Audio format","ISO base":"Base ISO","Añadir campo del rollo":"Add roll field","Añadir campo":"Add field","o escribe uno nuevo…":"or type a new one…","Añadir":"Add","Añadir otra cámara":"Add another camera","nombre de esta cámara…":"name of this camera…",
+"Modo de sensor":"Sensor mode","Espacio de color":"Color space","Tinte de balance de blancos":"White balance tint","ISO base":"Base ISO","Añadir campo del rollo":"Add roll field","Añadir campo":"Add field","o escribe uno nuevo…":"or type a new one…","Añadir":"Add","Añadir otra cámara":"Add another camera","nombre de esta cámara…":"name of this camera…",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Paso":"Gauge · perfs",
