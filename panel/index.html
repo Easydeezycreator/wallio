@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WALLIO · Panel</title>
+<style>
+  :root{--bg:#0b0c0e;--card:#15171a;--line:#262a2f;--txt:#f2f3f4;--sub:#9aa0a6;--ok:#34c759;--warn:#ffb020;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Inter",Arial,sans-serif;padding:28px 18px 80px;}
+  .wrap{max-width:860px;margin:0 auto;}
+  h1{font-size:19px;font-weight:700;letter-spacing:.2px;}
+  .sub{color:var(--sub);font-size:13px;margin-top:4px;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:22px 0;}
+  .card{background:var(--card);border:1px solid var(--line);padding:16px;}
+  .card .n{font-size:28px;font-weight:700;}
+  .card .l{color:var(--sub);font-size:12px;margin-top:4px;}
+  .section{margin-top:34px;}
+  .section h2{font-size:14px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;}
+  #chart{width:100%;height:120px;display:block;}
+  .lista{border-top:1px solid var(--line);}
+  .fila{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .fila .et{color:var(--txt);}
+  .fila .fe{color:var(--sub);white-space:nowrap;}
+  textarea{width:100%;background:var(--card);border:1px solid var(--line);color:var(--txt);padding:12px;font-size:14px;font-family:inherit;resize:vertical;min-height:70px;}
+  input.contacto{width:100%;background:var(--card);border:1px solid var(--line);color:var(--txt);padding:10px 12px;font-size:13px;margin-top:8px;font-family:inherit;}
+  button.enviar{margin-top:10px;background:var(--ok);color:#06240f;border:none;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;}
+  button.enviar:disabled{opacity:.5;cursor:default;}
+  .msg{font-size:12px;margin-top:8px;color:var(--ok);}
+  .vacio{color:var(--sub);font-size:13px;padding:14px 0;}
+  .sug{background:var(--card);border:1px solid var(--line);padding:10px 12px;margin-bottom:8px;font-size:13px;}
+  .sug .fe{color:var(--sub);font-size:11px;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>WALLIO · Panel</h1>
+  <div class="sub" id="actualizado">cargando…</div>
+
+  <div class="cards">
+    <div class="card"><div class="n" id="c_total">—</div><div class="l">Partes totales</div></div>
+    <div class="card"><div class="n" id="c_hoy">—</div><div class="l">Hoy</div></div>
+    <div class="card"><div class="n" id="c_semana">—</div><div class="l">Últimos 7 días</div></div>
+    <div class="card"><div class="n" id="c_casas">—</div><div class="l">Casas/equipos</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Crecimiento · últimos 30 días</h2>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="section">
+    <h2>Actividad reciente</h2>
+    <div class="lista" id="recientes"><div class="vacio">cargando…</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Buzón de sugerencias</h2>
+    <textarea id="s_texto" placeholder="Escribe tu sugerencia…"></textarea>
+    <input class="contacto" id="s_contacto" placeholder="Contacto (opcional)">
+    <button class="enviar" id="s_btn">Enviar</button>
+    <div class="msg" id="s_msg"></div>
+  </div>
+
+  <div class="section">
+    <h2>Sugerencias recibidas</h2>
+    <div id="sugerencias"><div class="vacio">cargando…</div></div>
+  </div>
+</div>
+
+<script>
+const SB_URL = "https://nyaevkntqaxdhzxuzbtv.supabase.co";
+const SB_KEY = "sb_publishable_VLj4d9z7jlBfAPgC2JxCSA_V82iwajL";
+
+async function rpc(fn, body){
+  const r = await fetch(SB_URL + "/rest/v1/rpc/" + fn, {
+    method:"POST",
+    headers:{apikey:SB_KEY, Authorization:"Bearer "+SB_KEY, "Content-Type":"application/json"},
+    body: JSON.stringify(body||{})
+  });
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+function fmtFecha(iso){
+  const d = new Date(iso);
+  return d.toLocaleString("es-ES",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
+}
+
+function dibujaChart(porDia){
+  const cv = document.getElementById("chart");
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = 120;
+  cv.width = w*dpr; cv.height = h*dpr;
+  const ctx = cv.getContext("2d");
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+
+  const dias = [];
+  const hoy = new Date();
+  for(let i=29;i>=0;i--){
+    const d = new Date(hoy); d.setDate(d.getDate()-i);
+    dias.push(d.toISOString().slice(0,10));
+  }
+  const mapa = {};
+  porDia.forEach(x => mapa[x.dia] = x.n);
+  const valores = dias.map(d => mapa[d] || 0);
+  const max = Math.max(1, ...valores);
+  const pad = 10;
+  const bw = (w - pad*2) / valores.length;
+
+  ctx.strokeStyle = "#262a2f";
+  ctx.beginPath(); ctx.moveTo(pad,h-20); ctx.lineTo(w-pad,h-20); ctx.stroke();
+
+  valores.forEach((v,i)=>{
+    const bh = (h-32) * (v/max);
+    const x = pad + i*bw;
+    ctx.fillStyle = i===valores.length-1 ? "#34c759" : "#3a3f45";
+    ctx.fillRect(x+1, h-20-bh, Math.max(1,bw-2), bh);
+  });
+
+  ctx.fillStyle = "#9aa0a6";
+  ctx.font = "11px -apple-system, Arial";
+  ctx.fillText(dias[0].slice(5), pad, h-6);
+  ctx.textAlign = "right";
+  ctx.fillText(dias[dias.length-1].slice(5), w-pad, h-6);
+  ctx.textAlign = "left";
+}
+
+async function cargaStats(){
+  const s = await rpc("panel_stats");
+  document.getElementById("c_total").textContent = s.total_partes;
+  document.getElementById("c_hoy").textContent = s.hoy;
+  document.getElementById("c_semana").textContent = s.semana;
+  document.getElementById("c_casas").textContent = s.total_casas;
+  dibujaChart(s.por_dia || []);
+
+  const cont = document.getElementById("recientes");
+  if(!s.recientes || !s.recientes.length){
+    cont.innerHTML = '<div class="vacio">Sin actividad todavía.</div>';
+  } else {
+    cont.innerHTML = s.recientes.map(r =>
+      '<div class="fila"><span class="et">'+ (r.etiqueta ? escapeHtml(r.etiqueta) : "(sin nombre)") +'</span><span class="fe">'+ fmtFecha(r.creada) +'</span></div>'
+    ).join("");
+  }
+  document.getElementById("actualizado").textContent = "Actualizado " + new Date().toLocaleTimeString("es-ES");
+}
+
+async function cargaSugerencias(){
+  const lista = await rpc("panel_sugerencias");
+  const cont = document.getElementById("sugerencias");
+  if(!lista.length){
+    cont.innerHTML = '<div class="vacio">Todavía no hay sugerencias.</div>';
+    return;
+  }
+  cont.innerHTML = lista.map(s =>
+    '<div class="sug">'+ escapeHtml(s.texto) + (s.contacto ? ' <span class="fe">— '+escapeHtml(s.contacto)+'</span>' : '') +'<div class="fe">'+ fmtFecha(s.creada) +'</div></div>'
+  ).join("");
+}
+
+function escapeHtml(t){
+  return String(t).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+document.getElementById("s_btn").addEventListener("click", async () => {
+  const texto = document.getElementById("s_texto").value.trim();
+  const contacto = document.getElementById("s_contacto").value.trim();
+  if(!texto) return;
+  const btn = document.getElementById("s_btn");
+  btn.disabled = true;
+  try{
+    const r = await fetch(SB_URL + "/rest/v1/sugerencias", {
+      method:"POST",
+      headers:{apikey:SB_KEY, Authorization:"Bearer "+SB_KEY, "Content-Type":"application/json", Prefer:"return=minimal"},
+      body: JSON.stringify({texto, contacto: contacto || null})
+    });
+    if(!r.ok) throw new Error(await r.text());
+    document.getElementById("s_texto").value = "";
+    document.getElementById("s_contacto").value = "";
+    document.getElementById("s_msg").textContent = "Enviado, gracias.";
+    cargaSugerencias();
+  }catch(e){
+    document.getElementById("s_msg").textContent = "No se pudo enviar.";
+    document.getElementById("s_msg").style.color = "#ff6b6b";
+  }
+  btn.disabled = false;
+});
+
+cargaStats();
+cargaSugerencias();
+setInterval(cargaStats, 60000);
+window.addEventListener("resize", cargaStats);
+</script>
+</body>
+</html>
