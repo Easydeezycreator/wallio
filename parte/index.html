@@ -6152,9 +6152,12 @@ const GRUPO_DEL_CATALOGO = {
    estas, se suman las que el dueño mismo vaya escribiendo (memExtra),
    exactamente igual que antes. */
 const SUGERENCIAS_CATALOGO = {
-  "ND": ["ND 0.3 (1 stop)", "ND 0.6 (2 stops)", "ND 0.9 (3 stops)", "ND 1.2 (4 stops)",
-         "ND 1.5 (5 stops)", "ND 1.8 (6 stops)", "ND 2.1 (7 stops)", "ND 2.4 (8 stops)",
-         "ND 2.7 (9 stops)", "ND 3.0 (10 stops)"],
+  /* v135: notación corta de siempre en set (ND3, ND6, ND9... = densidad x10,
+     como se dice de palabra: "estamos en un ND6") + Interno/Externo como
+     opciones propias, para anotar si el ND es el de la rueda interna de la
+     cámara o un filtro externo puesto en mate/rosca. */
+  "ND": ["Interno", "Externo", "ND3", "ND6", "ND9", "ND12", "ND15", "ND18",
+         "ND21", "ND24", "ND27", "ND30"],
   "Espacio de color": ["Rec.709", "Rec.2020", "P3-D65", "ACES", "S-Gamut3.Cine",
          "V-Gamut", "ARRI Wide Gamut", "Log-C4"],
   "Gamma": ["Rec.709", "S-Log3", "C-Log3", "V-Log", "Log-C4", "HLG", "PQ", "Natural"],
