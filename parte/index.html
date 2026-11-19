@@ -5516,22 +5516,49 @@ const GRUPOS_CAMPOS = {
 /* v124: lista de campos que empiezan ocultos en un proyecto NUEVO, sin
    ninguna preferencia aprendida todavía (Tiempos/tc/dur queda fuera, ese
    sigue siendo solo-PDF para siempre). */
-const CAMPOS_OCULTOS_DEFAULT = ["dial","pies","nclip","clip"];
+const CAMPOS_OCULTOS_DEFAULT = ["dial","pies","nclip","clip","serial","lut","res"];
 /* v128: Óptica (lens) y Exposición ya NO se ocultan nunca por defecto --
    el usuario pidió expresamente que esos campos aparezcan siempre justo
    después de Escena/Toma, igual en TODAS las versiones (iPhone, iPad, Mac)
    y en TODOS los proyectos, nuevos o ya existentes. CAMPOS_FORZADOS_VISIBLES
    se usa para "limpiar" cualquier camposOcultos/camposOcultosManual que ya
    estuviera guardado de antes (en este dispositivo o en otro) y que los
-   tuviera escondidos. */
-const CAMPOS_FORZADOS_VISIBLES = ["serial","focal","t","foco","filt","alt","tilt","pan",
-  "wb","ei","shutter","fps","lut","res"];
+   tuviera escondidos.
+   v129: "serial" (Óptica · nº de serie), "lut" y "res" (Resolución) SALEN
+   de esta lista -- LUT y Resolución ya se capturan en los Datos del rollo
+   (rollo/laboratorio), así que si el 1er AC los toca en una toma suelta es
+   solo una EXCEPCIÓN puntual para esa toma, no algo que deba verse siempre;
+   quedan disponibles en el panel "+ Añadir campo" (Óptica/Exposición) para
+   cuando se necesiten. Lo mismo con el número de serie de óptica: vuelve a
+   ser opcional vía "+ Añadir campo", no forzado. */
+const CAMPOS_FORZADOS_VISIBLES = ["focal","t","foco","filt","alt","tilt","pan",
+  "wb","ei","shutter","fps"];
 function forzarCamposLensExpoVisibles(){
   if (!S.parte) return;
   if (Array.isArray(S.parte.camposOcultos))
     S.parte.camposOcultos = S.parte.camposOcultos.filter(k => CAMPOS_FORZADOS_VISIBLES.indexOf(k) < 0);
   if (Array.isArray(S.parte.camposOcultosManual))
     S.parte.camposOcultosManual = S.parte.camposOcultosManual.filter(k => CAMPOS_FORZADOS_VISIBLES.indexOf(k) < 0);
+  forzarCamposOcultosDeVuelta();
+}
+/* v129: serial (Óptica · nº de serie), lut y res (Resolución) vuelven a
+   quedar ocultos por defecto en CUALQUIER proyecto -- nuevo o ya abierto,
+   en cualquier dispositivo -- a menos que el propio usuario ya los haya
+   restaurado a mano con el "+" (ahí sí quedan aprendidos en
+   prefCampos().visibles y se respeta). Esto deshace, en cualquier parte
+   que ya estuviera abierto, el forzado-visible que el v128 les había
+   aplicado por error. */
+const CAMPOS_VUELVEN_A_OCULTOS = ["serial","lut","res"];
+function forzarCamposOcultosDeVuelta(){
+  if (!S.parte) return;
+  const pref = prefCampos();
+  S.parte.camposOcultos = S.parte.camposOcultos || [];
+  S.parte.camposOcultosManual = S.parte.camposOcultosManual || [];
+  CAMPOS_VUELVEN_A_OCULTOS.forEach(k => {
+    if (pref.visibles.indexOf(k) >= 0) return;
+    if (S.parte.camposOcultos.indexOf(k) < 0) S.parte.camposOcultos.push(k);
+    if (S.parte.camposOcultosManual.indexOf(k) < 0) S.parte.camposOcultosManual.push(k);
+  });
 }
 /* v124: "la app aprende" -- memoria PERSISTENTE a nivel de dueño del
    aparato, no por proyecto. Si en cualquier toma restaura un campo con un
