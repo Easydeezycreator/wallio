@@ -2034,7 +2034,7 @@ let S = {
   focos: ["Mínimo", "2.40 m", "INF"], mhl: [], volcado: {},
   takes: {},            // "fmtKey|foco" -> {file, date, by, res}
   parte: {roll: {}, tomas: [], campos: [], camposRollo: [],
-          camposOcultos: ["serial","focal","t","foco","filt","alt","tilt","pan","wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"], camposOcultosManual: ["serial","focal","t","foco","filt","alt","tilt","pan","wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"]},   // parte de cámara (WLG-03)
+          camposOcultos: ["dial","pies","nclip","clip"], camposOcultosManual: ["dial","pies","nclip","clip"]},   // parte de cámara (WLG-03)
   base: {},             // lo que venía de la ficha cargada
   historial: [],
   memCampos: {}          // v70: lo que escribió antes en cada campo del rollo, para sugerirlo (sobrevive a "proyecto nuevo")
@@ -5502,7 +5502,7 @@ function deshacerSmartfill(){
    preset; con esto el grupo "Tiempos" deja de aparecer en pantalla. */
 const PRESETS_CAMPOS = {
   digital: ["dial","pies","tc","dur"],
-  pelicula: ["nclip","lut","res","tc","dur"]
+  pelicula: ["nclip","tc","dur"]
 };
 /* v111: grupos de campos para ocultar/restaurar varios de una vez -- usa el
    mismo mecanismo de siempre (camposOcultos/camposOcultosManual, la × de
@@ -5516,8 +5516,23 @@ const GRUPOS_CAMPOS = {
 /* v124: lista de campos que empiezan ocultos en un proyecto NUEVO, sin
    ninguna preferencia aprendida todavía (Tiempos/tc/dur queda fuera, ese
    sigue siendo solo-PDF para siempre). */
-const CAMPOS_OCULTOS_DEFAULT = ["serial","focal","t","foco","filt","alt","tilt","pan",
-  "wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"];
+const CAMPOS_OCULTOS_DEFAULT = ["dial","pies","nclip","clip"];
+/* v128: Óptica (lens) y Exposición ya NO se ocultan nunca por defecto --
+   el usuario pidió expresamente que esos campos aparezcan siempre justo
+   después de Escena/Toma, igual en TODAS las versiones (iPhone, iPad, Mac)
+   y en TODOS los proyectos, nuevos o ya existentes. CAMPOS_FORZADOS_VISIBLES
+   se usa para "limpiar" cualquier camposOcultos/camposOcultosManual que ya
+   estuviera guardado de antes (en este dispositivo o en otro) y que los
+   tuviera escondidos. */
+const CAMPOS_FORZADOS_VISIBLES = ["serial","focal","t","foco","filt","alt","tilt","pan",
+  "wb","ei","shutter","fps","lut","res"];
+function forzarCamposLensExpoVisibles(){
+  if (!S.parte) return;
+  if (Array.isArray(S.parte.camposOcultos))
+    S.parte.camposOcultos = S.parte.camposOcultos.filter(k => CAMPOS_FORZADOS_VISIBLES.indexOf(k) < 0);
+  if (Array.isArray(S.parte.camposOcultosManual))
+    S.parte.camposOcultosManual = S.parte.camposOcultosManual.filter(k => CAMPOS_FORZADOS_VISIBLES.indexOf(k) < 0);
+}
 /* v124: "la app aprende" -- memoria PERSISTENTE a nivel de dueño del
    aparato, no por proyecto. Si en cualquier toma restaura un campo con un
    "+", ese campo queda marcado como que SÍ lo usa, y los proyectos nuevos
@@ -5651,6 +5666,12 @@ function fillParte(){
       .concat(S.parte.camposOcultosManual.filter(k => (PRESETS_CAMPOS[tipoClave] || []).indexOf(k) < 0));
     S.parte.camposOcultosTipo = tipoClave;
   }
+  /* v128: Óptica y Exposición SIEMPRE visibles después de Escena/Toma, sin
+     importar qué cámara (A/B/C/D) esté activa ni si el rollo es Digital o
+     Película -- se fuerza aquí, después de aplicar cualquier preset, para
+     que ningún preset viejo ni ningún dato guardado de antes los vuelva a
+     esconder. */
+  forzarCamposLensExpoVisibles();
   /* v72: unidad/perf/rev/copia YA NO se rellenan solos — quedan vacíos hasta
      que Waldo los elige; solo se usa un valor por defecto al exportar/mostrar
      el reporte (ver resumenParte/PDF), nunca como dato guardado del rollo */
