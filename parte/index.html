@@ -19,7 +19,9 @@
  --bg:#ffffff; --panel:#fdf6f5; --band:#000; --line:#dde1e6; --line2:#f1cfcd;
  --tx:#161a1f; --tx2:#5c6670; --tx3:#8a93a0;
  --ok:#2f8f63; --warn:#9a6c13; --err:#c4433d; --sel:#161a1f;
- --camA:#d9372f; --camB:#3b82f6; --camC:#c9960b; --camD:#22974f;
+ /* v125: colores de cámara menos saturados -- siguen diferenciando A/B/C/D
+    pero sin gritar ni distraer, misma intensidad (luminosidad) de antes */
+ --camA:#b35a55; --camB:#658ccc; --camC:#9e8236; --camD:#3c7d55;
  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --tap:46px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -136,10 +138,17 @@ section{display:none}section.on{display:block}
 .f.restaurar button:active{color:var(--boxC);border-color:var(--boxC)}
 
 /* v118: "Cámara y rollo" y "Laboratorio" llevan la misma caja roja discreta
-   que los grupos de la toma, para que todo el parte se vea consistente */
-.card.cajaRoja{background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding-top:1px}
-.card.cajaRoja h2{background:transparent;color:var(--camA);padding:9px 11px 7px;margin-bottom:7px;
-  border-bottom:1px solid var(--line2)}
+   que los grupos de la toma, para que todo el parte se vea consistente.
+   v125: ahora además cambian de color según la cámara activa (A/B/C/D),
+   igual que ya hacían las cajas por rubro dentro de cada toma -- usa las
+   mismas variables --boxC/--boxBg/--boxLine, puestas en <body> por pintaCams() */
+body{--boxC:var(--camA);--boxBg:var(--panel);--boxLine:var(--line2)}
+body.camB{--boxC:var(--camB);--boxBg:#f2f7ff;--boxLine:#cfe0fa}
+body.camC{--boxC:var(--camC);--boxBg:#fdf9ec;--boxLine:#f0ddab}
+body.camD{--boxC:var(--camD);--boxBg:#f1faf4;--boxLine:#c9ecd5}
+.card.cajaRoja{background:var(--boxBg);border:1px solid var(--boxLine);border-radius:7px;padding-top:1px}
+.card.cajaRoja h2{background:transparent;color:var(--boxC);padding:9px 11px 7px;margin-bottom:7px;
+  border-bottom:1px solid var(--boxLine)}
 
 /* v123: Smartfill pasa a ser un botón chico y discreto, en la esquina de la
    cabecera (dentro de .th, junto a la ×), en rojo apagado -- ya no ocupa
@@ -158,20 +167,16 @@ details.agregar > summary{list-style:none;cursor:pointer;display:inline-block;
   background:transparent;border:1px dashed var(--line);color:var(--tx3);
   font:600 10px var(--mono);letter-spacing:.03em;padding:7px 12px;border-radius:5px}
 details.agregar > summary::-webkit-details-marker{display:none}
-details.agregar[open] > summary{color:var(--camA);border-color:var(--camA);margin-bottom:10px}
-.toma details.agregar[open] > summary{color:var(--boxC);border-color:var(--boxC)}
-details.agregar .agGrupo{background:var(--panel);border:1px solid var(--line2);
+details.agregar[open] > summary{color:var(--boxC);border-color:var(--boxC);margin-bottom:10px}
+details.agregar .agGrupo{background:var(--boxBg);border:1px solid var(--boxLine);
   border-radius:7px;padding:10px 12px 8px;margin-bottom:8px}
-.toma details.agregar .agGrupo{background:var(--boxBg);border-color:var(--boxLine)}
 details.agregar .agGrupo:last-child{margin-bottom:8px}
 details.agregar .agNombre{font:700 9px var(--mono);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--camA);margin-bottom:7px}
-.toma details.agregar .agNombre{color:var(--boxC)}
+  color:var(--boxC);margin-bottom:7px}
 details.agregar .chip{display:inline-block;margin:0 5px 5px 0;background:#fff;
   border:1px solid var(--line);color:var(--tx2);font:600 10px var(--mono);padding:5px 8px;
   border-radius:4px;cursor:pointer}
-details.agregar .chip:active{color:var(--camA);border-color:var(--camA)}
-.toma details.agregar .chip:active{color:var(--boxC);border-color:var(--boxC)}
+details.agregar .chip:active{color:var(--boxC);border-color:var(--boxC)}
 details.agregar .agNuevo{display:flex;gap:8px;align-items:center;padding-top:2px}
 details.agregar .agNuevo input{flex:1;min-height:0;font-size:12px;padding:5px 0}
 details.agregar .agNuevo .chip{white-space:nowrap}
@@ -4526,6 +4531,7 @@ function refrescaTodo(){
   renderFmt(); renderFoco(); renderCaptura(); fillParte(); renderTomas();
   renderCampos(); renderRollExtra();
   chartCheck(); updateChip();
+  if (typeof pintaCams === "function") pintaCams();
   if (typeof aplicaIdioma === "function") aplicaIdioma();
 }
 function empezarDeCero(){
@@ -5331,6 +5337,14 @@ function pintaCams(){
     caja.querySelectorAll("button").forEach(b =>
       b.classList.toggle("on", b.getAttribute("data-cam") === camActiva()));
   });
+  /* v125: las cajas de nivel rollo (Cámara y rollo, Laboratorio) también
+     cambian de color según la cámara activa -- antes solo lo hacían las
+     cajas por rubro dentro de cada toma. Misma lógica: una clase cam{B,C,D}
+     en <body> que las variables CSS de .card.cajaRoja heredan igual que
+     .toma. */
+  document.body.classList.remove("camB", "camC", "camD");
+  const l = camActiva();
+  if (l === "B" || l === "C" || l === "D") document.body.classList.add("cam" + l);
 }
 function esFilm(){ return ((S.parte.roll || {}).tipo || "digital") === "film"; }
 function pasoTexto(p){ return {"4":"35 mm · 4 perf","3":"35 mm · 3 perf","2":"35 mm · 2 perf",
