@@ -1515,6 +1515,9 @@ html.solo-parte .portada{display:none}
       <datalist id="dlResProy"></datalist>
       <datalist id="dlFocal"></datalist>
       <datalist id="dlNclip"></datalist>
+      <datalist id="dlAlt"></datalist>
+      <datalist id="dlTilt"></datalist>
+      <datalist id="dlPan"></datalist>
       <datalist id="dlCc"></datalist>
 <datalist id="dlCodec"></datalist>
 <datalist id="dlLut"></datalist>
@@ -5148,7 +5151,7 @@ const T_CLAVES = T_CAMPOS.map(c => c[0]);
 /* v110: campos de la toma que, al escribirse, quedan recordados como
    sugerencia para la próxima vez (igual que fps/ei/obturador a nivel de
    rollo) -- sigue siendo texto libre, solo se SUGIERE, nunca se obliga */
-const APRENDE_TOMA = ["res","focal","nclip"];
+const APRENDE_TOMA = ["res","focal","nclip","alt","tilt","pan"];
 /* v111: campos sin los que un 1er AC no puede dar la toma por buena --
    si faltan (y están visibles, no ocultados con la ×), se avisa con un
    texto discreto junto a la toma, sin bloquear el guardado ni usar cajas */
@@ -5525,6 +5528,13 @@ function fillParte(){
      sitios. Focal y Nº de clips son catálogos propios de la toma. */
   dl("dlFocal", [...new Set(["14","16","18","21","24","27","32","35","40","50","65","75","85","100","135","150","180","200","300"].concat(mem("focal")))]);
   dl("dlNclip", [...new Set(["1","2","3","4","5"].concat(mem("nclip")))]);
+  /* v112: Altura de óptica, Tilt y Pan se repiten mucho dentro de un mismo
+     setup (dolly/grúa) -- aquí no hay un catálogo universal como en focal,
+     así que la sugerencia es SOLO lo que ya se ha escrito antes (igual que
+     dlCodec/dlLut), sin valores de ejemplo inventados */
+  dl("dlAlt", mem("alt"));
+  dl("dlTilt", mem("tilt"));
+  dl("dlPan", mem("pan"));
 }
 
 function campoToma(i, k, etiqueta, lista, ancho){
@@ -5618,7 +5628,8 @@ function renderTomas(){
   const ultimoIdx = idxCam.length ? idxCam[idxCam.length - 1] : -1;
   const T_LISTAS = { sc: "dlEscenas", serial: "dlSeries", t: "dlT", filt: "dlFiltros",
                      wb: "dlWb", cc: "dlCc", fps: "dlFps", shutter: "dlShutter", ei: "dlEi", lut: "dlLut",
-                     res: "dlResProy", focal: "dlFocal", nclip: "dlNclip" };
+                     res: "dlResProy", focal: "dlFocal", nclip: "dlNclip",
+                     alt: "dlAlt", tilt: "dlTilt", pan: "dlPan" };
   let escenaAnterior = null;
   $("listaTomas").innerHTML = idxCam.length ? idxCam.map(i => {
     const t = L[i];
