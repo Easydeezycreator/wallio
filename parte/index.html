@@ -1458,8 +1458,13 @@ html.solo-parte .portada{display:none}
       <button data-cam="D" onclick="cambiaCam('D')">D</button>
     </div>
     <div class="grid">
-      <div class="f"><label>Cámara</label><input id="r_cam" placeholder="A" autocomplete="off"></div>
-      <div class="f"><label>Cuerpo <span style="float:right;cursor:pointer" onclick="otraCamara()">+ otra cámara</span></label><input id="r_body" list="dlBodies" onfocus="this.select()" placeholder="" autocomplete="off"></div>
+      <!-- v122: se quita el campo "Cámara" suelto (A/B/C/D ya se elige arriba
+           con los botones de camSelRollo, era el mismo dato repetido dos
+           veces) y el enlace "+ otra cámara" (el campo ya se selecciona
+           entero al tocarlo, con onfocus=select, así que escribir encima
+           ya lo reemplaza sin hacer falta un botón aparte) -->
+      <input id="r_cam" type="hidden">
+      <div class="f"><label>Cuerpo</label><input id="r_body" list="dlBodies" onfocus="this.select()" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Formato de captura</label><input id="r_fmt" list="dlFmts" onfocus="this.select()" placeholder="" autocomplete="off"></div>
             <div class="f"><label>Aspect ratio</label><input id="r_aspecto" list="dlAspecto" placeholder="" autocomplete="off"></div>
       <div class="f"><label>Resolución del proyecto</label><input id="r_res" list="dlResProy" placeholder="" autocomplete="off"></div>
@@ -1996,7 +2001,8 @@ let S = {
   formats: [],          // [{key, body, fmt, res, area, sop}]
   focos: ["Mínimo", "2.40 m", "INF"], mhl: [], volcado: {},
   takes: {},            // "fmtKey|foco" -> {file, date, by, res}
-  parte: {roll: {}, tomas: [], campos: [], camposRollo: []},   // parte de cámara (WLG-03)
+  parte: {roll: {}, tomas: [], campos: [], camposRollo: [],
+          camposOcultos: ["lut", "res"], camposOcultosManual: ["lut", "res"]},   // parte de cámara (WLG-03)
   base: {},             // lo que venía de la ficha cargada
   historial: [],
   memCampos: {}          // v70: lo que escribió antes en cada campo del rollo, para sugerirlo (sobrevive a "proyecto nuevo")
@@ -5006,8 +5012,13 @@ function proyectoNuevo(){
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
   S.prod = { };
   PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
+  /* v122: LUT y Resolución de la toma vienen ocultos por defecto -- ya
+     están en "Cámara y rollo" (una sola vez para todo el rollo) y casi
+     nunca cambian toma a toma; si alguna vez sí cambian, el "+ LUT" /
+     "+ Resolución" de la caja de Exposición los deja agregar igual. */
   S.parte = { roll: { tipo: "digital" },
               tomas: [], campos: [], camposRollo: [],
+              camposOcultos: ["lut", "res"], camposOcultosManual: ["lut", "res"],
               camActiva: "A", camsGuardadas: {} };
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
@@ -5033,6 +5044,8 @@ function jornadaSiguiente(){
   try { camsSig = JSON.parse(JSON.stringify(S.parte.camsGuardadas || {})); } catch(e){}
   S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
              camposRollo: (S.parte.camposRollo || []).slice(),
+             camposOcultos: (S.parte.camposOcultos || []).slice(),
+             camposOcultosManual: (S.parte.camposOcultosManual || []).slice(),
              camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig};
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
@@ -5175,6 +5188,8 @@ function ptSiguienteRollo(){
   try { camsSig = JSON.parse(JSON.stringify(S.parte.camsGuardadas || {})); } catch(e){}
   S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
              camposRollo: (S.parte.camposRollo || []).slice(),
+             camposOcultos: (S.parte.camposOcultos || []).slice(),
+             camposOcultosManual: (S.parte.camposOcultosManual || []).slice(),
              camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig};
   fillParte(); renderTomas();
   if (typeof renderCampos === "function") renderCampos();
