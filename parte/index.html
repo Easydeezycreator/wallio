@@ -565,6 +565,12 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 .toma .th button{min-height:30px;min-width:52px;flex:0 0 auto;font-size:9.5px;padding:0 9px}
 .toma .th button.si{background:var(--ok);border-color:var(--ok);color:#04160e}
 .toma .th button.mal{background:#7a1f1f;border-color:#7a1f1f;color:#fff}
+/* v140: MOS/TAILS/PU/buena viven en .btnrow.acciones, fuera de .th -- las
+   reglas de arriba nunca los alcanzaban y por eso no cambiaban de color al
+   seleccionarlos. Ahora toman el color de la cámara activa (--boxC), igual
+   que el resto de la caja de la toma; FALSO se queda en rojo de aviso. */
+.toma .btnrow.acciones button.si{background:var(--boxC);border-color:var(--boxC);color:#fff}
+.toma .btnrow.acciones button.mal{background:#7a1f1f;border-color:#7a1f1f;color:#fff}
 .toma.falso{opacity:.5}
 .escGrupo{font:700 11px/1 var(--mono);letter-spacing:.04em;text-transform:uppercase;
   color:var(--tx3);margin:14px 2px 4px;padding-top:6px;border-top:1px solid var(--line2)}
