@@ -5865,7 +5865,30 @@ function renderTomas(){
         return `<button class="chip" onclick="event.preventDefault();restaurarCampoToma('${k}')">+ ${esc(traduce(c ? c[1] : k))}</button>`; }).join("");
       return `<div class="agGrupo"><div class="agNombre">${esc(traduce(nombre))}</div>${chips}</div>`;
     }).join("");
-    const panelAgregar = agregarGrupos ? `<details class="agregar"><summary>+ ${esc(traduce("Agregar"))}</summary>${agregarGrupos}</details>` : "";
+    /* v126: un solo botón "+ Añadir campo" por toma -- antes había dos
+       paneles separados (uno para los campos predeterminados del rubro,
+       otro para los personalizados), lo que confundía: ahora al tocarlo
+       salen TODOS los campos posibles que ya existen (Óptica, Exposición,
+       Película) agrupados cada uno en su sección de siempre -- Tilt y Pan
+       junto con Altura de óptica, etc. -- más los personalizados que ya ha
+       usado antes, y al final la casilla para escribir uno totalmente
+       nuevo. Cada chip, al tocarlo, aparece YA dentro de la caja de su
+       propia sección (nunca suelto): los de rubro llaman a
+       restaurarCampoToma (misma caja de Óptica/Exposición/Película de
+       siempre) y los personalizados llaman a addCampoNombre (caja de
+       Personalizados). */
+    const pref = prefCampos();
+    const propiosDisp = pref.propios.filter(n => (S.parte.campos || []).indexOf(n) < 0);
+    const chipsProp = propiosDisp.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoNombre(this.dataset.n)">+ ${esc(n)}</button>`).join("");
+    const grupoPersonalizados = chipsProp ? `<div class="agGrupo"><div class="agNombre">${esc(traduce("Personalizados"))}</div>${chipsProp}</div>` : "";
+    const panelAgregar = (agregarGrupos || grupoPersonalizados) ? `<details class="agregar"><summary>+ ${esc(traduce("Añadir campo"))}</summary>
+      ${agregarGrupos}${grupoPersonalizados}
+      <div class="agNuevo"><input type="text" id="nuevoCampoInput_${i}" placeholder="${esc(traduce("o escribe uno nuevo…"))}">
+        <button class="chip" onclick="event.preventDefault();addCampoNombre($('nuevoCampoInput_${i}').value)">${esc(traduce("Añadir"))}</button></div>
+    </details>` : `<details class="agregar"><summary>+ ${esc(traduce("Añadir campo"))}</summary>
+      <div class="agNuevo"><input type="text" id="nuevoCampoInput_${i}" placeholder="${esc(traduce("o escribe uno nuevo…"))}">
+        <button class="chip" onclick="event.preventDefault();addCampoNombre($('nuevoCampoInput_${i}').value)">${esc(traduce("Añadir"))}</button></div>
+    </details>`;
     /* v115: los campos propios que cada quien añade con "+ Añadir campo"
        también aprenden y sugieren lo ya escrito -- usan el índice del campo
        (no el nombre) para no romperse si el nombre lleva comillas o acentos */
@@ -5879,20 +5902,7 @@ function renderTomas(){
         <datalist id="${idProp}">${opcionesProp.map(o => `<option value="${esc(o)}">`).join("")}</datalist>
       </div>`;
     }).join("");
-    /* v124: ya no hay un rectángulo fijo "+ Añadir campo" siempre visible,
-       ni un prompt() emergente -- si no hay campos propios todavía, solo
-       queda el mismo botón chico "+" de siempre; al tocarlo aparecen como
-       chips los nombres que ya ha usado antes (recordados entre proyectos)
-       + un campo para escribir uno nuevo. */
-    const pref = prefCampos();
-    const propiosDisp = pref.propios.filter(n => (S.parte.campos || []).indexOf(n) < 0);
-    const chipsProp = propiosDisp.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoNombre(this.dataset.n)">+ ${esc(n)}</button>`).join("");
-    const panelAddCampo = `<details class="agregar"><summary>+ ${esc(traduce("Añadir campo"))}</summary>
-      ${chipsProp ? `<div class="agGrupo">${chipsProp}</div>` : ""}
-      <div class="agNuevo"><input type="text" id="nuevoCampoInput_${i}" placeholder="${esc(traduce("o escribe uno nuevo…"))}">
-        <button class="chip" onclick="event.preventDefault();addCampoNombre($('nuevoCampoInput_${i}').value)">${esc(traduce("Añadir"))}</button></div>
-    </details>`;
-    const cajaPersonalizados = (propios ? `<div class="gsec"><div class="row">${propios}</div></div>` : "") + panelAddCampo;
+    const cajaPersonalizados = propios ? `<div class="gsec"><div class="row">${propios}</div></div>` : "";
         const abierta = i === ultimoIdx;
         /* v123: Smartfill vuelve a ser chico y discreto, en la esquina de la
            cabecera, en rojo apagado -- ya no ocupa toda la fila. Los demás
