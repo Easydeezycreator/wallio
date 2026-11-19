@@ -5158,6 +5158,13 @@ const APRENDE_TOMA = ["res","focal","nclip","alt","tilt","pan"];
    si faltan (y están visibles, no ocultados con la ×), se avisa con un
    texto discreto junto a la toma, sin bloquear el guardado ni usar cajas */
 const CAMPOS_CLAVE = ["focal","t"];
+/* v116: teclado numérico/decimal en vez del de letras para los campos que
+   son puramente numéricos -- más rápido de escribir en el móvil, como ya
+   pasaba en otros campos de la app (EI de rollo, carga, etc.). Tilt y Pan
+   se dejan en teclado normal porque ahí SÍ hacen falta negativos y el
+   teclado numérico del iPhone no trae signo menos. */
+const INPUTMODE_TOMA = { nclip: "numeric", dial: "numeric", pies: "decimal",
+  alt: "decimal", fps: "decimal", ei: "numeric", t: "decimal", dur: "decimal", focal: "decimal" };
 function aprendeCampo(k, v){
   v = (v || "").trim(); if (!v) return;
   S.memCampos = S.memCampos || {};
@@ -5618,8 +5625,9 @@ function campoToma(i, k, etiqueta, lista, ancho){
      escrito queda guardado como sugerencia para la próxima toma -- sigue
      siendo texto libre, esto solo alimenta la lista de sugerencias */
   const aprende = APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : "";
+  const modo = INPUTMODE_TOMA[k] ? ` inputmode="${INPUTMODE_TOMA[k]}"` : "";
   return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
-               `<input value="${v}"${l} placeholder="${ph}" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
+               `<input value="${v}"${l}${modo} placeholder="${ph}" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
          `onchange="${aprende}renderTomas()" autocomplete="off"></div>`;
 }
 function renderTomas(){
