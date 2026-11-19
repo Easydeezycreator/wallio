@@ -141,15 +141,33 @@ section{display:none}section.on{display:block}
 .card.cajaRoja h2{background:transparent;color:var(--camA);padding:9px 11px 7px;margin-bottom:7px;
   border-bottom:1px solid var(--line2)}
 
-/* v118: Smartfill pasa a ser la acción principal de la toma -- botón sólido
-   en rojo, SOLO, en su propia línea justo bajo la cabecera (no mezclado con
-   los demás botones, que ahora van en su propia fila al fondo de la toma).
-   El número de Escena/Toma se ve más grande. */
+/* v123: Smartfill pasa a ser un botón chico y discreto, en la esquina de la
+   cabecera (dentro de .th, junto a la ×), en rojo apagado -- ya no ocupa
+   toda la fila ni tiene tanto peso visual. */
 .toma .th .sl{font:800 19px/1 var(--mono);letter-spacing:-.02em;color:var(--tx)}
-.toma > button.smartfill{display:block;width:100%;background:var(--boxC);border-color:var(--boxC);
-  border-radius:7px;color:#fff;font-weight:700;letter-spacing:.03em;margin:8px 0 10px}
-.toma > button.smartfill:active{filter:brightness(.85)}
+.toma .th button.smartfill{background:transparent;border:1px solid var(--line2);color:var(--boxC);
+  font:700 10px var(--mono);letter-spacing:.04em;padding:6px 10px;border-radius:5px;
+  margin-left:auto;white-space:nowrap}
+.toma .th button.smartfill:active{background:var(--boxBg);filter:brightness(.92)}
 .btnrow.acciones{margin-top:10px}
+
+/* v123: panel único "+ Agregar" -- discreto, estilo dashed, agrupa por
+   rubro en chips; reemplaza las cajas vacías con botones "+" sueltos. */
+.toma details.agregar{margin:8px 0 2px}
+.toma details.agregar > summary{list-style:none;cursor:pointer;display:inline-block;
+  background:transparent;border:1px dashed var(--line);color:var(--tx3);
+  font:600 10px var(--mono);letter-spacing:.03em;padding:7px 12px;border-radius:5px}
+.toma details.agregar > summary::-webkit-details-marker{display:none}
+.toma details.agregar[open] > summary{color:var(--boxC);border-color:var(--boxC);margin-bottom:10px}
+.toma details.agregar .agGrupo{background:var(--boxBg);border:1px solid var(--boxLine);
+  border-radius:7px;padding:10px 12px 8px;margin-bottom:8px}
+.toma details.agregar .agGrupo:last-child{margin-bottom:0}
+.toma details.agregar .agNombre{font:700 9px var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--boxC);margin-bottom:7px}
+.toma details.agregar .chip{display:inline-block;margin:0 5px 5px 0;background:#fff;
+  border:1px solid var(--line);color:var(--tx2);font:600 10px var(--mono);padding:5px 8px;
+  border-radius:4px}
+.toma details.agregar .chip:active{color:var(--boxC);border-color:var(--boxC)}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
 input,select,textarea{width:100%;min-height:31px;background:transparent;color:var(--tx);
@@ -582,6 +600,8 @@ html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){displ
   .toma .th::after{content:"";order:1;flex:0 0 100%;height:0}
   .toma .th button{order:3;flex:1 1 0;min-width:0;padding:0 3px}
   .toma .th button.x{flex:0 0 36px}
+  .toma .th button.smartfill{order:0;flex:0 0 auto;margin-left:auto}
+  .toma .th button.x{order:0;flex:0 0 30px}
   .btnrow.presets button{padding-left:2px;padding-right:2px;letter-spacing:.04em}
 }
 .toma .row{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
@@ -2002,7 +2022,7 @@ let S = {
   focos: ["Mínimo", "2.40 m", "INF"], mhl: [], volcado: {},
   takes: {},            // "fmtKey|foco" -> {file, date, by, res}
   parte: {roll: {}, tomas: [], campos: [], camposRollo: [],
-          camposOcultos: ["lut", "res"], camposOcultosManual: ["lut", "res"]},   // parte de cámara (WLG-03)
+          camposOcultos: ["serial","focal","t","foco","filt","alt","tilt","pan","wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"], camposOcultosManual: ["serial","focal","t","foco","filt","alt","tilt","pan","wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"]},   // parte de cámara (WLG-03)
   base: {},             // lo que venía de la ficha cargada
   historial: [],
   memCampos: {}          // v70: lo que escribió antes en cada campo del rollo, para sugerirlo (sobrevive a "proyecto nuevo")
@@ -5018,7 +5038,7 @@ function proyectoNuevo(){
      "+ Resolución" de la caja de Exposición los deja agregar igual. */
   S.parte = { roll: { tipo: "digital" },
               tomas: [], campos: [], camposRollo: [],
-              camposOcultos: ["lut", "res"], camposOcultosManual: ["lut", "res"],
+              camposOcultos: ["serial","focal","t","foco","filt","alt","tilt","pan","wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"], camposOcultosManual: ["serial","focal","t","foco","filt","alt","tilt","pan","wb","ei","shutter","fps","lut","res","dial","pies","nclip","clip"],
               camActiva: "A", camsGuardadas: {} };
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
@@ -5762,20 +5782,17 @@ function renderTomas(){
     const clavesAgrupadas = {};
     Object.keys(GRUPOS_CAMPOS).forEach(nombre => GRUPOS_CAMPOS[nombre].forEach(k => { clavesAgrupadas[k] = true; }));
     const clavesToma = T_CLAVES.filter(k => k !== "cc" && !clavesAgrupadas[k]);
+    /* v123: ya no hay una caja vacía por rubro con solo botones de "+" --
+       eso seguía viéndose como una ventanilla aunque no tuviera campos
+       rellenos. Ahora, si un rubro no tiene NINGÚN campo visible, no pinta
+       nada; todos los campos ocultos de todos los rubros se juntan en un
+       solo panel discreto "+ Agregar" al pie de la toma. */
     function cajaGrupo(nombre, claves, togglable){
       const visibles = claves.map(k => keyHtml[k]).filter(Boolean).join("");
-      const ocultasGrupo = claves.filter(k => camposOcultos.indexOf(k) >= 0 && camposOcultosManual.indexOf(k) >= 0);
-      const restaurarGrupo = ocultasGrupo.length ? `<div class="f restaurar">` +
-        ocultasGrupo.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
-          return `<button class="ghost" onclick="restaurarCampoToma('${k}')">+ ${esc(traduce(c ? c[1] : k))}</button>`; }).join(" ") +
-        `</div>` : "";
-      if (!visibles && !restaurarGrupo) return "";
+      if (!visibles) return "";
       const todoOculto = togglable && GRUPOS_CAMPOS[nombre].every(k => camposOcultos.indexOf(k) >= 0);
-      /* v120: se quitan los títulos de cada caja (Toma/Óptica/Exposición...)
-         -- solo queda el control de ocultar/mostrar, discreto, sin nombre */
       const toggleBtn = togglable ? `<div class="ghead soloToggle"><span class="oculta" onclick="toggleGrupoCampos('${nombre}')">${esc(traduce(todoOculto ? "mostrar" : "ocultar"))}</span></div>` : "";
-      return `<div class="gsec">${toggleBtn}` +
-        `<div class="row">${visibles}</div>${restaurarGrupo}</div>`;
+      return `<div class="gsec">${toggleBtn}<div class="row">${visibles}</div></div>`;
     }
     /* v118: "Película" es SOLO para cuando el rollo es de película -- nunca
        se mezcla con digital, igual que ya pasaba antes del rediseño (el
@@ -5784,8 +5801,20 @@ function renderTomas(){
     const cajas = cajaGrupo("Toma", clavesToma, false) +
       cajaGrupo("Óptica", GRUPOS_CAMPOS["Óptica"], true) +
       cajaGrupo("Exposición", GRUPOS_CAMPOS["Exposición"], true) +
-      (esFilm() ? cajaGrupo("Película", GRUPOS_CAMPOS["Película"], true) : "") +
-      cajaGrupo("Tiempos", GRUPOS_CAMPOS["Tiempos"], true);
+      (esFilm() ? cajaGrupo("Película", GRUPOS_CAMPOS["Película"], true) : "");
+    /* v123: panel único "+ Agregar" -- junta los campos ocultos de TODOS los
+       rubros (Óptica/Exposición/Película), agrupados solo como etiquetas
+       dentro del panel (no como cajas aparte). Tiempos (tc/dur) se deja
+       fuera a propósito: ese sigue siendo solo-PDF, sin botón de agregar. */
+    const RUBROS_AGREGAR = esFilm() ? ["Óptica","Exposición","Película"] : ["Óptica","Exposición"];
+    const agregarGrupos = RUBROS_AGREGAR.map(nombre => {
+      const ocultas = GRUPOS_CAMPOS[nombre].filter(k => camposOcultos.indexOf(k) >= 0 && camposOcultosManual.indexOf(k) >= 0);
+      if (!ocultas.length) return "";
+      const chips = ocultas.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
+        return `<button class="chip" onclick="event.preventDefault();restaurarCampoToma('${k}')">+ ${esc(traduce(c ? c[1] : k))}</button>`; }).join("");
+      return `<div class="agGrupo"><div class="agNombre">${esc(traduce(nombre))}</div>${chips}</div>`;
+    }).join("");
+    const panelAgregar = agregarGrupos ? `<details class="agregar"><summary>+ ${esc(traduce("Agregar"))}</summary>${agregarGrupos}</details>` : "";
     /* v115: los campos propios que cada quien añade con "+ Añadir campo"
        también aprenden y sugieren lo ya escrito -- usan el índice del campo
        (no el nombre) para no romperse si el nombre lleva comillas o acentos */
@@ -5802,11 +5831,10 @@ function renderTomas(){
     const cajaPersonalizados = `<div class="gsec">` +
       `<div class="row">${propios}</div><div class="f addf"><button onclick="addCampo()">+ Añadir campo</button></div></div>`;
         const abierta = i === ultimoIdx;
-        /* v118: Smartfill queda SOLO, como acción principal justo bajo la
-           cabecera -- los demás botones (MOS/TAILS/PU/FALSO/buena) bajan a
-           su propia fila al fondo de la toma, como en la muestra aprobada.
-           Solo la × de borrar se queda arriba, para poder borrar una toma
-           sin tener que abrirla. */
+        /* v123: Smartfill vuelve a ser chico y discreto, en la esquina de la
+           cabecera, en rojo apagado -- ya no ocupa toda la fila. Los demás
+           botones (MOS/TAILS/PU/FALSO/buena) siguen en su propia fila al
+           fondo de la toma. La × de borrar se queda arriba siempre. */
         const smartfillBtn = abierta ? `<button class="smartfill" title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill →</button>` : "";
         const accionesBtn = abierta ? `<div class="btnrow acciones">
           <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
@@ -5819,10 +5847,11 @@ function renderTomas(){
       <summary class="th">
         ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${t.camLetra || "A"}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}${avisoFalta}</div>
+        ${smartfillBtn}
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
       </summary>
-      ${smartfillBtn}
       <div class="row">${cajas}${cajaPersonalizados}</div>
+      ${panelAgregar}
       ${accionesBtn}</details>`;
   }).join("") : "";
   $("listaTomas").classList.toggle("mc", esMulticam());
@@ -6394,7 +6423,7 @@ const EN = {
 "Si dos trabajan la misma letra a la vez, vale lo último que se subió. Salir deja de compartir pero no borra nada de tu aparato.":"If two people work the same letter at once, the last upload wins. Leave stops sharing but deletes nothing from your device.",
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Exposición":"Exposure","Tiempos":"Timing","Cargado por":"Loaded by","Altura de óptica":"Lens height","Tilt":"Tilt","Pan":"Pan",
-"ocultar":"hide","mostrar":"show","Personalizados":"Custom",
+"ocultar":"hide","mostrar":"show","Personalizados":"Custom","Agregar":"Add",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Paso":"Gauge · perfs",
