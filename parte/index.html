@@ -6156,12 +6156,16 @@ const GRUPO_DEL_CATALOGO = {
    estas, se suman las que el dueño mismo vaya escribiendo (memExtra),
    exactamente igual que antes. */
 const SUGERENCIAS_CATALOGO = {
-  /* v135: notación corta de siempre en set (ND3, ND6, ND9... = densidad x10,
-     como se dice de palabra: "estamos en un ND6") + Interno/Externo como
-     opciones propias, para anotar si el ND es el de la rueda interna de la
-     cámara o un filtro externo puesto en mate/rosca. */
-  "ND": ["Interno", "Externo", "ND3", "ND6", "ND9", "ND12", "ND15", "ND18",
-         "ND21", "ND24", "ND27", "ND30"],
+  /* v138: notación corta de siempre en set (ND3, ND6, ND9... = densidad x10,
+     como se dice de palabra: "estamos en un ND6") CADA valor ya trae si es
+     Interno (rueda interna de la cámara) o Externo (filtro puesto en mate/
+     rosca) -- Waldo pidio que no se pueda elegir "Interno"/"Externo" solos,
+     sino junto con la densidad de ND en una sola opción. */
+  "ND": ["ND3 Interno", "ND3 Externo", "ND6 Interno", "ND6 Externo",
+         "ND9 Interno", "ND9 Externo", "ND12 Interno", "ND12 Externo",
+         "ND15 Interno", "ND15 Externo", "ND18 Interno", "ND18 Externo",
+         "ND21 Interno", "ND21 Externo", "ND24 Interno", "ND24 Externo",
+         "ND27 Interno", "ND27 Externo", "ND30 Interno", "ND30 Externo"],
   "Espacio de color": ["Rec.709", "Rec.2020", "P3-D65", "ACES", "S-Gamut3.Cine",
          "V-Gamut", "ARRI Wide Gamut", "Log-C4"],
   "Gamma": ["Rec.709", "S-Log3", "C-Log3", "V-Log", "Log-C4", "HLG", "PQ", "Natural"],
