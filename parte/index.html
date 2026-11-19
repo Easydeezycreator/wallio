@@ -5931,6 +5931,13 @@ function renderTomas(){
   renderGruposCampos();
   resumenParte(); fillParte(); updateChip(); pintaCams();
 }
+/* v127: catálogo de campos de rollo/cámara ya predeterminados -- antes el
+   panel "+ Añadir campo del rollo" nacía vacío (solo con lo que el dueño
+   ya hubiera escrito antes), así que la primera vez no mostraba nada para
+   elegir. Ahora siempre hay un grupo de sugerencias comunes de cámara
+   listas para agregar con un toque, además de lo que el dueño ya usó. */
+const CAMPOS_ROLLO_CATALOGO = ["Modo de sensor","ND","Espacio de color","Gamma",
+  "Tinte de balance de blancos","Formato de audio","Firmware","ISO base"];
 function renderRollExtra(){
   const c = $("rollExtra"); if (!c) return;
   const cs = S.parte.camposRollo || [];
@@ -5945,10 +5952,13 @@ function renderRollExtra(){
      agregan con un toque) + un campo para escribir uno nuevo. */
   const p = $("rollAddPanel"); if (!p) return;
   const pref = prefCampos();
-  const disponibles = pref.propiosRollo.filter(n => cs.indexOf(n) < 0);
-  const chips = disponibles.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoRolloNombre(this.dataset.n)">+ ${esc(n)}</button>`).join("");
+  const sugeridos = CAMPOS_ROLLO_CATALOGO.filter(n => cs.indexOf(n) < 0);
+  const chipsSugeridos = sugeridos.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoRolloNombre(this.dataset.n)">+ ${esc(traduce(n))}</button>`).join("");
+  const disponibles = pref.propiosRollo.filter(n => cs.indexOf(n) < 0 && CAMPOS_ROLLO_CATALOGO.indexOf(n) < 0);
+  const chipsPropios = disponibles.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoRolloNombre(this.dataset.n)">+ ${esc(n)}</button>`).join("");
   p.innerHTML = `<details class="agregar"><summary>+ ${esc(traduce("Añadir campo del rollo"))}</summary>
-    ${chips ? `<div class="agGrupo">${chips}</div>` : ""}
+    ${chipsSugeridos ? `<div class="agGrupo">${chipsSugeridos}</div>` : ""}
+    ${chipsPropios ? `<div class="agGrupo"><div class="agNombre">${esc(traduce("Personalizados"))}</div>${chipsPropios}</div>` : ""}
     <div class="agNuevo"><input type="text" id="rollNuevoInput" placeholder="${esc(traduce("o escribe uno nuevo…"))}">
       <button class="chip" onclick="event.preventDefault();addCampoRolloNombre($('rollNuevoInput').value);$('rollNuevoInput').value=''">${esc(traduce("Añadir"))}</button></div>
   </details>`;
@@ -6519,6 +6529,7 @@ const EN = {
 "Película":"Film","+ otra cámara":"+ another camera","Laboratorio":"Laboratory","Nº de magazine":"Magazine no.",
 "Exposición":"Exposure","Tiempos":"Timing","Cargado por":"Loaded by","Altura de óptica":"Lens height","Tilt":"Tilt","Pan":"Pan",
 "ocultar":"hide","mostrar":"show","Personalizados":"Custom","Agregar":"Add",
+"Modo de sensor":"Sensor mode","Espacio de color":"Color space","Tinte de balance de blancos":"White balance tint","Formato de audio":"Audio format","ISO base":"Base ISO","Añadir campo del rollo":"Add roll field","Añadir campo":"Add field","o escribe uno nuevo…":"or type a new one…","Añadir":"Add",
 "Emulsión":"Film stock","Lote / batch":"Batch","Carga":"Load",
 "Unidad de medida":"Units","Pies (ft)":"Feet (ft)","Metros (m)":"Meters (m)",
 "Paso":"Gauge · perfs",
