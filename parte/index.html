@@ -1521,7 +1521,7 @@ html.solo-parte .portada{display:none}
         <div class="f" data-ppk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoPP('loader')">×</span></label><input id="pp_loader" autocomplete="off"></div>
         <div id="pp_grid_propios"></div>
       </div>
-      <details class="agregar" id="pp_agregar_det"><summary>+ Añadir campo</summary>
+      <details class="agregar" id="pp_agregar_det"><summary>+ <span>Añadir campo</span></summary>
         <div class="agGrupo" id="pp_agregar_panel"></div>
         <div class="agNuevo"><input type="text" id="pp_nuevoCampoInput" placeholder="o escribe uno nuevo…">
           <button class="chip" onclick="event.preventDefault();addCampoPP($('pp_nuevoCampoInput').value);$('pp_nuevoCampoInput').value=''">Añadir</button></div>
@@ -7614,7 +7614,7 @@ const EN = {
 "Sin proyecto":"No project","jornada ":"day ","jornada":"day","sin tomas":"no takes",
 "Datos":"Details",
 "Tus partes":"Your reports",
-"Empezar el rollo siguiente":"Start the next roll",
+"Empezar el rollo siguiente":"Start the next roll","rollo siguiente":"next roll",
 "Aún no hay partes.":"No reports yet.",
 "el de ahora":"the current one","abrir":"open","archivo":"file","quitar":"remove",
 "No hay nada que guardar todavía.":"There is nothing to save yet.",
@@ -7892,6 +7892,13 @@ function pinta(nodo){
     if (!e.getAttribute || !e.hasAttribute("placeholder")) continue;
     if (e.__op === undefined) e.__op = e.getAttribute("placeholder");
     e.setAttribute("placeholder", (LANG === "en") ? traduce(e.__op) : e.__op);
+  }
+  /* v144: los title= (tooltips) tampoco se quedan a medio traducir */
+  const elsT = nodo.nodeType === 1 ? [nodo, ...nodo.querySelectorAll("[title]")] : [];
+  for (const e of elsT){
+    if (!e.getAttribute || !e.hasAttribute("title")) continue;
+    if (e.__ot === undefined) e.__ot = e.getAttribute("title");
+    e.setAttribute("title", (LANG === "en") ? traduce(e.__ot) : e.__ot);
   }
 }
 function aplicaIdioma(){
