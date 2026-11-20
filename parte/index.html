@@ -199,17 +199,6 @@ details.agregar .chip:active{color:var(--boxC);border-color:var(--boxC)}
 details.agregar .agNuevo{display:flex;gap:8px;align-items:center;padding-top:2px}
 details.agregar .agNuevo input{flex:1;min-height:0;font-size:12px;padding:5px 0}
 details.agregar .agNuevo .chip{white-space:nowrap}
-/* v142: "+ Añadir campo" de Producción visible directo, sin acordeón que
-   haya que abrir -- aparece en cuanto hay un rubro oculto que restaurar. */
-.agregarDirecto{margin:10px 0 2px}
-.agregarDirecto .agEtiqueta{font:700 9px var(--mono);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--tx3);margin-bottom:7px}
-.agregarDirecto .agGrupo{background:var(--boxBg);border:1px solid var(--boxLine);
-  border-radius:7px;padding:10px 12px 8px}
-.agregarDirecto .chip{display:inline-block;margin:0 5px 5px 0;background:#fff;
-  border:1px solid var(--line);color:var(--tx2);font:600 10px var(--mono);padding:5px 8px;
-  border-radius:4px;cursor:pointer}
-.agregarDirecto .chip:active{color:var(--boxC);border-color:var(--boxC)}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
 input,select,textarea{width:100%;min-height:31px;background:transparent;color:var(--tx);
@@ -1530,10 +1519,9 @@ html.solo-parte .portada{display:none}
         <div class="f" data-ppk="dit"><label>Técnico de cámara / DIT <span class="xpp" onclick="ocultarCampoPP('dit')">×</span></label><input id="pp_dit" autocomplete="off"></div>
         <div class="f" data-ppk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoPP('loader')">×</span></label><input id="pp_loader" autocomplete="off"></div>
       </div>
-      <div class="agregarDirecto" id="pp_agregar_det" hidden>
-        <div class="agEtiqueta">+ Añadir campo</div>
+      <details class="agregar" id="pp_agregar_det"><summary>+ Añadir campo</summary>
         <div class="agGrupo" id="pp_agregar_panel"></div>
-      </div>
+      </details>
     </div>
   </details>
 
@@ -4938,12 +4926,11 @@ function aplicaPPOcultos(){
     const f = document.querySelector('#pp_grid .f[data-ppk="' + k + '"]');
     if (f) f.classList.toggle("oculto", ocultos.indexOf(k) >= 0);
   });
-  const panel = $("pp_agregar_panel"), det = $("pp_agregar_det");
+  const panel = $("pp_agregar_panel");
   if (panel){
     panel.innerHTML = ocultos.map(k => PP_ETIQUETAS[k] ?
       '<button class="chip" onclick="restaurarCampoPP(\'' + k + '\')">+ ' + esc(PP_ETIQUETAS[k]) + '</button>' : "").join("");
   }
-  if (det) det.hidden = ocultos.length === 0;
 }
 function enlazaProdParte(){
   PROD_PARTE.forEach(function(k){
