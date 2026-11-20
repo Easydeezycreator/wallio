@@ -8551,11 +8551,54 @@ materializaDefectos();
       if (n.querySelectorAll) n.querySelectorAll("input[list],input[data-lista]").forEach(prepara);
     }));
   }).observe(document.body, {childList: true, subtree: true});
+  /* v149: lo que se escribe a mano en "escribir…" se guarda en este
+     dispositivo y se añade como opción múltiple permanente de ese mismo
+     campo, para que la próxima vez ya salga en la lista -- así las
+     opciones múltiples van creciendo con el uso real de Waldo. */
+  const EXTRA_KEY = "wallio_combo_extra";
+  const comboExtraGet = () => { try { return JSON.parse(localStorage.getItem(EXTRA_KEY) || "{}"); } catch(e){ return {}; } };
+  const comboExtraSet = o => { try { localStorage.setItem(EXTRA_KEY, JSON.stringify(o)); } catch(e){} };
+  const comboExtraAdd = (dlId, val) => {
+    val = (val || "").trim(); if (!val || !dlId) return;
+    const dl = document.getElementById(dlId); if (!dl) return;
+    const yaExiste = [...dl.options].some(o => o.value.toLowerCase() === val.toLowerCase());
+    if (yaExiste) return;
+    const op = document.createElement("option"); op.value = val; dl.appendChild(op);
+    const todo = comboExtraGet();
+    todo[dlId] = todo[dlId] || [];
+    if (!todo[dlId].some(x => x.toLowerCase() === val.toLowerCase())) todo[dlId].push(val);
+    comboExtraSet(todo);
+  };
+  const comboExtraMerge = dl => { if (!dl || dl.tagName !== "DATALIST") return;
+    const extra = comboExtraGet()[dl.id] || [];
+    extra.forEach(val => {
+      if (![...dl.options].some(o => o.value.toLowerCase() === val.toLowerCase())){
+        const op = document.createElement("option"); op.value = val; dl.appendChild(op);
+      }
+    });
+  };
+  document.querySelectorAll("datalist").forEach(comboExtraMerge);
+  /* v149: varias pantallas RE-PINTAN el datalist entero (dl("dlBodies",...)
+     reemplaza todo el innerHTML) cada vez que cambian cámara/rollo/proyecto
+     -- eso borraba las opciones que el usuario había añadido a mano. Este
+     observer las vuelve a inyectar cada vez que eso pasa, para toda la app. */
+  new MutationObserver(muts => { const vistos = new Set();
+    muts.forEach(m => { const tgt = m.target;
+      if (tgt && tgt.nodeType === 1 && tgt.tagName === "DATALIST" && tgt.id && !vistos.has(tgt.id)){
+        vistos.add(tgt.id); comboExtraMerge(tgt);
+      }
+    });
+  }).observe(document.body, {childList: true, subtree: true});
+  let cambiandoAEscribir = false;
   const activaEscribir = inp => {
+    cierra();
     inp.setAttribute("data-escribir", "1");
     inp.removeAttribute("inputmode");
+    cambiandoAEscribir = true;
     inp.blur();
-    setTimeout(() => inp.focus(), 0);
+    setTimeout(() => { inp.focus(); cambiandoAEscribir = false;
+      const n = inp.value.length; try { inp.setSelectionRange(n, n); } catch(e){}
+    }, 0);
   };
   const pinta = (inp, filtrar) => {
     /* v50: al TOCAR salen TODAS las opciones (la regla de siempre);
@@ -8604,22 +8647,33 @@ materializaDefectos();
   };
   document.addEventListener("focusin", e => { const t = e.target;
     prepara(t);
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t, t.hasAttribute("data-escribir") ? true : undefined); else cierra(); });
+    if (t.tagName !== "INPUT" || !t.hasAttribute("data-lista")) return cierra();
+    if (t.hasAttribute("data-escribir")) return cierra(); /* v149: en modo escribir, sin lista */
+    pinta(t); });
   document.addEventListener("input", e => { const t = e.target;
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t, true); });
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && !t.hasAttribute("data-escribir")) pinta(t, true); });
   document.addEventListener("click", e => { const t = e.target;
     prepara(t);
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t, t.hasAttribute("data-escribir") ? true : undefined); });
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && !t.hasAttribute("data-escribir")) pinta(t); });
   document.addEventListener("pointerdown", e => {
     if (!caja.contains(e.target) && e.target !== activo) cierra(); });
+  /* v149: al confirmar (change nativo, al perder el foco) lo escrito a mano
+     en modo "escribir", se guarda como opción múltiple permanente de ese
+     campo -- así la próxima vez ya aparece en la lista. */
+  document.addEventListener("change", e => { const t = e.target;
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && t.hasAttribute("data-escribir") && !cambiandoAEscribir){
+      comboExtraAdd(t.getAttribute("data-lista"), t.value);
+    }
+  });
   /* v148: cuando el campo pierde el foco de verdad (no el parpadeo propio
      de activaEscribir, que vuelve a enfocar en el mismo instante) se
      olvida el modo "escribir" -- la próxima vez que lo toquen, vuelve a
      mostrar solo la lista, sin teclado, tal como pide Waldo. */
   document.addEventListener("focusout", e => { const t = e.target;
     if (t && t.tagName === "INPUT" && t.hasAttribute("data-lista")){
+      if (t.hasAttribute("data-escribir") && !cambiandoAEscribir) comboExtraAdd(t.getAttribute("data-lista"), t.value);
       setTimeout(() => {
-        if (document.activeElement !== t){
+        if (document.activeElement !== t && !cambiandoAEscribir){
           t.removeAttribute("data-escribir");
           t.setAttribute("inputmode", "none");
         }
