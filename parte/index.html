@@ -1267,9 +1267,12 @@ input,select,textarea{border-bottom-color:rgba(22,26,31,.18)}
   border:1px solid rgba(255,255,255,.55)}
 html.solo-parte .portada{display:none}
 
-/* ---- el aviso de jornada nueva, en la tira del parte ---- */
-.tira button.jsig{border-color:var(--boxC);color:var(--boxC);margin-right:6px;
-  padding:4px 7px;font-size:8px}
+/* v145: el aviso de jornada nueva ya no es un botón en recuadro -- texto
+   discreto, como el resto de la ×/enlaces de la app, pegado al botón
+   "Datos" para que no robe atención. */
+.tira span.jsig{cursor:pointer;opacity:.6;color:var(--boxC);font:600 8px var(--mono);
+  letter-spacing:.1em;text-transform:uppercase;margin-left:7px}
+.tira span.jsig:active{opacity:1}
 
 /* ---- la guía: el manual dentro de la app ---- */
 #v-guia p{margin:9px 11px;font-size:13px;line-height:1.65;color:var(--tx2)}
@@ -1497,8 +1500,8 @@ html.solo-parte .portada{display:none}
 <section id="v-parte">
   <div class="tira" id="tiraParte">
     <div class="tx"><b id="tp_proy">—</b><span id="tp_det"></span></div>
-    <button class="jsig" id="tp_jsig" onclick="jornadaSiguiente()" hidden>Jornada nueva</button>
     <button onclick="abreProdParte()">Datos</button>
+    <span class="xpp jsig" id="tp_jsig" onclick="jornadaSiguiente()" hidden>Jornada nueva</span>
   </div>
 
   <details class="solo" id="pp_bloque">
@@ -1573,7 +1576,7 @@ html.solo-parte .portada{display:none}
   </div>
 
   <div class="card">
-    <div class="grid"><div class="f"><label>Rollo / magazine <span class="xpp" style="opacity:.7" title="Empezar el rollo siguiente" onclick="ptSiguienteRollo()">rollo siguiente</span></label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
+    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
         <div id="avisoSmartfill" hidden></div>
         <div id="gruposCampos"></div>
         <div id="listaTomas"></div>
@@ -4972,7 +4975,7 @@ function aplicaPPOcultos(){
   const panel = $("pp_agregar_panel");
   if (panel){
     panel.innerHTML = ocultos.map(k => etiquetas[k] ?
-      '<button class="chip" onclick="restaurarCampoPP(\'' + k.replace(/'/g, "\\'") + '\')">+ ' + esc(etiquetas[k]) + '</button>' : "").join("");
+      '<button class="chip" onclick="restaurarCampoPP(\'' + k.replace(/'/g, "\\'") + '\')">+ ' + esc(traduce(etiquetas[k])) + '</button>' : "").join("");
   }
 }
 function enlazaProdParte(){
@@ -5353,19 +5356,30 @@ function siguienteRollo(s){
   const n = String(parseInt(m[2], 10) + 1);
   return m[1] + (n.length < m[2].length ? m[2].slice(0, m[2].length - n.length) + n : n) + m[3];
 }
-/* el rollo siguiente del mismo día: se queda todo menos las tomas */
-function ptSiguienteRollo(){
-  if (!confirm(traduce("Se guarda este parte y se empieza el siguiente rollo con la misma producción y los mismos ajustes de cámara. Las tomas se vacían.")))
+/* v145: ya no existe un botón "rollo siguiente" -- basta con escribir el
+   nuevo número de rollo/magazine directamente en ese campo. Si ya había
+   tomas reales tecleadas en el rollo anterior, la app entiende que es un
+   rollo nuevo: guarda el parte de antes, vacía las tomas (la primera hereda
+   óptica/focal/T/foco/filtro/altura/tilt/pan de la última usada por cámara,
+   igual que antes) y conserva intacta la producción y los ajustes de
+   cámara. Si todavía no se había tecleado ninguna toma, solo renombra. */
+function manejaCambioRollo(valorNuevo){
+  valorNuevo = (valorNuevo || "").trim();
+  const anterior = (S.parte.roll && S.parte.roll.roll) || "";
+  if (valorNuevo === anterior){ if (typeof ptArchiva === "function") ptArchiva(false); return; }
+  const hayTomasReales = (S.parte.tomas || []).some(t =>
+    (t.sc || "").trim() || (t.clip || "").trim() || (t.nclip || "").trim());
+  if (!hayTomasReales){
+    S.parte.roll.roll = valorNuevo;
+    if (typeof ptArchiva === "function") ptArchiva(false);
+    updateChip(); pintaTira(); autoguarda();
     return;
+  }
   ptArchiva(false);
-  /* v141: antes de vaciar las tomas, se guarda la última de cada cámara --
-     la primera toma del rollo nuevo la hereda (ver "materializaDefectos"
-     en renderTomas), así no hay que volver a escribir óptica/focal/T/foco/
-     filtro/altura/tilt/pan a mano. */
   window.ULTIMA_TOMA_ROLLO_ANTERIOR = {};
   (S.parte.tomas || []).forEach(t => { window.ULTIMA_TOMA_ROLLO_ANTERIOR[t.camLetra || "A"] = t; });
   const R = Object.assign({}, S.parte.roll || {});
-  R.roll = siguienteRollo(R.roll);
+  R.roll = valorNuevo;
   let camsSig = {};
   try { camsSig = JSON.parse(JSON.stringify(S.parte.camsGuardadas || {})); } catch(e){}
   const camasActivasSig = (S.parte.camasActivas || CAM_LETRAS.slice(0, 4)).slice();
@@ -5381,8 +5395,6 @@ function ptSiguienteRollo(){
   if (typeof renderRollExtra === "function") renderRollExtra();
   updateChip(); pintaTira(); autoguarda(); ptLista();
   ptMsg(traduce("Rollo nuevo: ") + (R.roll || "—"), "good");
-  /* v141: ya no salta al inicio de la página -- se queda donde está y deja
-     el campo Escena de la toma nueva listo para escribir. */
   setTimeout(() => {
     const campo = document.querySelector('#listaTomas .toma[open] .f[data-k="sc"] input');
     if (campo){ campo.scrollIntoView({block: "center", behavior: "smooth"}); campo.focus(); }
@@ -5839,6 +5851,10 @@ function sumaTC(tc, offset, fps){
 function wireParte(){
   R_CAMPOS.forEach(k => {
     const el = $("r_" + k); if (!el) return;
+    /* v145: "roll" NO se sincroniza letra por letra -- manejaCambioRollo
+       necesita comparar el valor ANTERIOR contra el nuevo al confirmar
+       (blur/enter) para saber si hay que archivar y vaciar tomas. */
+    if (k === "roll") return;
     el.oninput = () => { S.parte.roll[k] = el.value; updateChip(); };
   });
   R2_CAMPOS.forEach(k => {
@@ -5853,7 +5869,7 @@ function wireParte(){
      tecleado no se queda huérfano en un rollo "sin-rollo" */
   const erRoll = $("r_roll");
   if (erRoll) erRoll.addEventListener("change", () => {
-    if (typeof ptArchiva === "function") ptArchiva(false);
+    manejaCambioRollo(erRoll.value);
   });
   const eb = $("r_body");
   if (eb) eb.onchange = () => {
@@ -6349,7 +6365,7 @@ function renderTomas(){
           <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
           <button class="${t.notaEsp === 'PU' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='PU'?'':'PU');renderTomas()">PU</button>
           <button class="${t.falso ? "mal" : ""}" title="${esc(traduce("Marcar esta toma como clip falso (equivocación, prueba, no es material real)"))}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].falso=!S.parte.tomas[${i}].falso;renderTomas()">${traduce("FALSO")}</button>
-          <button class="${t.ok ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${t.ok ? "buena" : "—"}</button>
+          <button class="${t.ok ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${traduce("buena")}</button>
         </div>` : "";
         return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}" data-i="${i}"${abierta ? " open" : ""}>
       <summary class="th">
@@ -7700,7 +7716,7 @@ const EN = {
 "Refrescar":"Refresh","actualizado":"updated","Pan":"Pan",
 "Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado":"Redraws everything on screen without losing any data already entered",
 "Filtro":"Filter","Distancia de foco":"Focus distance","Timecode":"Timecode","Duración (s)":"Duration (s)",
-"Nota":"Note","buena":"circle","Resumen del rollo":"Roll summary","escenas":"scenes","buenas":"circle takes",
+"Nota":"Note","buena":"good","Resumen del rollo":"Roll summary","escenas":"scenes","buenas":"circle takes",
 "duración":"duration","Generar":"Generate","Parte en PDF":"Report as PDF","Guardar parte":"Save report",
 "Entregas el parte":"Deliver the report","Sigues":"Next","Por si acaso":"Just in case",
 "El CSV lleva una columna por dato, con el número de serie de la óptica en cada toma, para que entre en una hoja de cálculo o en el software de laboratorio.":
