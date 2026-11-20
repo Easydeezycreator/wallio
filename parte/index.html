@@ -8843,16 +8843,23 @@ materializaDefectos();
     });
   }).observe(document.body, {childList: true, subtree: true});
   let cambiandoAEscribir = false;
+  /* v153: en iPhone/iPad el teclado SOLO se abre si el foco se da dentro del
+     mismo toque del usuario. Antes el foco se daba un instante después
+     (setTimeout) y iOS lo ignoraba: el campo quedaba "para escribir" pero sin
+     teclado y atrapado. Ahora blur+focus van en el mismo toque. */
   const activaEscribir = inp => {
     cierra();
     inp.setAttribute("data-escribir", "1");
     inp.removeAttribute("inputmode");
     cambiandoAEscribir = true;
-    inp.blur();
-    setTimeout(() => { inp.focus(); cambiandoAEscribir = false;
-      const n = inp.value.length; try { inp.setSelectionRange(n, n); } catch(e){}
-    }, 0);
+    try { inp.blur(); } catch(e){}
+    inp.focus();
+    const n = inp.value.length; try { inp.setSelectionRange(n, n); } catch(e){}
+    setTimeout(() => { cambiandoAEscribir = false; }, 0);
   };
+  /* tocar la lista no le quita el foco al campo (así el paso a escribir
+     ocurre sin que el campo se cierre por el camino) */
+  ["pointerdown", "mousedown"].forEach(ev => caja.addEventListener(ev, e => { if (e.cancelable) e.preventDefault(); }));
   const pinta = (inp, filtrar) => {
     /* v50: al TOCAR salen TODAS las opciones (la regla de siempre);
        el filtro solo actúa cuando se ESCRIBE */
@@ -8922,7 +8929,13 @@ materializaDefectos();
     { const dl = document.getElementById(t.getAttribute("data-lista")); if (!dl || !dl.options.length) return; }
     pinta(t); });
   document.addEventListener("pointerdown", e => {
-    if (!caja.contains(e.target) && e.target !== activo) cierra(); });
+    if (!caja.contains(e.target) && e.target !== activo) cierra();
+    /* v153: tocar fuera suelta el campo de opciones (en iPhone, sin teclado,
+       tocar fuera no siempre quitaba el foco y el campo quedaba atrapado) */
+    const a = document.activeElement;
+    if (a && a.tagName === "INPUT" && a.hasAttribute("data-lista") && a !== e.target && !caja.contains(e.target)
+        && !(e.target && e.target.tagName === "INPUT")) { try { a.blur(); } catch(_){} }
+  });
   /* v149: al confirmar (change nativo, al perder el foco) lo escrito a mano
      en modo "escribir", se guarda como opción múltiple permanente de ese
      campo -- así la próxima vez ya aparece en la lista. */
