@@ -99,6 +99,7 @@ section{display:none}section.on{display:block}
    encogiera TODA la página y la barra de pestañas se saliera por abajo */
 .card > *:not(h2){max-width:calc(100% - 22px)}
 .grid{display:grid;grid-template-columns:1fr;gap:0}
+#pp_grid_propios{display:contents}
 @media(min-width:480px){.grid{grid-template-columns:1fr 1fr;column-gap:16px}.grid .wide{grid-column:1/-1}}
 @media(min-width:700px){.grid{grid-template-columns:1fr 1fr 1fr}.grid .wide{grid-column:1/-1}}
 
@@ -1518,9 +1519,12 @@ html.solo-parte .portada{display:none}
         <div class="f" data-ppk="vtr"><label>VTR <span class="xpp" onclick="ocultarCampoPP('vtr')">×</span></label><input id="pp_vtr" autocomplete="off"></div>
         <div class="f" data-ppk="dit"><label>Técnico de cámara / DIT <span class="xpp" onclick="ocultarCampoPP('dit')">×</span></label><input id="pp_dit" autocomplete="off"></div>
         <div class="f" data-ppk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoPP('loader')">×</span></label><input id="pp_loader" autocomplete="off"></div>
+        <div id="pp_grid_propios"></div>
       </div>
       <details class="agregar" id="pp_agregar_det"><summary>+ Añadir campo</summary>
         <div class="agGrupo" id="pp_agregar_panel"></div>
+        <div class="agNuevo"><input type="text" id="pp_nuevoCampoInput" placeholder="o escribe uno nuevo…">
+          <button class="chip" onclick="event.preventDefault();addCampoPP($('pp_nuevoCampoInput').value);$('pp_nuevoCampoInput').value=''">Añadir</button></div>
       </details>
     </div>
   </details>
@@ -4911,6 +4915,44 @@ function ppOcultosGet(){
 function ppOcultosSet(arr){
   try { localStorage.setItem("wallio_pp_ocultos", JSON.stringify(arr)); } catch(e){}
 }
+/* v144: rubros propios que cada quien escribe a mano en "+ Añadir campo" de
+   Producción (igual que ya existía para las tomas) -- el NOMBRE vive en el
+   dispositivo (se ofrece en todos los proyectos futuros) y el VALOR vive en
+   S.prod.propios, que ya viaja con el resto del proyecto. */
+function ppPropiosGet(){
+  try { return JSON.parse(localStorage.getItem("wallio_pp_propios") || "[]"); } catch(e){ return []; }
+}
+function ppPropiosSet(arr){
+  try { localStorage.setItem("wallio_pp_propios", JSON.stringify(arr)); } catch(e){}
+}
+function ppEtiquetasTodas(){
+  const t = Object.assign({}, PP_ETIQUETAS);
+  ppPropiosGet().forEach(n => { t["propio:" + n] = n; });
+  return t;
+}
+function addCampoPP(n){
+  n = (n || "").trim(); if (!n) return;
+  const arr = ppPropiosGet();
+  if (arr.indexOf(n) < 0){ arr.push(n); ppPropiosSet(arr); }
+  const k = "propio:" + n;
+  S.prod.propios = S.prod.propios || {};
+  if (S.prod.propios[n] === undefined) S.prod.propios[n] = "";
+  ppOcultosSet(ppOcultosGet().filter(x => x !== k));
+  renderPPPropios(); aplicaPPOcultos();
+  const inp = $("pp_propio_" + CSS.escape(n)); if (inp) inp.focus();
+}
+function renderPPPropios(){
+  const cont = $("pp_grid_propios"); if (!cont) return;
+  S.prod.propios = S.prod.propios || {};
+  cont.innerHTML = ppPropiosGet().map(function(n){
+    const k = "propio:" + n;
+    const v = esc(S.prod.propios[n] || "");
+    return '<div class="f" data-ppk="' + esc(k) + '"><label>' + esc(n) +
+      ' <span class="xpp" onclick="ocultarCampoPP(\'' + esc(k).replace(/'/g, "\\'") + '\')">×</span></label>' +
+      '<input id="pp_propio_' + esc(CSS.escape(n)) + '" value="' + v + '" autocomplete="off" ' +
+      'oninput="S.prod.propios=S.prod.propios||{};S.prod.propios[\'' + esc(n).replace(/'/g, "\\'") + '\']=this.value"></div>';
+  }).join("");
+}
 function ocultarCampoPP(k){
   const arr = ppOcultosGet();
   if (arr.indexOf(k) < 0){ arr.push(k); ppOcultosSet(arr); }
@@ -4922,14 +4964,15 @@ function restaurarCampoPP(k){
 }
 function aplicaPPOcultos(){
   const ocultos = ppOcultosGet();
-  Object.keys(PP_ETIQUETAS).forEach(function(k){
+  const etiquetas = ppEtiquetasTodas();
+  Object.keys(etiquetas).forEach(function(k){
     const f = document.querySelector('#pp_grid .f[data-ppk="' + k + '"]');
     if (f) f.classList.toggle("oculto", ocultos.indexOf(k) >= 0);
   });
   const panel = $("pp_agregar_panel");
   if (panel){
-    panel.innerHTML = ocultos.map(k => PP_ETIQUETAS[k] ?
-      '<button class="chip" onclick="restaurarCampoPP(\'' + k + '\')">+ ' + esc(PP_ETIQUETAS[k]) + '</button>' : "").join("");
+    panel.innerHTML = ocultos.map(k => etiquetas[k] ?
+      '<button class="chip" onclick="restaurarCampoPP(\'' + k.replace(/'/g, "\\'") + '\')">+ ' + esc(etiquetas[k]) + '</button>' : "").join("");
   }
 }
 function enlazaProdParte(){
@@ -4999,6 +5042,7 @@ function fillProdParte(){
   ["p_loader", "pp_loader"].forEach(function(id){
     const el = $(id); if (el) el.value = lo;
   });
+  if (typeof renderPPPropios === "function") renderPPPropios();
   avisoParte();
 }
 /* lo que avisaba aquí ahora lo dice la tira; la letra vive en la Guía */
@@ -5131,6 +5175,7 @@ function proyectoNuevo(){
      jornada, localización y fecha. */
   const recordados = {};
   PP_RECORDAR.forEach(function(k){ recordados[k] = S.prod[k] || ""; });
+  recordados.propios = Object.assign({}, S.prod.propios || {});
   S.prod = Object.assign({}, recordados);
   PP_SOLO_PROYECTO.forEach(function(k){ S.prod[k] = ""; });
   /* v124: ya no se parte siempre de la misma lista fija -- un proyecto
@@ -8390,7 +8435,7 @@ if (LANG === "en" && S.focos.join("|") === "Mínimo|2.40 m|INF") S.focos[0] = "M
 S.focosFab = S.focos.slice();      // lo de fábrica se aparta solo al tocarlo
 fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas(); chartCheck();
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
-enlazaProdParte(); enlazaLoaderProd(); fillProdParte(); aplicaPPOcultos(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
+enlazaProdParte(); enlazaLoaderProd(); fillProdParte(); renderPPPropios(); aplicaPPOcultos(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
 /* v91: ya no se abre sola "Datos del proyecto" aunque esté vacío -- se entra
