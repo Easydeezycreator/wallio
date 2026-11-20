@@ -210,6 +210,7 @@ details.agregar .agNuevo .chip{white-space:nowrap}
   border:1px solid var(--line);color:var(--tx2);font:600 10px var(--mono);padding:5px 8px;
   border-radius:4px;cursor:pointer}
 .agregarDirecto .chip:active{color:var(--boxC);border-color:var(--boxC)}
+.agregarDirecto .agVacio{color:var(--tx3);font:500 11px var(--mono)}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
 input,select,textarea{width:100%;min-height:31px;background:transparent;color:var(--tx);
@@ -1530,9 +1531,9 @@ html.solo-parte .portada{display:none}
         <div class="f" data-ppk="dit"><label>Técnico de cámara / DIT <span class="xpp" onclick="ocultarCampoPP('dit')">×</span></label><input id="pp_dit" autocomplete="off"></div>
         <div class="f" data-ppk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoPP('loader')">×</span></label><input id="pp_loader" autocomplete="off"></div>
       </div>
-      <div class="agregarDirecto" id="pp_agregar_det" hidden>
+      <div class="agregarDirecto" id="pp_agregar_det">
         <div class="agEtiqueta">+ Añadir campo</div>
-        <div class="agGrupo" id="pp_agregar_panel"></div>
+        <div class="agGrupo" id="pp_agregar_panel"><span class="agVacio" id="pp_agregar_vacio">No hay rubros ocultos para añadir.</span></div>
       </div>
     </div>
   </details>
@@ -4933,12 +4934,13 @@ function aplicaPPOcultos(){
     const f = document.querySelector('#pp_grid .f[data-ppk="' + k + '"]');
     if (f) f.classList.toggle("oculto", ocultos.indexOf(k) >= 0);
   });
-  const panel = $("pp_agregar_panel"), det = $("pp_agregar_det");
+  const panel = $("pp_agregar_panel");
   if (panel){
-    panel.innerHTML = ocultos.map(k => PP_ETIQUETAS[k] ?
-      '<button class="chip" onclick="restaurarCampoPP(\'' + k + '\')">+ ' + esc(PP_ETIQUETAS[k]) + '</button>' : "").join("");
+    panel.innerHTML = ocultos.length ?
+      ocultos.map(k => PP_ETIQUETAS[k] ?
+        '<button class="chip" onclick="restaurarCampoPP(\'' + k + '\')">+ ' + esc(PP_ETIQUETAS[k]) + '</button>' : "").join("") :
+      '<span class="agVacio" id="pp_agregar_vacio">' + esc(traduce("No hay rubros ocultos para añadir.")) + '</span>';
   }
-  if (det) det.hidden = ocultos.length === 0;
 }
 function enlazaProdParte(){
   PROD_PARTE.forEach(function(k){
