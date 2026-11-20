@@ -199,6 +199,17 @@ details.agregar .chip:active{color:var(--boxC);border-color:var(--boxC)}
 details.agregar .agNuevo{display:flex;gap:8px;align-items:center;padding-top:2px}
 details.agregar .agNuevo input{flex:1;min-height:0;font-size:12px;padding:5px 0}
 details.agregar .agNuevo .chip{white-space:nowrap}
+/* v142: "+ Añadir campo" de Producción visible directo, sin acordeón que
+   haya que abrir -- aparece en cuanto hay un rubro oculto que restaurar. */
+.agregarDirecto{margin:10px 0 2px}
+.agregarDirecto .agEtiqueta{font:700 9px var(--mono);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tx3);margin-bottom:7px}
+.agregarDirecto .agGrupo{background:var(--boxBg);border:1px solid var(--boxLine);
+  border-radius:7px;padding:10px 12px 8px}
+.agregarDirecto .chip{display:inline-block;margin:0 5px 5px 0;background:#fff;
+  border:1px solid var(--line);color:var(--tx2);font:600 10px var(--mono);padding:5px 8px;
+  border-radius:4px;cursor:pointer}
+.agregarDirecto .chip:active{color:var(--boxC);border-color:var(--boxC)}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
 input,select,textarea{width:100%;min-height:31px;background:transparent;color:var(--tx);
@@ -1267,7 +1278,8 @@ input,select,textarea{border-bottom-color:rgba(22,26,31,.18)}
 html.solo-parte .portada{display:none}
 
 /* ---- el aviso de jornada nueva, en la tira del parte ---- */
-.tira button.jsig{border-color:rgba(47,143,99,.5);color:var(--acc);margin-right:8px}
+.tira button.jsig{border-color:var(--boxC);color:var(--boxC);margin-right:6px;
+  padding:4px 7px;font-size:8px}
 
 /* ---- la guía: el manual dentro de la app ---- */
 #v-guia p{margin:9px 11px;font-size:13px;line-height:1.65;color:var(--tx2)}
@@ -1518,9 +1530,10 @@ html.solo-parte .portada{display:none}
         <div class="f" data-ppk="dit"><label>Técnico de cámara / DIT <span class="xpp" onclick="ocultarCampoPP('dit')">×</span></label><input id="pp_dit" autocomplete="off"></div>
         <div class="f" data-ppk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoPP('loader')">×</span></label><input id="pp_loader" autocomplete="off"></div>
       </div>
-      <details class="agregar" id="pp_agregar_det" hidden><summary>+ Añadir campo</summary>
+      <div class="agregarDirecto" id="pp_agregar_det" hidden>
+        <div class="agEtiqueta">+ Añadir campo</div>
         <div class="agGrupo" id="pp_agregar_panel"></div>
-      </details>
+      </div>
     </div>
   </details>
 
@@ -1568,7 +1581,7 @@ html.solo-parte .portada{display:none}
   </div>
 
   <div class="card">
-    <div class="grid"><div class="f"><label>Rollo / magazine <span class="xpp" style="opacity:.7" title="Empezar el rollo siguiente" onclick="ptSiguienteRollo()">↻ siguiente</span></label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
+    <div class="grid"><div class="f"><label>Rollo / magazine <span class="xpp" style="opacity:.7" title="Empezar el rollo siguiente" onclick="ptSiguienteRollo()">rollo siguiente</span></label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
         <div id="avisoSmartfill" hidden></div>
         <div id="gruposCampos"></div>
         <div id="listaTomas"></div>
@@ -1608,7 +1621,6 @@ html.solo-parte .portada{display:none}
 
   <div class="card">
     <div class="btnrow">
-      <button onclick="ptSiguienteRollo()">Empezar el rollo siguiente</button>
       <button onclick="jornadaSiguiente()">Empezar la jornada siguiente</button>
     </div>
   </div>
