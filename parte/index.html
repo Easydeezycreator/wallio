@@ -642,6 +642,7 @@ html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){displ
 #combo .op{padding:11px 13px;font:500 13px/1.25 var(--mono);color:var(--tx);cursor:pointer;border-bottom:1px solid var(--line)}
 #combo .op:last-child{border-bottom:none}
 #combo .op:active{background:var(--tx);color:var(--bg)}
+#combo .op-escribir{color:var(--tx3);font-style:italic;letter-spacing:.02em}
 .toma .th button.x{min-width:34px;padding:0;color:var(--tx3)}
 /* v90: en el móvil los botones de la toma bajan a su propia línea y se reparten el ancho
    (antes CÍRCULO y × se salían de la pantalla del iPhone) */
@@ -7049,6 +7050,7 @@ function descargar(texto, nombre, tipo){
 
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {
+"✎ escribir…":"✎ type…",
 "Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only",
 "Compartir este parte":"Share this report","Proyecto nuevo":"New project","Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?":"The current report is saved on this device and a brand NEW project starts from scratch. Sure?","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Introduce el nombre del proyecto":"Enter the project name","EL PRIMER DÍA":"THE FIRST DAY",
 "Escribe primero el Proyecto en Producción.":"Fill in the Project in Production first.",
@@ -8527,6 +8529,34 @@ materializaDefectos();
   document.body.appendChild(caja);
   let activo = null, abiertoEn = 0;
   const cierra = () => { caja.hidden = true; activo = null; };
+  /* v148: al tocar un campo de opción múltiple NO debe salir el teclado --
+     solo la lista. El teclado solo aparece si el usuario pulsa "escribir…"
+     dentro de la lista, cuando quiere teclear algo que no está en las
+     opciones. inputmode="none" evita que iOS muestre su teclado virtual
+     sin afectar el tecleo con teclado físico (iPad/Mac). */
+  const prepara = inp => {
+    if (!inp || inp.tagName !== "INPUT") return;
+    if (inp.hasAttribute("list")){
+      inp.setAttribute("data-lista", inp.getAttribute("list")); inp.removeAttribute("list");
+    }
+    if (inp.hasAttribute("data-lista") && !inp.hasAttribute("data-escribir")){
+      inp.setAttribute("inputmode", "none");
+    }
+  };
+  document.querySelectorAll("input[list],input[data-lista]").forEach(prepara);
+  new MutationObserver(muts => {
+    muts.forEach(m => m.addedNodes.forEach(n => {
+      if (n.nodeType !== 1) return;
+      if (n.matches && n.matches("input[list],input[data-lista]")) prepara(n);
+      if (n.querySelectorAll) n.querySelectorAll("input[list],input[data-lista]").forEach(prepara);
+    }));
+  }).observe(document.body, {childList: true, subtree: true});
+  const activaEscribir = inp => {
+    inp.setAttribute("data-escribir", "1");
+    inp.removeAttribute("inputmode");
+    inp.blur();
+    setTimeout(() => inp.focus(), 0);
+  };
   const pinta = (inp, filtrar) => {
     /* v50: al TOCAR salen TODAS las opciones (la regla de siempre);
        el filtro solo actúa cuando se ESCRIBE */
@@ -8535,8 +8565,8 @@ materializaDefectos();
     const v = filtrar ? (inp.value || "").toLowerCase().trim() : "";
     const ops = [...dl.options].map(o => o.value)
       .filter(x => !v || x.toLowerCase().includes(v));
-    if (!ops.length) return cierra();
-    caja.innerHTML = ops.slice(0, 60).map(x =>
+    const escribirTxt = '<div class="op op-escribir">' + esc(traduce("✎ escribir…")) + "</div>";
+    caja.innerHTML = escribirTxt + ops.slice(0, 60).map(x =>
       '<div class="op">' + x.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</div>").join("");
     const r = inp.getBoundingClientRect();
     caja.style.left = (r.left + scrollX) + "px";
@@ -8564,24 +8594,38 @@ materializaDefectos();
         recoloca();
       }
     });
-    [...caja.children].forEach(d => d.onclick = () => {
+    const hijos = [...caja.children];
+    hijos[0].onclick = () => activaEscribir(inp);
+    hijos.slice(1).forEach(d => d.onclick = () => {
       inp.value = d.textContent;
       inp.dispatchEvent(new Event("input", {bubbles: true}));
       inp.dispatchEvent(new Event("change", {bubbles: true}));
       cierra(); });
   };
   document.addEventListener("focusin", e => { const t = e.target;
-    if (t.tagName === "INPUT" && t.hasAttribute("list")){
-      t.setAttribute("data-lista", t.getAttribute("list")); t.removeAttribute("list"); }
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t); else cierra(); });
+    prepara(t);
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t, t.hasAttribute("data-escribir") ? true : undefined); else cierra(); });
   document.addEventListener("input", e => { const t = e.target;
     if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t, true); });
   document.addEventListener("click", e => { const t = e.target;
-    if (t.tagName === "INPUT" && t.hasAttribute("list")){
-      t.setAttribute("data-lista", t.getAttribute("list")); t.removeAttribute("list"); }
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t); });
+    prepara(t);
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista")) pinta(t, t.hasAttribute("data-escribir") ? true : undefined); });
   document.addEventListener("pointerdown", e => {
     if (!caja.contains(e.target) && e.target !== activo) cierra(); });
+  /* v148: cuando el campo pierde el foco de verdad (no el parpadeo propio
+     de activaEscribir, que vuelve a enfocar en el mismo instante) se
+     olvida el modo "escribir" -- la próxima vez que lo toquen, vuelve a
+     mostrar solo la lista, sin teclado, tal como pide Waldo. */
+  document.addEventListener("focusout", e => { const t = e.target;
+    if (t && t.tagName === "INPUT" && t.hasAttribute("data-lista")){
+      setTimeout(() => {
+        if (document.activeElement !== t){
+          t.removeAttribute("data-escribir");
+          t.setAttribute("inputmode", "none");
+        }
+      }, 80);
+    }
+  });
   /* v50: el scroll que provoca el propio foco (teclado del iPhone, autoscroll
      del navegador) ya NO cierra el combo — en ese primer momento se recoloca
      bajo el campo; un scroll deliberado más tarde sí lo cierra (v42) */
