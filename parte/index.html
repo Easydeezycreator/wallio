@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<meta name="wallio-ver" content="156">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -8388,6 +8389,7 @@ function bzDrena(){
    recargar la página (que podría perder lo no guardado aún), esto vuelve a
    dibujar todo con la info que YA tiene el navegador. */
 function refrescarTodo(){
+  try { if (window.wallioMiraVersion) window.wallioMiraVersion(); } catch(e){}
   try {
     if (typeof fillParte === "function") fillParte();
     if (typeof fillProdParte === "function") fillProdParte();
@@ -8435,6 +8437,38 @@ function guardaYa(){
   }
 }
 function guardaSiPendiente(){ if (guardadoTimer) guardaYa(); }
+/* v156: la app se pone al día sola -- al volver a ella (o cada 5 min con
+   ella abierta) mira si en wallioapp.com hay una versión nueva; si la hay,
+   guarda todo y se recarga con la nueva, sin perder nada. Así nadie se queda
+   con una versión vieja abierta (en el iPhone la app no se cierra nunca). */
+(function(){
+  const MIA = (document.querySelector('meta[name="wallio-ver"]') || {}).content || "";
+  const URL_VER = "https://wallioapp.com/parte/index.html";
+  let mirando = false;
+  const escribiendo = () => { const a = document.activeElement;
+    return !!a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT"); };
+  const mira = async () => {
+    if (mirando || !MIA || document.visibilityState !== "visible") return;
+    if (!(/wallioapp\.com$/.test(location.hostname) || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()))) return;
+    mirando = true;
+    try {
+      const t = await (await fetch(URL_VER + "?v=" + Date.now(), {cache: "no-store"})).text();
+      const m = t.match(/<meta name="wallio-ver" content="([^"]+)">/);
+      const nueva = m && m[1];
+      let ya = ""; try { ya = sessionStorage.getItem("wallio.recargadoA") || ""; } catch(e){}
+      if (nueva && nueva !== MIA && ya !== nueva && !escribiendo()){
+        try { sessionStorage.setItem("wallio.recargadoA", nueva); } catch(e){}
+        try { guardaYa(); } catch(e){}
+        location.reload();
+      }
+    } catch(e){}
+    mirando = false;
+  };
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") setTimeout(mira, 600); });
+  setInterval(mira, 5 * 60 * 1000);
+  setTimeout(mira, 4000);
+  window.wallioMiraVersion = mira;
+})();
 document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "hidden") guardaYa(); });
 window.addEventListener("pagehide", guardaYa);
 window.addEventListener("beforeunload", guardaYa);
