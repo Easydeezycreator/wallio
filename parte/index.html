@@ -5609,10 +5609,10 @@ function cambiaUnidad(nueva){
 function ponTipo(t){ guarda(); S.parte.roll.tipo = t;
   /* si la camara o el formato son del OTRO modo, se limpian: con el campo vacio la lista sale entera */
   const R = S.parte.roll, film = t === "film";
-  const otrosB = new Set(FORMATS.filter(f => film ? f.s !== "pelicula" : f.s === "pelicula").map(f => f.m + " " + f.c)
+  const otrosB = new Set(FORMATS.filter(f => film ? f.s !== "pelicula" : f.s === "pelicula").flatMap(f => [f.m + " " + f.c, enCat(f.m + " " + f.c)])
     .concat(film ? S.formats.map(f => f.body) : [])
     .concat((S.camarasPropias || []).filter(c => c.s === (film ? "digital" : "pelicula")).map(c => c.n)));
-  const otrosF = new Set(FORMATS.filter(f => film ? f.s !== "pelicula" : f.s === "pelicula").map(f => f.f)
+  const otrosF = new Set(FORMATS.filter(f => film ? f.s !== "pelicula" : f.s === "pelicula").flatMap(f => [f.f, enCat(f.f)])
     .concat(film ? S.formats.map(f => f.fmt) : []));
   if (R.body && otrosB.has(R.body)) R.body = "";
   if (R.fmt && otrosF.has(R.fmt)) R.fmt = "";
@@ -6030,7 +6030,7 @@ function fillParte(){
   const bodies = [...new Set(propias.concat(film ? [] : S.formats.map(f => f.body)).concat(CAT.map(f => f.m + " " + f.c)))];
   const fmts   = [...new Set((film ? [] : S.formats.map(f => f.fmt)).concat(CAT.map(f => f.f)))];
   const series = [...new Set([S.lens.serial].concat(S.parte.tomas.map(t => t.serial)).filter(Boolean))];
-  const dl = (id, arr) => { const e = $(id); if (e) e.innerHTML = arr.map(v => `<option value="${esc(v)}">`).join(""); };
+  const dl = (id, arr) => { const e = $(id); if (e) e.innerHTML = arr.map(v => `<option value="${esc(enCat(v))}">`).join(""); };
   const mem = k => (S.memCampos && S.memCampos[k]) || [];
   dl("dlBodies", bodies); dl("dlFmts", [...new Set(fmts.concat(mem("fmt")))]); dl("dlSeries", series);
   dl("dlCarga", (R.unidad === "m") ? ["30","61","122","305","610"] : ["100","200","400","1000","2000"]);
@@ -6144,14 +6144,105 @@ const CAMARA_SPECS = {
     codec: ["REDCODE RAW"]
   }
 };
+/* v152: lo que REALMENTE tiene cada cuerpo (datos del fabricante):
+   nd = filtros ND internos en notación de set (6 = ND .6, 12 = ND 1.2...),
+   [] = la cámara no tiene ND interno (todo ND es externo);
+   ei = ISO base primero y luego los EI habituales; fps = máximo de grabación
+   (solo donde el fabricante lo publica claro). Lo que no está, no se inventa:
+   esa cámara usa el catálogo general. */
+const CAMARA_EXTRA = {
+  "ARRI ALEXA 35":        {nd:[6,12,18], ei:["800","160","200","250","320","400","500","640","1000","1280","1600","2000","2560","3200","4800","6400"], fps:120},
+  "ARRI ALEXA 65":        {nd:[], ei:["800","160","200","250","320","400","500","640","1000","1280","1600","2000","2560","3200"], fps:60},
+  "ARRI ALEXA Mini":      {nd:[6,12,21], ei:["800","160","200","250","320","400","500","640","1000","1280","1600","2000","2560","3200"], fps:200},
+  "ARRI ALEXA Mini LF":   {nd:[6,12,18], ei:["800","160","200","250","320","400","500","640","1000","1280","1600","2000","2560","3200"], fps:90},
+  "Sony BURANO":          {nd:[6,9,12,15,18,21], ei:["800","3200","400","500","640","1000","1250","1600","2000","2500","4000","5000","6400"]},
+  "Sony VENICE 2 6K":     {nd:[3,6,9,12,15,18,21,24], ei:["500","2500","250","320","400","640","800","1000","1250","1600","2000","3200","4000","5000"]},
+  "Sony VENICE 2 8.6K":   {nd:[3,6,9,12,15,18,21,24], ei:["800","3200","400","500","640","1000","1250","1600","2000","2500","4000","5000","6400"]},
+  "RED KOMODO 6K":        {nd:[], ei:["800","250","320","400","500","640","1000","1280","1600","2000","2560","3200"]},
+  "RED MONSTRO 8K VV":    {nd:[], ei:["800","250","320","400","500","640","1000","1280","1600","2000","2560","3200"]},
+  "RED V-RAPTOR 8K VV":   {nd:[], ei:["800","250","320","400","500","640","1000","1280","1600","2000","2560","3200"], fps:120},
+  "RED V-RAPTOR XL 8K VV":{nd:[6,9,12,15,18,21], ei:["800","250","320","400","500","640","1000","1280","1600","2000","2560","3200"], fps:120},
+  "Blackmagic URSA Cine 12K LF": {nd:[6,12,18], fps:120},
+  "Canon EOS C400":       {nd:[6,12,18,24,30], ei:["800","3200","12800","400","500","640","1000","1250","1600","2000","2500","4000","5000","6400"]},
+  "Canon EOS C500 Mark II":{nd:[6,12,18,24,30], ei:["800","400","500","640","1000","1250","1600","2000","2500","3200","4000","5000","6400"]},
+  "Panavision Millennium DXL2": {nd:[], ei:["1600","400","500","640","800","1000","1280","2000","2560","3200"]}
+};
+const EMULSIONES_35 = ["KODAK VISION3 50D 5203","KODAK VISION3 250D 5207","KODAK VISION3 200T 5213","KODAK VISION3 500T 5219","KODAK EKTACHROME 100D 5294","KODAK DOUBLE-X 5222"];
+const EMULSIONES_16 = ["KODAK VISION3 50D 7203","KODAK VISION3 250D 7207","KODAK VISION3 200T 7213","KODAK VISION3 500T 7219","KODAK EKTACHROME 100D 7294","KODAK DOUBLE-X 7222"];
+const CODECS_GEN = ["ARRIRAW","ProRes 4444 XQ","ProRes 4444","ProRes 422 HQ","X-OCN XT","X-OCN ST","X-OCN LT","XAVC","REDCODE RAW (R3D)","Blackmagic RAW (BRAW)","Cinema RAW Light","XF-AVC"];
+/* ND de la cámara activa, en la notación corta de set: si el cuerpo tiene
+   ND interno se ofrecen sus pasos "Interno" + todos los "Externo"; si no
+   tiene, solo "Externo"; cámara desconocida = catálogo completo. */
+function ndDeCamara(){
+  const body = ($("r_body") && $("r_body").value || "").trim();
+  const ex = CAMARA_EXTRA[body];
+  const I = traduce("Interno"), X = traduce("Externo");
+  const todos = [3,6,9,12,15,18,21,24,27,30];
+  const internos = ex ? ex.nd : todos;
+  const out = [];
+  todos.forEach(n => { if (internos.includes(n)) out.push("ND" + n + " " + I); out.push("ND" + n + " " + X); });
+  return out;
+}
+/* nombres de catálogo que vienen en español: en inglés se muestran en inglés */
+function enCat(v){
+  if (typeof LANG === "undefined" || LANG !== "en" || typeof v !== "string") return v;
+  return v.replace(/Anamórfico/g, "Anamorphic").replace(/anamórfico/g, "anamorphic").replace(/esférico/g, "spherical")
+    .replace(/híbrido/g, "hybrid").replace(/clásica/g, "classic").replace(/Zoom clásico/g, "Classic zoom")
+    .replace(/estándar/g, "standard").replace(/ventanilla ARRI/g, "ARRI gate").replace(/ventanilla/g, "gate").replace(/recorte central/g, "center crop").replace(/ancho Academy/g, "Academy width")
+    .replace(/\(norma\)/g, "(standard)").replace(/^Norma SMPTE /, "SMPTE ").replace(/^Varios /, "");
+}
 function filtraPorCamara(){
   const body = ($("r_body") && $("r_body").value || "").trim();
-  const spec = CAMARA_SPECS[body];
+  const spec = CAMARA_SPECS[body], ex = CAMARA_EXTRA[body];
   const mem = k => (S.memCampos && S.memCampos[k]) || [];
-  const dl = (id, arr) => { const e = $(id); if (e) e.innerHTML = arr.map(v => `<option value="${esc(v)}">`).join(""); };
-  if (!spec) return; /* cámara no reconocida (una "propia") -- se deja el catálogo genérico que ya puso fillParte() */
-  dl("dlResProy", [...new Set(spec.res.concat(mem("res")))]);
-  dl("dlCodec", [...new Set(spec.codec.concat(mem("codec")))]);
+  const dl = (id, arr) => { const e = $(id); if (e) e.innerHTML = arr.map(v => `<option value="${esc(enCat(v))}">`).join(""); };
+  const film = esFilm();
+  /* lo aprendido sirve, pero un formato/códec/resolución que es de OTRA
+     cámara conocida no se mezcla en la lista de esta */
+  const ajenos = k => {
+    const s = new Set();
+    if (k === "fmt") FORMATS.forEach(f => { const n = f.m + " " + f.c; if (n !== body && enCat(n) !== body){ s.add(f.f); s.add(enCat(f.f)); } });
+    if (k === "codec" || k === "res") Object.keys(CAMARA_SPECS).forEach(n => { if (n !== body) (CAMARA_SPECS[n][k] || []).forEach(v => s.add(v)); });
+    if (k === "codec" && spec) spec.codec.forEach(v => s.delete(v));
+    if (k === "res" && spec) spec.res.forEach(v => s.delete(v));
+    return s;
+  };
+  const memC = k => { const a = ajenos(k); return mem(k).filter(v => !a.has(v)); };
+  /* película: el campo Codec/emulsión ofrece emulsiones (35 o 16 mm según el cuerpo) */
+  if (film){
+    /* película: la emulsión que se ofrece es la del paso de ESE cuerpo (16 o 35 mm) */
+    const es16 = /16\s*mm|416|16SR|super 16/i.test(body), es35 = /35\s*mm|ARRICAM|235|435|535|Panaflex|VistaVision/i.test(body);
+    dl("dlEmul", [...new Set((es16 ? EMULSIONES_16 : es35 ? EMULSIONES_35 : EMULSIONES_35.concat(EMULSIONES_16)).concat(mem("emul")))]);
+  } else if (!spec) dl("dlCodec", [...new Set(CODECS_GEN.concat(mem("codec")))]);
+  /* formatos: solo los de ESE cuerpo (digital o película) */
+  const propios = FORMATS.filter(f => { const n = f.m + " " + f.c; return n === body || enCat(n) === body; }).map(f => f.f);
+  /* al cambiar a un cuerpo desconocido se vuelve al catálogo general (mismas listas que fillParte) */
+  const FPS_GEN = ["23.976","24","25","29.97","30","48","50","60","75","90","96","120"];
+  const EI_GEN = ["200","400","500","640","800","1280","1600","2500","3200"];
+  const RES_GEN = ["1920x1080 (2K HD)","2048x1080 (2K DCI)","2048x858 (2K Scope)","3840x2160 (4K UHD)","4096x2160 (4K DCI)","4096x2560 (4K 1.6:1)","4608x3164 (4.5K)","5120x2700 (5K)","5120x2560 (5K 2:1)","6144x3240 (6K)","6144x4320 (6K 1.42:1)","8192x4320 (8K)"];
+  if (propios.length) dl("dlFmts", [...new Set(propios.concat(memC("fmt")))]);
+  else dl("dlFmts", [...new Set(FORMATS.filter(f => film ? f.s === "pelicula" : f.s !== "pelicula").map(f => f.f).concat(film ? [] : (S.formats || []).map(f => f.fmt)).concat(mem("fmt")))]);
+  if (spec){
+    dl("dlResProy", [...new Set(spec.res.concat(memC("res")))]);
+    if (!film) dl("dlCodec", [...new Set(spec.codec.concat(memC("codec")))]);
+  } else dl("dlResProy", [...new Set(RES_GEN.concat(mem("res")))]);
+  dl("dlEi", [...new Set(((ex && ex.ei) || EI_GEN).concat(mem("ei")))]);
+  { const base = ["23.976","24","25","29.97","30","48","50","60","75","90","96","100","120","150","200"];
+    dl("dlFps", [...new Set((ex && ex.fps ? base.filter(v => parseFloat(v) <= ex.fps) : FPS_GEN).concat(mem("fps")))]); }
+  /* filtros: los ND "INT" solo si la cámara los tiene de verdad (se rehace
+     cada vez, así al cambiar de cuerpo vuelven los del nuevo) */
+  const e = $("dlFiltros");
+  if (e){
+    const dens = n => (n / 10).toFixed(1).replace(/^0/, "");
+    [...e.options].forEach(o => { if (/ INT$/.test(o.value)) o.remove(); });
+    const nds = ex ? ex.nd : [3,6,9,12,15,18,21];
+    nds.slice().reverse().forEach(n => {
+      const v = "ND " + dens(n) + " INT"; const op = document.createElement("option"); op.value = v;
+      const ref = [...e.options].find(o => o.value === "ND " + dens(n) + " EXT") || [...e.options].find(o => o.value === "ND " + dens(n));
+      if (ref) ref.after(op);
+      else { const nd = [...e.options].filter(o => /^ND /.test(o.value)); if (nd.length) nd[nd.length - 1].after(op); else e.prepend(op); }
+    });
+  }
 }
 
 /* v151: la misma X discreta para quitar un campo (y el panel "+ Añadir
@@ -6515,7 +6606,7 @@ function renderTomas(){
     const propios = (S.parte.campos || []).map((n, pi) => {
       const idProp = "dlProp_" + pi;
       const opcionesProp = opcionesPara(n);
-      return `<div class="f" data-k="prop_${pi}"><label>${esc(n)}</label>
+      return `<div class="f" data-k="prop_${pi}"><label>${esc(traduce(n))} <span style="cursor:pointer;opacity:.55" title="${esc(traduce("Quitar este campo"))}" onclick="event.stopPropagation();event.preventDefault();quitarCampo(${pi})">×</span></label>
         <input value="${esc((t.extra || {})[n] || "")}" list="${idProp}"
           oninput="if(!S.parte.tomas[${i}].extra)S.parte.tomas[${i}].extra={};S.parte.tomas[${i}].extra['${esc(n)}']=this.value"
           onchange="aprendeExtra(${pi},this.value)" autocomplete="off">
@@ -6610,7 +6701,7 @@ const SUGERENCIAS_CATALOGO = {
   "Modo de sensor": ["Open Gate", "S35 4:3", "S35 16:9", "Full Frame", "S16", "Anamórfico 2x"]
 };
 function opcionesPara(n){
-  const propias = SUGERENCIAS_CATALOGO[n] || [];
+  const propias = n === "ND" ? ndDeCamara() : (SUGERENCIAS_CATALOGO[n] || []).map(x => LANG === "en" ? x.replace("Anamórfico", "Anamorphic") : x);
   const aprendidas = (S.memExtra && S.memExtra[n]) || [];
   const vistas = new Set();
   return propias.concat(aprendidas).filter(o => {
@@ -6664,6 +6755,7 @@ function addCampoRolloNombre(n){
 }
 function quitarCampoRollo(i){
   guarda(); const n = S.parte.camposRollo.splice(i, 1)[0];
+  { const pref = prefCampos(); pref.propiosRollo = pref.propiosRollo.filter(x => x !== n); }
   if (S.parte.roll.extra) delete S.parte.roll.extra[n];
   renderRollExtra();
 }
@@ -6676,7 +6768,11 @@ function addCampoNombre(n){
   guarda(); S.parte.campos.push(n); renderTomas(); renderCampos();
 }
 function quitarCampo(i){
-  guarda(); S.parte.campos.splice(i, 1); renderTomas(); renderCampos();
+  /* v152: la × va en la etiqueta del propio campo (como en todos los demás);
+     al quitarlo, la app deja de traerlo solo en los proyectos nuevos */
+  guarda(); const n = S.parte.campos.splice(i, 1)[0];
+  const pref = prefCampos(); pref.propios = pref.propios.filter(x => x !== n);
+  renderTomas(); renderCampos();
 }
 function ocultarCampoToma(k){
   guarda(); S.parte.camposOcultos = S.parte.camposOcultos || [];
@@ -6701,10 +6797,9 @@ function restaurarCampoToma(k){
 function renderCampos(){
   const c = $("listaCampos"); if (!c) return;
   const cs = S.parte.campos || [];
-  c.innerHTML = cs.length
-    ? cs.map((n, i) => `<div class="selfmt"><div class="t">${esc(n)}</div>
-        <button onclick="quitarCampo(${i})">×</button></div>`).join("")
-    : "";
+  /* v152: la lista suelta "ND ×" debajo de las tomas parecía un campo roto;
+     cada campo propio ya lleva su × en la etiqueta */
+  c.innerHTML = "";
 }
 /* v88: el número de clip avanza solo, como la toma (C001 → C002 → C003). Toma el
    bloque «C+dígitos» del nombre (ARRI/Sony/RED/BMD: A001C003_…) y, si no lo hay, el
@@ -7203,7 +7298,7 @@ function descargar(texto, nombre, tipo){
 }
 
 /* ================= BILINGÜE ES / EN ================= */
-const EN = {
+const EN = {"Quitar este campo":"Remove this field","Smartfill aplicado":"Smartfill applied","+ Archivo":"+ File","Abrir archivo":"Open file","Interno":"Internal","Externo":"External",
 "✎ escribir…":"✎ type…",
 "Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only",
 "Compartir este parte":"Share this report","Proyecto nuevo":"New project","Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?":"The current report is saved on this device and a brand NEW project starts from scratch. Sure?","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Introduce el nombre del proyecto":"Enter the project name","EL PRIMER DÍA":"THE FIRST DAY",
@@ -8694,7 +8789,11 @@ materializaDefectos();
       inp.setAttribute("data-lista", inp.getAttribute("list")); inp.removeAttribute("list");
     }
     if (inp.hasAttribute("data-lista") && !inp.hasAttribute("data-escribir")){
-      inp.setAttribute("inputmode", "none");
+      /* v152: lista vacía (todavía nada que sugerir) = campo normal con
+         teclado; en cuanto haya opciones vuelve a abrir la lista */
+      const dl = document.getElementById(inp.getAttribute("data-lista"));
+      if (dl && dl.options.length) inp.setAttribute("inputmode", "none");
+      else inp.removeAttribute("inputmode");
     }
   };
   document.querySelectorAll("input[list],input[data-lista]").forEach(prepara);
@@ -8803,6 +8902,7 @@ materializaDefectos();
     prepara(t);
     if (t.tagName !== "INPUT" || !t.hasAttribute("data-lista")) return cierra();
     if (t.hasAttribute("data-escribir")) return cierra(); /* v149: en modo escribir, sin lista */
+    { const dl = document.getElementById(t.getAttribute("data-lista")); if (!dl || !dl.options.length) return cierra(); }
     pinta(t); });
   document.addEventListener("input", e => { const t = e.target;
     if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && !t.hasAttribute("data-escribir")) pinta(t, true); });
@@ -8813,7 +8913,13 @@ materializaDefectos();
        vuelve a tocar el mismo campo porque quiere escribir), un segundo
        toque activa directamente el modo escribir -- no hace falta buscar
        la opción "escribir…" dentro de la lista cada vez. */
-    if (activo === t && !caja.hidden){ activaEscribir(t); return; }
+    /* v152: el PRIMER toque dispara focusin (abre la lista) y justo después
+       click sobre el mismo campo -- antes eso contaba como "segundo toque" y
+       pasaba directo a escribir: la lista se cerraba al instante y salía el
+       teclado. Ahora solo cuenta como segundo toque si la lista ya llevaba
+       abierta un momento (el usuario la vio y volvió a tocar). */
+    if (activo === t && !caja.hidden){ if (Date.now() - abiertoEn > 450) activaEscribir(t); return; }
+    { const dl = document.getElementById(t.getAttribute("data-lista")); if (!dl || !dl.options.length) return; }
     pinta(t); });
   document.addEventListener("pointerdown", e => {
     if (!caja.contains(e.target) && e.target !== activo) cierra(); });
@@ -8821,7 +8927,8 @@ materializaDefectos();
      en modo "escribir", se guarda como opción múltiple permanente de ese
      campo -- así la próxima vez ya aparece en la lista. */
   document.addEventListener("change", e => { const t = e.target;
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && t.hasAttribute("data-escribir") && !cambiandoAEscribir){
+    const vacia = t.tagName === "INPUT" && t.hasAttribute("data-lista") && !((document.getElementById(t.getAttribute("data-lista")) || {}).options || []).length;
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && (t.hasAttribute("data-escribir") || vacia) && !cambiandoAEscribir){
       comboExtraAdd(t.getAttribute("data-lista"), t.value);
     }
   });
