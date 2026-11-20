@@ -2,7 +2,7 @@
 <html lang="es" data-solo="parte">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Report">
@@ -205,7 +205,10 @@ details.agregar .chip{display:inline-block;margin:0 5px 5px 0;background:#fff;
   border-radius:4px;cursor:pointer}
 details.agregar .chip:active{color:var(--boxC);border-color:var(--boxC)}
 details.agregar .agNuevo{display:flex;gap:8px;align-items:center;padding-top:2px}
-details.agregar .agNuevo input{flex:1;min-height:0;font-size:12px;padding:5px 0}
+details.agregar .agNuevo input{flex:1;min-width:0;min-height:0;font-size:16px;padding:5px 0}
+/* v155: la app nunca se desplaza de lado ni se agranda (Waldo: menos en iPhone) */
+body{overflow-x:hidden}
+#listaTomas .f,#listaTomas .f input,.card .f,.card .f input{min-width:0}
 details.agregar .agNuevo .chip{white-space:nowrap}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
@@ -651,6 +654,15 @@ html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){displ
 #combo .op:last-child{border-bottom:none}
 #combo .op:active{background:var(--tx);color:var(--bg)}
 #combo .op-escribir{color:var(--tx3);font-style:italic;letter-spacing:.02em}
+/* v155: "✎ type…" es un campo de verdad dentro de la lista: al tocarlo iOS
+   abre su teclado siempre (antes dependía de un foco programado que el
+   iPhone a veces ignoraba, p. ej. en Filtro). 16px = sin zoom en iPhone. */
+#combo{max-width:calc(100vw - 16px);box-sizing:border-box}
+#combo .op{overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+#combo .op-in{padding:0;position:sticky;top:0;background:var(--panel);z-index:1}
+#combo .op-in input{display:block;width:100%;box-sizing:border-box;border:0;outline:0;background:transparent;
+  font:italic 500 16px/1.25 var(--mono);color:var(--tx);padding:11px 13px;min-height:44px;border-radius:0;-webkit-appearance:none}
+#combo .op-in input::placeholder{color:var(--tx3)}
 .toma .th button.x{min-width:34px;padding:0;color:var(--tx3)}
 /* v90: en el móvil los botones de la toma bajan a su propia línea y se reparten el ancho
    (antes CÍRCULO y × se salían de la pantalla del iPhone) */
@@ -6321,10 +6333,12 @@ function aplicaOcultosGen(seccion){
       extraCam = genOcultosGet("camara").map(k => eCam[k] ?
         '<button class="chip" onclick="restaurarCampoGen(\'camara\',\'' + k.replace(/'/g, "\\'") + '\')">+ ' + esc(traduce(eCam[k])) + '</button>' : "").join("");
     }
-    panel.innerHTML = extraCam + ocultos.map(k => etiquetas[k] ?
+    const rollChips = (seccion === "camara" || seccion === "rollo2") ? '<span class="rollChipsHolder">' + (window.ROLL_CHIPS_HTML || "") + '</span>' : "";
+    panel.innerHTML = extraCam + rollChips + ocultos.map(k => etiquetas[k] ?
       '<button class="chip" onclick="restaurarCampoGen(\'' + seccion + '\',\'' + k.replace(/'/g, "\\'") + '\')">+ ' + esc(traduce(etiquetas[k])) + '</button>' : "").join("") +
       '<div class="agNuevo"><input type="text" id="' + seccion + '_nuevoCampoInput" placeholder="' + esc(traduce("o escribe uno nuevo…")) + '">' +
       '<button class="chip" onclick="event.preventDefault();addCampoGen(\'' + seccion + '\',$(\'' + seccion + '_nuevoCampoInput\').value);$(\'' + seccion + '_nuevoCampoInput\').value=\'\'">' + esc(traduce("Añadir")) + '</button></div>';
+    { const h = panel.querySelector(".rollChipsHolder"), n = panel.querySelector(".agNuevo"); if (h && n) panel.insertBefore(h, n); }
   }
 }
 function aplicaTodosOcultosGen(){ Object.keys(GEN_ETIQUETAS).forEach(aplicaOcultosGen); }
@@ -6774,12 +6788,12 @@ function renderRollExtra(){
   const chipsSugeridos = sugeridos.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoRolloNombre(this.dataset.n)">+ ${esc(traduce(n))}</button>`).join("");
   const disponibles = pref.propiosRollo.filter(n => cs.indexOf(n) < 0 && CAMPOS_ROLLO_CATALOGO.indexOf(n) < 0);
   const chipsPropios = disponibles.map(n => `<button class="chip" data-n="${esc(n)}" onclick="event.preventDefault();addCampoRolloNombre(this.dataset.n)">+ ${esc(n)}</button>`).join("");
-  p.innerHTML = `<details class="agregar"><summary>+ ${esc(traduce("Añadir campo del rollo"))}</summary>
-    ${chipsSugeridos ? `<div class="agGrupo">${chipsSugeridos}</div>` : ""}
-    ${chipsPropios ? `<div class="agGrupo"><div class="agNombre">${esc(traduce("Personalizados"))}</div>${chipsPropios}</div>` : ""}
-    <div class="agNuevo"><input type="text" id="rollNuevoInput" placeholder="${esc(traduce("o escribe uno nuevo…"))}">
-      <button class="chip" onclick="event.preventDefault();addCampoRolloNombre($('rollNuevoInput').value);$('rollNuevoInput').value=''">${esc(traduce("Añadir"))}</button></div>
-  </details>`;
+  /* v155: Waldo quiere UN solo "+ Añadir campo" en Cámara y rollo -- los
+     rubros del rollo van dentro de ese mismo panel (ya no hay un segundo
+     botón "+ Añadir campo del rollo"). */
+  window.ROLL_CHIPS_HTML = chipsSugeridos + chipsPropios;
+  p.innerHTML = "";
+  document.querySelectorAll(".rollChipsHolder").forEach(h => { h.innerHTML = window.ROLL_CHIPS_HTML; });
   /* v130: mismo arreglo que en las tomas -- no se cierra solo al agregar un
      campo, para poder meter varios de una vez sin reabrir el panel. */
   if (abiertoAntes){ const d = p.querySelector("details.agregar"); if (d) d.open = true; }
@@ -8816,7 +8830,34 @@ materializaDefectos();
   const caja = document.createElement("div"); caja.id = "combo"; caja.hidden = true;
   document.body.appendChild(caja);
   let activo = null, abiertoEn = 0;
-  const cierra = () => { caja.hidden = true; activo = null; };
+  let saltaConfirma = false;
+  const campoIn = () => caja.querySelector(".op-in input");
+  /* v155: la lista nunca se sale de la pantalla (nombres muy largos) */
+  const ajustaAncho = r => {
+    const cw = document.documentElement.clientWidth;
+    caja.style.maxWidth = Math.max(160, Math.min(cw - 16, Math.max(r.width, 300))) + "px";
+    caja.style.left = (scrollX + 8) + "px";
+    const w = caja.getBoundingClientRect().width;
+    caja.style.left = (Math.max(8, Math.min(r.left, cw - 8 - w)) + scrollX) + "px";
+  };
+  const cierra = () => {
+    const ci = campoIn();
+    if (ci && document.activeElement === ci){ saltaConfirma = true; try { ci.blur(); } catch(e){} saltaConfirma = false; }
+    caja.hidden = true; activo = null; };
+  /* v155: confirma lo escrito en el campo de la lista -> pasa al campo del
+     parte, se aprende como opción y se cierra la lista */
+  const confirma = () => {
+    const ci = campoIn(); if (!ci || !activo) return false;
+    const val = (ci.value || "").trim(); if (!val) return false;
+    const inp = activo;
+    inp.value = val;
+    inp.dispatchEvent(new Event("input", {bubbles: true}));
+    comboExtraAdd(inp.getAttribute("data-lista"), val);
+    ci.value = "";
+    cierra();
+    inp.dispatchEvent(new Event("change", {bubbles: true}));
+    return true;
+  };
   /* v148: al tocar un campo de opción múltiple NO debe salir el teclado --
      solo la lista. El teclado solo aparece si el usuario pulsa "escribir…"
      dentro de la lista, cuando quiere teclear algo que no está en las
@@ -8898,7 +8939,9 @@ materializaDefectos();
   };
   /* tocar la lista no le quita el foco al campo (así el paso a escribir
      ocurre sin que el campo se cierre por el camino) */
-  ["pointerdown", "mousedown"].forEach(ev => caja.addEventListener(ev, e => { if (e.cancelable) e.preventDefault(); }));
+  ["pointerdown", "mousedown"].forEach(ev => caja.addEventListener(ev, e => {
+    if (e.target && e.target.closest && e.target.closest(".op-in")) return; /* v155: el campo de escribir sí recibe el foco */
+    if (e.cancelable) e.preventDefault(); }));
   const pinta = (inp, filtrar) => {
     /* v50: al TOCAR salen TODAS las opciones (la regla de siempre);
        el filtro solo actúa cuando se ESCRIBE */
@@ -8907,12 +8950,12 @@ materializaDefectos();
     const v = filtrar ? (inp.value || "").toLowerCase().trim() : "";
     const ops = [...dl.options].map(o => o.value)
       .filter(x => !v || x.toLowerCase().includes(v));
-    const escribirTxt = '<div class="op op-escribir">' + esc(traduce("✎ escribir…")) + "</div>";
+    const escribirTxt = '<div class="op op-escribir op-in"><input type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="' + esc(traduce("✎ escribir…")) + '"></div>';
     caja.innerHTML = escribirTxt + ops.slice(0, 60).map(x =>
       '<div class="op">' + x.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</div>").join("");
     const r = inp.getBoundingClientRect();
-    caja.style.left = (r.left + scrollX) + "px";
-    caja.style.minWidth = r.width + "px";
+    caja.style.minWidth = Math.min(r.width, document.documentElement.clientWidth - 16) + "px";
+    caja.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - 8 - Math.max(r.width, caja.offsetWidth || r.width))) + scrollX + "px";
     /* v119: si el campo queda en la mitad de abajo de la pantalla, el
        desplegable (hasta 42vh de alto) se abría hacia abajo y se salía del
        borde inferior -- el usuario no podía ver ni tocar las opciones de
@@ -8925,6 +8968,7 @@ materializaDefectos();
     else caja.style.top = (r.top + scrollY - alto - 2) + "px";
     caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
     caja.hidden = false; activo = inp; abiertoEn = Date.now();
+    ajustaAncho(r);
     /* v147: en iPhone el teclado reduce el viewport visible (visualViewport);
        si el campo queda tapado por el teclado, se desliza a la vista dentro
        del área visible real, no de window.innerHeight (que no cambia). */
@@ -8937,7 +8981,13 @@ materializaDefectos();
       }
     });
     const hijos = [...caja.children];
-    hijos[0].onclick = () => activaEscribir(inp);
+    const ci = hijos[0].querySelector("input");
+    ci.addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); confirma(); } });
+    ci.addEventListener("input", () => {
+      const q = ci.value.toLowerCase().trim();
+      [...caja.children].slice(1).forEach(d => { d.style.display = (!q || d.textContent.toLowerCase().includes(q)) ? "" : "none"; });
+    });
+    ci.addEventListener("blur", () => { if (!saltaConfirma) setTimeout(() => { if (!caja.hidden && document.activeElement !== ci) { if (!confirma()) cierra(); } }, 0); });
     hijos.slice(1).forEach(d => d.onclick = () => {
       inp.value = d.textContent;
       inp.dispatchEvent(new Event("input", {bubbles: true}));
@@ -8945,6 +8995,7 @@ materializaDefectos();
       cierra(); });
   };
   document.addEventListener("focusin", e => { const t = e.target;
+    if (caja.contains(t)) return;
     prepara(t);
     if (t.tagName !== "INPUT" || !t.hasAttribute("data-lista")) return cierra();
     if (t.hasAttribute("data-escribir")) return cierra(); /* v149: en modo escribir, sin lista */
@@ -8967,6 +9018,13 @@ materializaDefectos();
     if (activo === t && !caja.hidden){ if (Date.now() - abiertoEn > 450) activaEscribir(t); return; }
     { const dl = document.getElementById(t.getAttribute("data-lista")); if (!dl || !dl.options.length) return; }
     pinta(t); });
+  /* v155: Intro en "o escribe uno nuevo…" añade el campo */
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    const t = e.target; const nuevo = t && t.closest && t.closest(".agNuevo");
+    if (!nuevo || t.tagName !== "INPUT") return;
+    e.preventDefault(); const b = nuevo.querySelector(".chip"); if (b) b.click();
+  });
   /* v154: al elegir un rubro en cualquier "+ Añadir campo" (o añadir uno
      escrito), el panel se cierra solo para que el parte quede limpio --
      Waldo lo pidió así (antes, v130, se quedaba abierto). */
@@ -8978,7 +9036,7 @@ materializaDefectos();
     setTimeout(() => document.querySelectorAll("details.agregar[open]").forEach(d => { d.open = false; }), 0);
   }, true);
   document.addEventListener("pointerdown", e => {
-    if (!caja.contains(e.target) && e.target !== activo) cierra();
+    if (!caja.contains(e.target) && e.target !== activo){ if (!confirma()) cierra(); }
     /* v153: tocar fuera suelta el campo de opciones (en iPhone, sin teclado,
        tocar fuera no siempre quitaba el foco y el campo quedaba atrapado) */
     const a = document.activeElement;
@@ -9015,13 +9073,14 @@ materializaDefectos();
      bajo el campo; un scroll deliberado más tarde sí lo cierra (v42) */
   const recoloca = () => { if (!activo) return; const r = activo.getBoundingClientRect();
     const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
-    caja.style.left = (r.left + scrollX) + "px";
+    ajustaAncho(r);
     const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
     const cabeAbajo = (r.bottom + 2 + alto) <= vh;
     caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
     caja.style.top = cabeAbajo ? (r.bottom + scrollY + 2) + "px" : (r.top + scrollY - alto - 2) + "px"; };
   window.addEventListener("scroll", e => {
     if (caja.contains(e.target)) return;
+    if (activo && document.activeElement === campoIn()){ recoloca(); return; }
     if (activo && document.activeElement === activo && Date.now() - abiertoEn < 700){ recoloca(); return; }
     cierra(); }, true);
   /* v147: el teclado de iOS dispara eventos en window.visualViewport
@@ -9030,7 +9089,7 @@ materializaDefectos();
      COMPLETO y terminaba posicionado debajo del teclado, invisible. */
   if (window.visualViewport){
     window.visualViewport.addEventListener("resize", () => {
-      if (activo && document.activeElement === activo){
+      if (activo && (document.activeElement === activo || document.activeElement === campoIn())){
         requestAnimationFrame(() => {
           const r = activo.getBoundingClientRect();
           const vh = window.visualViewport.height;
@@ -9040,7 +9099,7 @@ materializaDefectos();
       }
     });
     window.visualViewport.addEventListener("scroll", () => {
-      if (activo && document.activeElement === activo) recoloca();
+      if (activo && (document.activeElement === activo || document.activeElement === campoIn())) recoloca();
     });
   }
 })();
