@@ -1324,6 +1324,7 @@ html.solo-parte .portada{display:none}
   padding:8px 10px 7px;margin:0}
 .f label{margin-bottom:2px}
 input,select,textarea{border:none !important;padding:2px 0 !important}
+select{padding-right:20px !important}
 input:focus,select:focus,textarea:focus{outline:none}
 .f:focus-within{border-color:var(--boxC)}
 .toma .row{gap:8px}
@@ -8545,11 +8546,24 @@ materializaDefectos();
        borde inferior -- el usuario no podía ver ni tocar las opciones de
        más abajo sin antes deslizar la página a mano. Si no cabe debajo,
        se abre hacia ARRIBA del campo en su lugar. */
-    const alto = Math.min(caja.scrollHeight || 300, window.innerHeight * 0.42);
-    const cabeAbajo = (r.bottom + 2 + alto) <= window.innerHeight;
+    const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+    const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
+    const cabeAbajo = (r.bottom + 2 + alto) <= vh;
     if (cabeAbajo) caja.style.top = (r.bottom + scrollY + 2) + "px";
     else caja.style.top = (r.top + scrollY - alto - 2) + "px";
+    caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
     caja.hidden = false; activo = inp; abiertoEn = Date.now();
+    /* v147: en iPhone el teclado reduce el viewport visible (visualViewport);
+       si el campo queda tapado por el teclado, se desliza a la vista dentro
+       del área visible real, no de window.innerHeight (que no cambia). */
+    requestAnimationFrame(() => {
+      const rr = inp.getBoundingClientRect();
+      const topLimite = 8, botLimite = vh - 8;
+      if (rr.top < topLimite || rr.bottom > botLimite){
+        inp.scrollIntoView({block: "center", behavior: "instant"});
+        recoloca();
+      }
+    });
     [...caja.children].forEach(d => d.onclick = () => {
       inp.value = d.textContent;
       inp.dispatchEvent(new Event("input", {bubbles: true}));
@@ -8572,14 +8586,35 @@ materializaDefectos();
      del navegador) ya NO cierra el combo — en ese primer momento se recoloca
      bajo el campo; un scroll deliberado más tarde sí lo cierra (v42) */
   const recoloca = () => { if (!activo) return; const r = activo.getBoundingClientRect();
+    const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
     caja.style.left = (r.left + scrollX) + "px";
-    const alto = Math.min(caja.scrollHeight || 300, window.innerHeight * 0.42);
-    const cabeAbajo = (r.bottom + 2 + alto) <= window.innerHeight;
+    const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
+    const cabeAbajo = (r.bottom + 2 + alto) <= vh;
+    caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
     caja.style.top = cabeAbajo ? (r.bottom + scrollY + 2) + "px" : (r.top + scrollY - alto - 2) + "px"; };
   window.addEventListener("scroll", e => {
     if (caja.contains(e.target)) return;
     if (activo && document.activeElement === activo && Date.now() - abiertoEn < 700){ recoloca(); return; }
     cierra(); }, true);
+  /* v147: el teclado de iOS dispara eventos en window.visualViewport
+     (resize al abrirse/cerrarse, scroll al desplazarse), no en window --
+     sin esto el desplegable se quedaba calculado con el alto de pantalla
+     COMPLETO y terminaba posicionado debajo del teclado, invisible. */
+  if (window.visualViewport){
+    window.visualViewport.addEventListener("resize", () => {
+      if (activo && document.activeElement === activo){
+        requestAnimationFrame(() => {
+          const r = activo.getBoundingClientRect();
+          const vh = window.visualViewport.height;
+          if (r.top < 8 || r.bottom > vh - 8) activo.scrollIntoView({block: "center", behavior: "instant"});
+          recoloca();
+        });
+      }
+    });
+    window.visualViewport.addEventListener("scroll", () => {
+      if (activo && document.activeElement === activo) recoloca();
+    });
+  }
 })();
 if (NB.rol) $("nb_rol").value = NB.rol;
 nbPinta();
