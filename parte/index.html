@@ -210,7 +210,6 @@ details.agregar .agNuevo .chip{white-space:nowrap}
   border:1px solid var(--line);color:var(--tx2);font:600 10px var(--mono);padding:5px 8px;
   border-radius:4px;cursor:pointer}
 .agregarDirecto .chip:active{color:var(--boxC);border-color:var(--boxC)}
-.agregarDirecto .agVacio{color:var(--tx3);font:500 11px var(--mono)}
 label{display:block;font:600 8px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;
  color:var(--tx3);margin-bottom:1px}
 input,select,textarea{width:100%;min-height:31px;background:transparent;color:var(--tx);
@@ -1531,9 +1530,9 @@ html.solo-parte .portada{display:none}
         <div class="f" data-ppk="dit"><label>Técnico de cámara / DIT <span class="xpp" onclick="ocultarCampoPP('dit')">×</span></label><input id="pp_dit" autocomplete="off"></div>
         <div class="f" data-ppk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoPP('loader')">×</span></label><input id="pp_loader" autocomplete="off"></div>
       </div>
-      <div class="agregarDirecto" id="pp_agregar_det">
+      <div class="agregarDirecto" id="pp_agregar_det" hidden>
         <div class="agEtiqueta">+ Añadir campo</div>
-        <div class="agGrupo" id="pp_agregar_panel"><span class="agVacio" id="pp_agregar_vacio">No hay rubros ocultos para añadir.</span></div>
+        <div class="agGrupo" id="pp_agregar_panel"></div>
       </div>
     </div>
   </details>
@@ -4905,6 +4904,11 @@ function guardarFicha(){
    donde se escriba, es el mismo dato. Así esta página se basta sola.   */
 const PROD_PARTE = ["proyecto", "productora", "unidad", "jornada",
                                          "localizacion", "fecha", "casa", "director", "dop", "ac", "ac2", "vtr", "dit"];
+/* v143: al crear un proyecto nuevo, qué se conserva (el cliente y el equipo
+   con el que se trabaja, que se repiten) y qué se vacía (lo que cambia en
+   cada proyecto) -- así la app aprende cómo trabaja cada quien. */
+const PP_RECORDAR = ["productora", "unidad", "casa", "director", "dop", "ac", "ac2", "vtr", "dit"];
+const PP_SOLO_PROYECTO = ["proyecto", "jornada", "localizacion", "fecha"];
 
 /* v141: campos de "Datos del proyecto" que se pueden quitar con la × y
    devolver con "+ Añadir campo" -- es preferencia del dispositivo (como el
@@ -4934,13 +4938,12 @@ function aplicaPPOcultos(){
     const f = document.querySelector('#pp_grid .f[data-ppk="' + k + '"]');
     if (f) f.classList.toggle("oculto", ocultos.indexOf(k) >= 0);
   });
-  const panel = $("pp_agregar_panel");
+  const panel = $("pp_agregar_panel"), det = $("pp_agregar_det");
   if (panel){
-    panel.innerHTML = ocultos.length ?
-      ocultos.map(k => PP_ETIQUETAS[k] ?
-        '<button class="chip" onclick="restaurarCampoPP(\'' + k + '\')">+ ' + esc(PP_ETIQUETAS[k]) + '</button>' : "").join("") :
-      '<span class="agVacio" id="pp_agregar_vacio">' + esc(traduce("No hay rubros ocultos para añadir.")) + '</span>';
+    panel.innerHTML = ocultos.map(k => PP_ETIQUETAS[k] ?
+      '<button class="chip" onclick="restaurarCampoPP(\'' + k + '\')">+ ' + esc(PP_ETIQUETAS[k]) + '</button>' : "").join("");
   }
+  if (det) det.hidden = ocultos.length === 0;
 }
 function enlazaProdParte(){
   PROD_PARTE.forEach(function(k){
@@ -5081,8 +5084,7 @@ function modoParteSolo(){
     if (f2) f2.value = S.prod.fecha;
   }
   const res = document.querySelector("#pp_bloque > summary");
-  if (res) res.innerHTML = "<b>" + traduce("Datos del proyecto") + "</b> — <span>" +
-    traduce("proyecto, jornada, fecha y quién responde") + "</span>";
+  if (res) res.innerHTML = "<b>" + traduce("Datos del proyecto") + "</b>";
 }
 
 
@@ -5135,9 +5137,15 @@ function proyectoNuevo(){
   guarda();
   ptArchiva(false);
   if (typeof pcSalir === "function" && PC.parte) pcSalir();
-  PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
-  S.prod = { };
-  PROD_PARTE.forEach(function(k){ S.prod[k] = ""; });
+  /* v143: productora/cliente, unidad, casa y el equipo (director, DOP,
+     foquista, 2º AC, VTR, DIT) son datos que se repiten de proyecto en
+     proyecto para quien usa la app -- se conservan tal cual en el proyecto
+     nuevo. Solo se vacía lo que sí cambia cada vez: nombre del proyecto,
+     jornada, localización y fecha. */
+  const recordados = {};
+  PP_RECORDAR.forEach(function(k){ recordados[k] = S.prod[k] || ""; });
+  S.prod = Object.assign({}, recordados);
+  PP_SOLO_PROYECTO.forEach(function(k){ S.prod[k] = ""; });
   /* v124: ya no se parte siempre de la misma lista fija -- un proyecto
      nuevo nace con los campos que el dueño ya demostró que usa (recordados
      en S.prefCampos, que vive fuera de S.parte y nunca se borra), tanto
