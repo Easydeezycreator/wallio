@@ -139,6 +139,21 @@ section{display:none}section.on{display:block}
 .f.restaurar button{border-style:dashed;color:var(--tx3);font-size:9.5px;padding:5px 9px}
 .f.restaurar button:active{color:var(--boxC);border-color:var(--boxC)}
 
+/* v141: rubros de "Datos del proyecto" -- misma × discreta de siempre junto
+   a la etiqueta para quitarlos, y "+ Añadir campo" para devolverlos */
+.f .xpp{cursor:pointer;opacity:.55;font-weight:400}
+.f[data-ppk="proyecto"] .xpp{display:none}
+.f.oculto{display:none}
+
+/* v141: unidad (m/ft) de Distancia de foco y Altura de óptica, y signo
+   (+/−) de Tilt/Pan -- solo aparecen mientras se está escribiendo en ese
+   campo, igual que pidió Waldo; se agregan al texto que ya escribió */
+.unidadWrap{display:flex;gap:6px;align-items:center}
+.unidadWrap .unidadBtn{display:none;cursor:pointer;opacity:.6;font-size:.82em;
+  letter-spacing:.03em;color:var(--tx3)}
+.unidadWrap.activo .unidadBtn{display:inline-block}
+.unidadWrap .unidadBtn:active{color:var(--boxC)}
+
 /* v118: "Cámara y rollo" y "Laboratorio" llevan la misma caja roja discreta
    que los grupos de la toma, para que todo el parte se vea consistente.
    v125: ahora además cambian de color según la cámara activa (A/B/C/D),
@@ -1487,22 +1502,25 @@ html.solo-parte .portada{display:none}
   <details class="solo" id="pp_bloque">
     <summary><b>Producción</b></summary>
     <div class="cuerpo">
-      <div class="grid">
-        <div class="f"><label>Proyecto</label><input id="pp_proyecto" autocomplete="off"></div>
-        <div class="f"><label>Productora / cliente</label><input id="pp_productora" autocomplete="off"></div>
-        <div class="f"><label>Unidad</label><input id="pp_unidad" autocomplete="off"></div>
-        <div class="f"><label>Nº de jornada</label><input id="pp_jornada" autocomplete="off"></div>
-        <div class="f"><label>Localización</label><input id="pp_localizacion" autocomplete="off"></div>
-        <div class="f"><label>Fecha</label><input id="pp_fecha" type="date" autocomplete="off"></div>
-        <div class="f"><label>Casa de renta / propietario</label><input id="pp_casa" autocomplete="off"></div>
-                <div class="f"><label>Director</label><input id="pp_director" autocomplete="off"></div>
-<div class="f"><label>Director de fotografía</label><input id="pp_dop" autocomplete="off"></div>
-        <div class="f"><label>Foquista</label><input id="pp_ac" autocomplete="off"></div>
-        <div class="f"><label>Auxiliar · 2º AC</label><input id="pp_ac2" autocomplete="off"></div>
-        <div class="f"><label>VTR</label><input id="pp_vtr" autocomplete="off"></div>
-        <div class="f"><label>Técnico de cámara / DIT</label><input id="pp_dit" autocomplete="off"></div>
-        <div class="f"><label>Cargado por</label><input id="pp_loader" autocomplete="off"></div>
+      <div class="grid" id="pp_grid">
+        <div class="f" data-ppk="proyecto"><label>Proyecto</label><input id="pp_proyecto" autocomplete="off"></div>
+        <div class="f" data-ppk="productora"><label>Productora / cliente <span class="xpp" onclick="ocultarCampoPP('productora')">×</span></label><input id="pp_productora" autocomplete="off"></div>
+        <div class="f" data-ppk="unidad"><label>Unidad <span class="xpp" onclick="ocultarCampoPP('unidad')">×</span></label><input id="pp_unidad" autocomplete="off"></div>
+        <div class="f" data-ppk="jornada"><label>Nº de jornada <span class="xpp" onclick="ocultarCampoPP('jornada')">×</span></label><input id="pp_jornada" autocomplete="off"></div>
+        <div class="f" data-ppk="localizacion"><label>Localización <span class="xpp" onclick="ocultarCampoPP('localizacion')">×</span></label><input id="pp_localizacion" autocomplete="off"></div>
+        <div class="f" data-ppk="fecha"><label>Fecha <span class="xpp" onclick="ocultarCampoPP('fecha')">×</span></label><input id="pp_fecha" type="date" autocomplete="off"></div>
+        <div class="f" data-ppk="casa"><label>Casa de renta / propietario <span class="xpp" onclick="ocultarCampoPP('casa')">×</span></label><input id="pp_casa" autocomplete="off"></div>
+        <div class="f" data-ppk="director"><label>Director <span class="xpp" onclick="ocultarCampoPP('director')">×</span></label><input id="pp_director" autocomplete="off"></div>
+        <div class="f" data-ppk="dop"><label>Director de fotografía <span class="xpp" onclick="ocultarCampoPP('dop')">×</span></label><input id="pp_dop" autocomplete="off"></div>
+        <div class="f" data-ppk="ac"><label>Foquista <span class="xpp" onclick="ocultarCampoPP('ac')">×</span></label><input id="pp_ac" autocomplete="off"></div>
+        <div class="f" data-ppk="ac2"><label>Auxiliar · 2º AC <span class="xpp" onclick="ocultarCampoPP('ac2')">×</span></label><input id="pp_ac2" autocomplete="off"></div>
+        <div class="f" data-ppk="vtr"><label>VTR <span class="xpp" onclick="ocultarCampoPP('vtr')">×</span></label><input id="pp_vtr" autocomplete="off"></div>
+        <div class="f" data-ppk="dit"><label>Técnico de cámara / DIT <span class="xpp" onclick="ocultarCampoPP('dit')">×</span></label><input id="pp_dit" autocomplete="off"></div>
+        <div class="f" data-ppk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoPP('loader')">×</span></label><input id="pp_loader" autocomplete="off"></div>
       </div>
+      <details class="agregar" id="pp_agregar_det" hidden><summary>+ Añadir campo</summary>
+        <div class="agGrupo" id="pp_agregar_panel"></div>
+      </details>
     </div>
   </details>
 
@@ -1550,7 +1568,7 @@ html.solo-parte .portada{display:none}
   </div>
 
   <div class="card">
-    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
+    <div class="grid"><div class="f"><label>Rollo / magazine <span class="xpp" style="opacity:.7" title="Empezar el rollo siguiente" onclick="ptSiguienteRollo()">↻ siguiente</span></label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
         <div id="avisoSmartfill" hidden></div>
         <div id="gruposCampos"></div>
         <div id="listaTomas"></div>
@@ -4875,6 +4893,41 @@ function guardarFicha(){
 const PROD_PARTE = ["proyecto", "productora", "unidad", "jornada",
                                          "localizacion", "fecha", "casa", "director", "dop", "ac", "ac2", "vtr", "dit"];
 
+/* v141: campos de "Datos del proyecto" que se pueden quitar con la × y
+   devolver con "+ Añadir campo" -- es preferencia del dispositivo (como el
+   idioma), no del proyecto: si Waldo no usa VTR, no lo usa en NINGÚN parte. */
+const PP_ETIQUETAS = {productora:"Productora / cliente", unidad:"Unidad", jornada:"Nº de jornada",
+  localizacion:"Localización", fecha:"Fecha", casa:"Casa de renta / propietario", director:"Director",
+  dop:"Director de fotografía", ac:"Foquista", ac2:"Auxiliar · 2º AC", vtr:"VTR",
+  dit:"Técnico de cámara / DIT", loader:"Cargado por"};
+function ppOcultosGet(){
+  try { return JSON.parse(localStorage.getItem("wallio_pp_ocultos") || "[]"); } catch(e){ return []; }
+}
+function ppOcultosSet(arr){
+  try { localStorage.setItem("wallio_pp_ocultos", JSON.stringify(arr)); } catch(e){}
+}
+function ocultarCampoPP(k){
+  const arr = ppOcultosGet();
+  if (arr.indexOf(k) < 0){ arr.push(k); ppOcultosSet(arr); }
+  aplicaPPOcultos();
+}
+function restaurarCampoPP(k){
+  ppOcultosSet(ppOcultosGet().filter(x => x !== k));
+  aplicaPPOcultos();
+}
+function aplicaPPOcultos(){
+  const ocultos = ppOcultosGet();
+  Object.keys(PP_ETIQUETAS).forEach(function(k){
+    const f = document.querySelector('#pp_grid .f[data-ppk="' + k + '"]');
+    if (f) f.classList.toggle("oculto", ocultos.indexOf(k) >= 0);
+  });
+  const panel = $("pp_agregar_panel"), det = $("pp_agregar_det");
+  if (panel){
+    panel.innerHTML = ocultos.map(k => PP_ETIQUETAS[k] ?
+      '<button class="chip" onclick="restaurarCampoPP(\'' + k + '\')">+ ' + esc(PP_ETIQUETAS[k]) + '</button>' : "").join("");
+  }
+  if (det) det.hidden = ocultos.length === 0;
+}
 function enlazaProdParte(){
   PROD_PARTE.forEach(function(k){
     const el = $("pp_" + k); if (!el) return;
@@ -5251,6 +5304,12 @@ function ptSiguienteRollo(){
   if (!confirm(traduce("Se guarda este parte y se empieza el siguiente rollo con la misma producción y los mismos ajustes de cámara. Las tomas se vacían.")))
     return;
   ptArchiva(false);
+  /* v141: antes de vaciar las tomas, se guarda la última de cada cámara --
+     la primera toma del rollo nuevo la hereda (ver "materializaDefectos"
+     en renderTomas), así no hay que volver a escribir óptica/focal/T/foco/
+     filtro/altura/tilt/pan a mano. */
+  window.ULTIMA_TOMA_ROLLO_ANTERIOR = {};
+  (S.parte.tomas || []).forEach(t => { window.ULTIMA_TOMA_ROLLO_ANTERIOR[t.camLetra || "A"] = t; });
   const R = Object.assign({}, S.parte.roll || {});
   R.roll = siguienteRollo(R.roll);
   let camsSig = {};
@@ -5268,7 +5327,12 @@ function ptSiguienteRollo(){
   if (typeof renderRollExtra === "function") renderRollExtra();
   updateChip(); pintaTira(); autoguarda(); ptLista();
   ptMsg(traduce("Rollo nuevo: ") + (R.roll || "—"), "good");
-  window.scrollTo(0, 0);
+  /* v141: ya no salta al inicio de la página -- se queda donde está y deja
+     el campo Escena de la toma nueva listo para escribir. */
+  setTimeout(() => {
+    const campo = document.querySelector('#listaTomas .toma[open] .f[data-k="sc"] input');
+    if (campo){ campo.scrollIntoView({block: "center", behavior: "smooth"}); campo.focus(); }
+  }, 60);
 }
 
 /* ================= PARTE DE CÁMARA · WLG-03 ================= */
@@ -5919,6 +5983,27 @@ function fillParte(){
   dl("dlLoader", mem("loader"));
 }
 
+/* v141: agrega la unidad (m/ft) al final del número que ya se escribió en
+   Distancia de foco / Altura de óptica, sin pisar el valor -- quita una
+   unidad anterior si ya tenía una puesta. */
+function aplicaUnidadToma(i, k, unidad){
+  const actual = String(S.parte.tomas[i][k] || "");
+  const m = actual.match(/-?[\d.,]+/);
+  if (!m) return;
+  S.parte.tomas[i][k] = m[0] + " " + unidad;
+  if (APRENDE_TOMA.indexOf(k) >= 0) aprendeCampo(k, S.parte.tomas[i][k]);
+  renderTomas();
+}
+/* v141: agrega el signo (+/−) y el símbolo ° al número que ya se escribió
+   en Tilt / Pan -- "+" se deja sin signo visible (positivo implícito). */
+function aplicaSignoToma(i, k, signo){
+  const actual = String(S.parte.tomas[i][k] || "");
+  const m = actual.match(/[\d.,]+/);
+  if (!m) return;
+  S.parte.tomas[i][k] = (signo === "-" ? "-" : "") + m[0] + "°";
+  if (APRENDE_TOMA.indexOf(k) >= 0) aprendeCampo(k, S.parte.tomas[i][k]);
+  renderTomas();
+}
 function campoToma(i, k, etiqueta, lista, ancho){
   const v = esc(S.parte.tomas[i][k] || "");
   const l = lista ? ` list="${lista}"` : "";
@@ -5944,6 +6029,37 @@ function campoToma(i, k, etiqueta, lista, ancho){
       `<div style="display:flex;gap:6px;align-items:center">` +
       `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
       `${toggleUnidad}</div></div>`;
+  }
+  /* v141: Distancia de foco y Altura de óptica -- al tocar el campo aparecen
+     "M" / "FT" discretos; tocar uno agrega la unidad a lo que ya se escribió
+     (sin pisar el número). onmousedown con preventDefault evita que el campo
+     pierda el foco antes de que el clic llegue al botón. */
+  if (k === "foco" || k === "alt"){
+    return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+      `<div class="unidadWrap">` +
+      `<input value="${v}"${l}${INPUTMODE_TOMA[k] ? ` inputmode="${INPUTMODE_TOMA[k]}"` : ""} placeholder="${ph}" style="flex:1" ` +
+      `oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
+      `onfocus="this.closest('.unidadWrap').classList.add('activo')" ` +
+      `onblur="this.closest('.unidadWrap').classList.remove('activo')" ` +
+      `onchange="${APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : ""}renderTomas()" autocomplete="off">` +
+      `<span class="unidadBtn" onmousedown="event.preventDefault()" onclick="aplicaUnidadToma(${i},'${k}','m')">M</span>` +
+      `<span class="unidadBtn" onmousedown="event.preventDefault()" onclick="aplicaUnidadToma(${i},'${k}','ft')">FT</span>` +
+      `</div></div>`;
+  }
+  /* v141: Tilt y Pan -- al tocar el campo aparecen "+" / "−"; tocar uno le
+     pone el signo al número que ya se escribió y agrega el símbolo °. Solo
+     se escribe el número, el signo y el ° los pone el botón. */
+  if (k === "tilt" || k === "pan"){
+    return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+      `<div class="unidadWrap">` +
+      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" ` +
+      `oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
+      `onfocus="this.closest('.unidadWrap').classList.add('activo')" ` +
+      `onblur="this.closest('.unidadWrap').classList.remove('activo')" ` +
+      `onchange="${APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : ""}renderTomas()" autocomplete="off">` +
+      `<span class="unidadBtn" onmousedown="event.preventDefault()" onclick="aplicaSignoToma(${i},'${k}','+')">+</span>` +
+      `<span class="unidadBtn" onmousedown="event.preventDefault()" onclick="aplicaSignoToma(${i},'${k}','-')">−</span>` +
+      `</div></div>`;
   }
   /* v94: al cambiar de Escena en la toma abierta, se guarda solo el parte en
      "Tus partes" (sin descargar nada aparte) -- queda registrada la escena
@@ -6009,7 +6125,20 @@ function renderTomas(){
      de Rollo/Magazine. Ahora se revisa por cámara activa, igual que hace
      "cuántas tomas tiene esta cámara" en cualquier otro lado del código. */
   if (!L.some(t => (t.camLetra || "A") === camActiva())){
-    const t0 = tomaVacia();
+    /* v141: al empezar un rollo nuevo del mismo proyecto, la primera toma
+       no nace en blanco -- hereda lo técnico (óptica, focal, T, foco,
+       filtro, WB, fps, EI, LUT, resolución, altura/tilt/pan) de la última
+       toma de esa cámara en el rollo anterior, igual que hace Smartfill
+       entre tomas. Solo se usa una vez por cámara (se consume al leerla). */
+    const RESET_KEYS_HEREDA = ["tk","sc","clip","nclip","dial","pies","mos","falso","notaEsp","ok","nota","tc","dur"];
+    const u = window.ULTIMA_TOMA_ROLLO_ANTERIOR && window.ULTIMA_TOMA_ROLLO_ANTERIOR[camActiva()];
+    const t0 = u ? Object.assign({}, u, {extra: Object.assign({}, u.extra)}) : tomaVacia();
+    if (u){
+      t0.sc = ""; t0.clip = ""; t0.nclip = ""; t0.dial = ""; t0.pies = "";
+      t0.mos = false; t0.falso = false; t0.notaEsp = ""; t0.ok = false; t0.nota = ""; t0.tc = ""; t0.dur = "";
+      t0._heredados = T_CLAVES.concat(["cc"]).filter(k => RESET_KEYS_HEREDA.indexOf(k) < 0 && (t0[k] || "") !== "");
+      delete window.ULTIMA_TOMA_ROLLO_ANTERIOR[camActiva()];
+    }
     t0.camLetra = camActiva();
     t0.tk = "1";
     t0.ts = Date.now();
@@ -8252,7 +8381,7 @@ if (LANG === "en" && S.focos.join("|") === "Mínimo|2.40 m|INF") S.focos[0] = "M
 S.focosFab = S.focos.slice();      // lo de fábrica se aparta solo al tocarlo
 fillFam(); renderFmt(); S.focosPrev = S.focos.slice(); renderFoco(); llenaCartas(); chartCheck();
 wireParte(); fillParte(); renderTomas(); renderCampos(); renderRollExtra();
-enlazaProdParte(); enlazaLoaderProd(); fillProdParte(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
+enlazaProdParte(); enlazaLoaderProd(); fillProdParte(); aplicaPPOcultos(); pintaTira(); ptLista(); modoParteSolo(); pintaPortada();
 tgAjuste(); if ($("tg_lado")) { $("tg_lado").value = String(TG_LADO); tgPonAjuste(TG_LADO); }
 updateChip(); show("prod");
 /* v91: ya no se abre sola "Datos del proyecto" aunque esté vacío -- se entra
