@@ -1315,6 +1315,19 @@ html.solo-parte .portada{display:none}
   .toma .row input{font-size:18px;min-height:40px}
   .cellrow .lbl,.cellrow .lbl .fo{font-size:18px}
 }
+/* v146: cada rubro (campo) en su propio recuadro discreto -- línea fina,
+   mismo fondo suave que ya usaba la app (--panel/--boxBg), sin tocar los
+   botones (MOS/TAILS/PU/FALSO/buena siguen sin recuadro). Aprobado por
+   Waldo en vista previa antes de aplicarlo. */
+.grid{gap:8px}
+.f{border:1px solid var(--line);border-radius:7px;background:var(--panel);
+  padding:8px 10px 7px;margin:0}
+.f label{margin-bottom:2px}
+input,select,textarea{border:none !important;padding:2px 0 !important}
+input:focus,select:focus,textarea:focus{outline:none}
+.f:focus-within{border-color:var(--boxC)}
+.toma .row{gap:8px}
+.toma .row .f{margin-bottom:0}
 </style>
 </head>
 <body>
