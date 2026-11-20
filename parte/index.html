@@ -8967,6 +8967,16 @@ materializaDefectos();
     if (activo === t && !caja.hidden){ if (Date.now() - abiertoEn > 450) activaEscribir(t); return; }
     { const dl = document.getElementById(t.getAttribute("data-lista")); if (!dl || !dl.options.length) return; }
     pinta(t); });
+  /* v154: al elegir un rubro en cualquier "+ Añadir campo" (o añadir uno
+     escrito), el panel se cierra solo para que el parte quede limpio --
+     Waldo lo pidió así (antes, v130, se quedaba abierto). */
+  document.addEventListener("click", e => {
+    const ch = e.target && e.target.closest && e.target.closest("details.agregar .chip");
+    if (!ch) return;
+    const nuevo = ch.closest(".agNuevo");
+    if (nuevo){ const inp = nuevo.querySelector("input"); if (inp && !inp.value.trim()) return; }
+    setTimeout(() => document.querySelectorAll("details.agregar[open]").forEach(d => { d.open = false; }), 0);
+  }, true);
   document.addEventListener("pointerdown", e => {
     if (!caja.contains(e.target) && e.target !== activo) cierra();
     /* v153: tocar fuera suelta el campo de opciones (en iPhone, sin teclado,
