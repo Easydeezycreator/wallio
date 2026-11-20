@@ -150,9 +150,14 @@ section{display:none}section.on{display:block}
    (+/−) de Tilt/Pan -- solo aparecen mientras se está escribiendo en ese
    campo, igual que pidió Waldo; se agregan al texto que ya escribió */
 .unidadWrap{display:flex;gap:6px;align-items:center}
-.unidadWrap .unidadBtn{display:none;cursor:pointer;opacity:.6;font-size:.82em;
-  letter-spacing:.03em;color:var(--tx3)}
+.unidadWrap .unidadBtn{display:none;cursor:pointer;opacity:.75;font-size:15px;
+  font-weight:600;letter-spacing:.03em;color:var(--tx3);min-width:40px;height:40px;
+  line-height:40px;text-align:center;-webkit-user-select:none;user-select:none;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;flex:none}
+/* v154: + y − de Tilt/Pan más grandes -- Waldo: eran muy pequeños para el dedo */
+.unidadWrap .unidadBtn.signo{font-size:26px;font-weight:400}
 .unidadWrap.activo .unidadBtn{display:inline-block}
+.unidadWrap input{min-width:0}
 .unidadWrap .unidadBtn:active{color:var(--boxC)}
 
 /* v118: "Cámara y rollo" y "Laboratorio" llevan la misma caja roja discreta
@@ -169,6 +174,8 @@ body.camF{--boxC:var(--camF);--boxBg:#eff8f9;--boxLine:#c7e6e9}
 .card.cajaRoja{background:var(--boxBg);border:1px solid var(--boxLine);border-radius:7px;padding-top:1px}
 .card.cajaRoja h2{background:transparent;color:var(--boxC);padding:9px 11px 7px;margin-bottom:7px;
   border-bottom:1px solid var(--boxLine)}
+/* v154: "+ Añadir campo" de Cámara y rollo alineado con los campos */
+.card.cajaRoja > details.agregar{margin-left:11px;margin-right:11px}
 
 /* v123: Smartfill pasa a ser un botón chico y discreto, en la esquina de la
    cabecera (dentro de .th, junto a la ×), en rojo apagado -- ya no ocupa
@@ -633,7 +640,8 @@ html:not(.pfilm) #listaTomas .f[data-k="dial"],html:not(.pfilm) #listaTomas .f[d
 /* v71: en film la descripcion llena la fila 1 para que serie y focal queden juntas */
 @media(min-width:520px){html.pfilm #listaTomas .f[data-k="desc"]{grid-column:span 2}}
 @media(min-width:780px){html.pfilm #listaTomas .f[data-k="desc"]{grid-column:span 4}}
-html:not(.pfilm) #filmRollo,html:not(.pfilm) #cardLab{display:none}
+/* v154: en película un solo "+ Añadir campo" al final (el del rollo lleva también los de cámara) */
+html.pfilm #camara_agregar_det,html:not(.pfilm) #filmRollo,html:not(.pfilm) #rollo2_agregar_det,html:not(.pfilm) #cardLab{display:none}
 html.pfilm .f:has(> #p_dit),html.pfilm .f:has(> #pp_dit){display:none}
 html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){display:none}
 #combo{position:absolute;z-index:9999;background:var(--panel);border:1px solid var(--line);
@@ -1569,7 +1577,7 @@ input:focus,select:focus,textarea:focus{outline:none}
       <div class="f" data-gk="lut"><label>LUT <span class="xpp" onclick="ocultarCampoGen('camara','lut')">×</span></label><input id="r_lut" list="dlLut" placeholder="" autocomplete="off"></div>
       <div class="f" data-gk="codec"><label>Codec / emulsión <span class="xpp" onclick="ocultarCampoGen('camara','codec')">×</span></label><input id="r_codec" list="dlCodec" placeholder="" autocomplete="off"></div>
     </div>
-    <details class="agregar" id="camara_agregar_det"><summary>+ <span>Añadir campo</span>
+    <details class="agregar" id="camara_agregar_det"><summary>+ <span>Añadir campo</span></summary>
       <div class="agGrupo" id="camara_agregar_panel"></div>
     </details>
     <!-- v71: Rollo/magazine, FPS, EI, Obturador, WB, LUT y Filtros se registran
@@ -1589,7 +1597,7 @@ input:focus,select:focus,textarea:focus{outline:none}
       <div class="f" data-gk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoGen('rollo2','loader')">×</span></label><input id="r2_loader" list="dlLoader" autocomplete="off"></div>
       <div class="f" data-gk="dial0"><label>Contador al empezar <span class="xpp" onclick="ocultarCampoGen('rollo2','dial0')">×</span></label><input id="r2_dial0" inputmode="numeric" placeholder="" autocomplete="off"></div>
     </div>
-    <details class="agregar" id="rollo2_agregar_det"><summary>+ <span>Añadir campo</span>
+    <details class="agregar" id="rollo2_agregar_det"><summary>+ <span>Añadir campo</span></summary>
       <div class="agGrupo" id="rollo2_agregar_panel"></div>
     </details>
     <div id="rollExtra"></div>
@@ -6304,8 +6312,16 @@ function aplicaOcultosGen(seccion){
     if (f) f.classList.toggle("oculto", ocultos.indexOf(k) >= 0);
   });
   const panel = document.getElementById(seccion + "_agregar_panel");
+  if (seccion === "camara" && GEN_ETIQUETAS.rollo2) setTimeout(() => aplicaOcultosGen("rollo2"), 0);
   if (panel){
-    panel.innerHTML = ocultos.map(k => etiquetas[k] ?
+    /* v154: en película el panel del rollo ofrece también los campos de cámara quitados */
+    let extraCam = "";
+    if (seccion === "rollo2"){
+      const eCam = genEtiquetasTodas("camara");
+      extraCam = genOcultosGet("camara").map(k => eCam[k] ?
+        '<button class="chip" onclick="restaurarCampoGen(\'camara\',\'' + k.replace(/'/g, "\\'") + '\')">+ ' + esc(traduce(eCam[k])) + '</button>' : "").join("");
+    }
+    panel.innerHTML = extraCam + ocultos.map(k => etiquetas[k] ?
       '<button class="chip" onclick="restaurarCampoGen(\'' + seccion + '\',\'' + k.replace(/'/g, "\\'") + '\')">+ ' + esc(traduce(etiquetas[k])) + '</button>' : "").join("") +
       '<div class="agNuevo"><input type="text" id="' + seccion + '_nuevoCampoInput" placeholder="' + esc(traduce("o escribe uno nuevo…")) + '">' +
       '<button class="chip" onclick="event.preventDefault();addCampoGen(\'' + seccion + '\',$(\'' + seccion + '_nuevoCampoInput\').value);$(\'' + seccion + '_nuevoCampoInput\').value=\'\'">' + esc(traduce("Añadir")) + '</button></div>';
@@ -6316,7 +6332,30 @@ function aplicaTodosOcultosGen(){ Object.keys(GEN_ETIQUETAS).forEach(aplicaOcult
 /* v141: agrega la unidad (m/ft) al final del número que ya se escribió en
    Distancia de foco / Altura de óptica, sin pisar el valor -- quita una
    unidad anterior si ya tenía una puesta. */
+/* v154: unidad por defecto -- la de la óptica de esa toma si ya se eligió,
+   si no la última que este usuario tocó en ese campo; se recuerda sola. */
+function unidadUltima(k){ try { return (JSON.parse(localStorage.getItem("wallio.unidadUlt") || "{}"))[k] || ""; } catch(e){ return ""; } }
+function guardaUnidadUltima(k, u){ try { const m = JSON.parse(localStorage.getItem("wallio.unidadUlt") || "{}"); m[k] = u; localStorage.setItem("wallio.unidadUlt", JSON.stringify(m)); } catch(e){} }
+function unidadPorDefecto(i, k){
+  const t = S.parte.tomas[i] || {};
+  if (k === "foco" && String(t.serial || "").trim()){
+    try { const m = JSON.parse(localStorage.getItem("wallio.unidadPorOptica") || "{}"); const c = String(t.serial).trim().toLowerCase(); if (m[c]) return m[c]; } catch(e){}
+  }
+  return unidadUltima(k) || unidadUltima(k === "foco" ? "alt" : "foco") || unidadDeOptica(t.serial);
+}
+/* v154: al terminar de escribir solo el número, se completa solo: Tilt/Pan
+   con °, Distancia de foco / Altura de óptica con m o ft. Si ya trae algo
+   (INF, 3'6", 2 m...) se deja tal cual. */
+function completaToma(i, k, el){
+  const v = String(el.value || "").trim();
+  if (!/^[+−-]?\d+(?:[.,]\d+)?$/.test(v)) return;
+  let nv;
+  if (k === "tilt" || k === "pan") nv = v.replace(/^\+/, "").replace("−", "-") + "°";
+  else nv = v + " " + unidadPorDefecto(i, k);
+  el.value = nv; S.parte.tomas[i][k] = nv;
+}
 function aplicaUnidadToma(i, k, unidad){
+  guardaUnidadUltima(k, unidad);
   const actual = String(S.parte.tomas[i][k] || "");
   const m = actual.match(/-?[\d.,]+/);
   if (!m) return;
@@ -6371,7 +6410,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
       `oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
       `onfocus="this.closest('.unidadWrap').classList.add('activo')" ` +
       `onblur="this.closest('.unidadWrap').classList.remove('activo')" ` +
-      `onchange="${APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : ""}renderTomas()" autocomplete="off">` +
+      `onchange="completaToma(${i},'${k}',this);${APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : ""}renderTomas()" autocomplete="off">` +
       `<span class="unidadBtn" onmousedown="event.preventDefault()" onclick="aplicaUnidadToma(${i},'${k}','m')">M</span>` +
       `<span class="unidadBtn" onmousedown="event.preventDefault()" onclick="aplicaUnidadToma(${i},'${k}','ft')">FT</span>` +
       `</div></div>`;
@@ -6386,9 +6425,9 @@ function campoToma(i, k, etiqueta, lista, ancho){
       `oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
       `onfocus="this.closest('.unidadWrap').classList.add('activo')" ` +
       `onblur="this.closest('.unidadWrap').classList.remove('activo')" ` +
-      `onchange="${APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : ""}renderTomas()" autocomplete="off">` +
-      `<span class="unidadBtn" onmousedown="event.preventDefault()" onclick="aplicaSignoToma(${i},'${k}','+')">+</span>` +
-      `<span class="unidadBtn" onmousedown="event.preventDefault()" onclick="aplicaSignoToma(${i},'${k}','-')">−</span>` +
+      `onchange="completaToma(${i},'${k}',this);${APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : ""}renderTomas()" autocomplete="off">` +
+      `<span class="unidadBtn signo" onmousedown="event.preventDefault()" onclick="aplicaSignoToma(${i},'${k}','+')">+</span>` +
+      `<span class="unidadBtn signo" onmousedown="event.preventDefault()" onclick="aplicaSignoToma(${i},'${k}','-')">−</span>` +
       `</div></div>`;
   }
   /* v94: al cambiar de Escena en la toma abierta, se guarda solo el parte en
@@ -8934,7 +8973,8 @@ materializaDefectos();
        tocar fuera no siempre quitaba el foco y el campo quedaba atrapado) */
     const a = document.activeElement;
     if (a && a.tagName === "INPUT" && a.hasAttribute("data-lista") && a !== e.target && !caja.contains(e.target)
-        && !(e.target && e.target.tagName === "INPUT")) { try { a.blur(); } catch(_){} }
+        && !(e.target && e.target.tagName === "INPUT")
+        && !(e.target && e.target.closest && e.target.closest(".unidadBtn"))) { try { a.blur(); } catch(_){} }
   });
   /* v149: al confirmar (change nativo, al perder el foco) lo escrito a mano
      en modo "escribir", se guarda como opción múltiple permanente de ese
