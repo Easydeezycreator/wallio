@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="166">
+<meta name="wallio-ver" content="167">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1367,6 +1367,17 @@ body:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF),.toma:not(.camB):not
 .toma .row > .gsec,.card.cajaRoja{background:color-mix(in srgb,var(--boxC) var(--boxTint),#fff);
   border-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
 .gsec .ghead{border-bottom-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
+/* v167: botones de cámara -- en uso = tono claro de su color + nº de tomas; activa = color fuerte (Waldo, opción 2) */
+.camSel button[data-cam]{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.camSel button .nl{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.camSel button .nt{display:block;font:600 8.5px/1 var(--mono);letter-spacing:.08em;margin-top:4px;opacity:.85;white-space:nowrap;text-transform:uppercase}
+.camSel button[data-cam]:not(.uso):not(.on){opacity:.55}
+.camSel button.uso:not(.on)[data-cam=A]{background:color-mix(in srgb,var(--camA) 30%,#fff)!important;border-color:var(--camA)!important}
+.camSel button.uso:not(.on)[data-cam=B]{background:color-mix(in srgb,var(--camB) 30%,#fff)!important;border-color:var(--camB)!important}
+.camSel button.uso:not(.on)[data-cam=C]{background:color-mix(in srgb,var(--camC) 30%,#fff)!important;border-color:var(--camC)!important}
+.camSel button.uso:not(.on)[data-cam=D]{background:color-mix(in srgb,var(--camD) 30%,#fff)!important;border-color:var(--camD)!important}
+.camSel button.uso:not(.on)[data-cam=E]{background:color-mix(in srgb,var(--camE) 30%,#fff)!important;border-color:var(--camE)!important}
+.camSel button.uso:not(.on)[data-cam=F]{background:color-mix(in srgb,var(--camF) 30%,#fff)!important;border-color:var(--camF)!important}
 /* v166: "+ Añadir campo" fuera del fondo y aire antes de Roll / magazine */
 .agFuera{margin:6px 0 22px}
 .agFuera > details.agregar{margin:0}
@@ -5667,14 +5678,19 @@ function agregarCamara(){
 }
 function renombrarCamaraActiva(nombre){
   camNombres()[camActiva()] = (nombre || "").trim();
-  const btn = document.querySelector('#camSelRollo button[data-cam="' + camActiva() + '"]');
-  if (btn) btn.textContent = nombreCam(camActiva());
+  renderCamSel();
 }
 function renderCamSel(){
   const activas = camasActivas();
   const cont = $("camSelRollo");
+  /* v167 (opción 2 de Waldo): cada cámara con tomas se pinta en un tono
+     claro de su color y dice cuántas lleva; la cámara en la que se trabaja
+     va en color fuerte. Así se ve de un vistazo que hay más cámaras. */
+  const nTomas = {};
+  ((S.parte && S.parte.tomas) || []).forEach(t => { const l = t.camLetra || "A"; nTomas[l] = (nTomas[l] || 0) + 1; });
+  const etTomas = n => n ? n + " " + (n === 1 ? (LANG === "en" ? "take" : "toma") : traduce("tomas")) : "";
   if (cont) cont.innerHTML = activas.map(l =>
-    `<button data-cam="${l}" class="${l === camActiva() ? "on" : ""}" onclick="cambiaCam('${l}')">${esc(nombreCam(l))}</button>`
+    `<button data-cam="${l}" class="${[l === camActiva() ? "on" : "", nTomas[l] ? "uso" : ""].join(" ").trim()}" onclick="cambiaCam('${l}')"><span class="nl">${esc(nombreCam(l))}</span><span class="nt">${etTomas(nTomas[l]) || "&nbsp;"}</span></button>`
   ).join("") + (activas.length < CAM_LETRAS.length
     ? `<button class="mas" title="${esc(traduce("Añadir otra cámara"))}" onclick="agregarCamara()">+</button>` : "");
   const ren = $("camRenombrar");
@@ -8668,6 +8684,10 @@ function guardaSiPendiente(){ if (guardadoTimer) guardaYa(); }
   const envuelve = n => { const o = window[n]; if (typeof o !== "function") return;
     window[n] = function(){ const r = o.apply(this, arguments); programa(); return r; }; };
   ["renderTomas","fillParte","fillProdParte","renderCampos","renderRollExtra","refrescarTodo"].forEach(envuelve);
+  /* v167: los botones de cámara se ponen al día cada vez que cambian las tomas
+     (nueva, borrada, o llegada del teléfono de otro compañero) */
+  { const o = window.renderTomas; if (typeof o === "function")
+      window.renderTomas = function(){ const r = o.apply(this, arguments); try { renderCamSel(); } catch(e){} return r; }; }
   setTimeout(programa, 300); setTimeout(programa, 1500);
 })();
 /* v156: la app se pone al día sola -- al volver a ella (o cada 5 min con
