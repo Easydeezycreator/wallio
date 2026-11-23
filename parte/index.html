@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="173">
+<meta name="wallio-ver" content="174">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1412,7 +1412,7 @@ html.soloVer .toma .x,html.soloVer #tp_jsig,html.soloVer #btnProyNuevo{display:n
 .camSel button .nt{display:block;font:600 8.5px/1 var(--mono);letter-spacing:.08em;margin-top:4px;opacity:.85;white-space:nowrap;text-transform:uppercase}
 /* v171: las cámaras SIN uso no llevan su color: un tono tenue de la cámara
    en la que se trabaja (rojo si es la A) -- no distraen */
-.camSel button[data-cam]:not(.uso):not(.on){opacity:1;color:color-mix(in srgb,var(--boxC) 45%,transparent)!important;border-color:color-mix(in srgb,var(--boxC) 22%,transparent)!important;background:transparent!important}
+.camSel button[data-cam]:not(.uso):not(.on){opacity:1;color:color-mix(in srgb,var(--boxC) 24%,transparent)!important;border-color:color-mix(in srgb,var(--boxC) 9%,transparent)!important;background:transparent!important}
 .camSel button.uso:not(.on)[data-cam=A]{background:color-mix(in srgb,var(--camA) 16%,#fff)!important;border-color:color-mix(in srgb,var(--camA) 45%,transparent)!important;opacity:.9}
 .camSel button.uso:not(.on)[data-cam=B]{background:color-mix(in srgb,var(--camB) 16%,#fff)!important;border-color:color-mix(in srgb,var(--camB) 45%,transparent)!important;opacity:.9}
 .camSel button.uso:not(.on)[data-cam=C]{background:color-mix(in srgb,var(--camC) 16%,#fff)!important;border-color:color-mix(in srgb,var(--camC) 45%,transparent)!important;opacity:.9}
@@ -5762,9 +5762,8 @@ function renderCamSel(){
      va en color fuerte. Así se ve de un vistazo que hay más cámaras. */
   const nTomas = {};
   ((S.parte && S.parte.tomas) || []).forEach(t => { const l = t.camLetra || "A"; nTomas[l] = (nTomas[l] || 0) + 1; });
-  const etTomas = n => n ? n + " " + (n === 1 ? (LANG === "en" ? "take" : "toma") : traduce("tomas")) : "";
   if (cont) cont.innerHTML = activas.map(l =>
-    `<button data-cam="${l}" class="${[l === camActiva() ? "on" : "", nTomas[l] ? "uso" : ""].join(" ").trim()}" onclick="cambiaCam('${l}')"><span class="nl">${esc(nombreCam(l))}</span><span class="nt">${etTomas(nTomas[l]) || "&nbsp;"}</span></button>`
+    `<button data-cam="${l}" class="${[l === camActiva() ? "on" : "", nTomas[l] ? "uso" : ""].join(" ").trim()}" onclick="cambiaCam('${l}')"><span class="nl">${esc(nombreCam(l))}</span></button>`
   ).join("") + (activas.length < CAM_LETRAS.length
     ? `<button class="mas" title="${esc(traduce("Añadir otra cámara"))}" onclick="agregarCamara()">+</button>` : "");
   const ren = $("camRenombrar");
