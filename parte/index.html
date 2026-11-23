@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="167">
+<meta name="wallio-ver" content="168">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1367,6 +1367,16 @@ body:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF),.toma:not(.camB):not
 .toma .row > .gsec,.card.cajaRoja{background:color-mix(in srgb,var(--boxC) var(--boxTint),#fff);
   border-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
 .gsec .ghead{border-bottom-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
+/* v168: sección Para postproducción */
+.postSec{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.postTit{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx2);margin-bottom:10px}
+#postEstado{margin-top:10px;font:600 12px/1.5 var(--mono);overflow-wrap:anywhere}
+#postEstado .ok{color:#2f7d4f}
+#postEstado .mal{color:#b35a55}
+#postEstado .gris{color:var(--tx3)}
+#postEstado a{color:inherit;text-decoration:underline;cursor:pointer;white-space:nowrap}
+.sugClip{display:block;margin-top:4px;cursor:pointer;font:600 15px/1.3 var(--mono);color:var(--tx3);-webkit-tap-highlight-color:transparent}
+.sugClip i{font-style:normal;font-size:11px;letter-spacing:.06em;color:#2f7d4f;text-transform:uppercase}
 /* v167: botones de cámara -- en uso = tono claro de su color + nº de tomas; activa = color fuerte (Waldo, opción 2) */
 .camSel button[data-cam]{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .camSel button .nl{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1781,6 +1791,15 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
     <div class="btnrow addmini">
       <button onclick="hacerParte(camActiva())">PDF · solo mi cámara</button>
       <button onclick="parteCSV()">CSV</button>
+    </div>
+    <!-- v168: archivos para postproducción (Silverstack / Avid / Resolve) -->
+    <div class="postSec" id="postSec">
+      <div class="postTit">Para postproducción</div>
+      <div class="btnrow addmini">
+        <button onclick="exportaSilverstack()">Silverstack · CSV</button>
+        <button onclick="exportaALE()">Avid · Resolve · ALE</button>
+      </div>
+      <div id="postEstado"></div>
     </div>
   </div>
 
@@ -5915,7 +5934,7 @@ const PRESETS_CAMPOS = {
 const GRUPOS_CAMPOS = {
   "Óptica": ["serial","focal","t","foco","filt","alt","tilt","pan"],
   "Exposición": ["wb","ei","shutter","fps","lut","res"],
-  "Película": ["dial","pies","nclip","clip"],
+  "Película": ["dial","pies","nclip"],   /* v168: "clip" pasa a la caja de la Toma (también en digital) */
   "Tiempos": ["tc","dur"]
 };
 /* v132: campos de TOMA que son solo de digital (LUT, Resolución) -- en
@@ -5928,7 +5947,7 @@ const CATALOGO_SOLO_DIGITAL_GLOBAL = ["Espacio de color", "Gamma", "Firmware", "
 /* v124: lista de campos que empiezan ocultos en un proyecto NUEVO, sin
    ninguna preferencia aprendida todavía (Tiempos/tc/dur queda fuera, ese
    sigue siendo solo-PDF para siempre). */
-const CAMPOS_OCULTOS_DEFAULT = ["dial","pies","nclip","clip","serial","lut","res"];
+const CAMPOS_OCULTOS_DEFAULT = ["dial","pies","nclip","serial","lut","res"];  /* v168: "clip" ya nace visible (postproducción lo necesita) */
 /* v128: Óptica (lens) y Exposición ya NO se ocultan nunca por defecto --
    el usuario pidió expresamente que esos campos aparezcan siempre justo
    después de Escena/Toma, igual en TODAS las versiones (iPhone, iPad, Mac)
@@ -6171,6 +6190,14 @@ function fillParte(){
      que ningún preset viejo ni ningún dato guardado de antes los vuelva a
      esconder. */
   forzarCamposLensExpoVisibles();
+  /* v168: "Archivo / clip" se muestra en digital (Silverstack/Avid emparejan
+     por el nombre del clip). Se aplica UNA vez por parte; si el usuario lo
+     quita después con la ×, se respeta. En película el CSS lo sigue ocultando. */
+  if (!esFilm() && !S.parte.clipVisibleV168){
+    S.parte.camposOcultos = (S.parte.camposOcultos || []).filter(k => k !== "clip");
+    S.parte.camposOcultosManual = (S.parte.camposOcultosManual || []).filter(k => k !== "clip");
+    S.parte.clipVisibleV168 = true;
+  }
   /* v132: al revés -- en Película, LUT y Resolución quedan SIEMPRE ocultos
      (son conceptos de digital, nunca se usan en análogo), aunque el dueño
      ya los hubiera "aprendido" antes en un proyecto digital. En Digital no
@@ -6607,6 +6634,15 @@ function campoToma(i, k, etiqueta, lista, ancho){
       `<span class="unidadBtn signo" onmousedown="event.preventDefault()" onclick="aplicaSignoToma(${i},'${k}','-')">−</span>` +
       `</div></div>`;
   }
+  /* v168: Archivo / clip -- si está vacío, se sugiere el siguiente nombre
+     (A001C002 → A001C003); un toque lo pone. Se puede escribir a mano igual. */
+  if (k === "clip"){
+    const sug = v ? "" : sugerenciaClip(i);
+    return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+      `<input value="${v}" placeholder="" autocapitalize="characters" oninput="S.parte.tomas[${i}].clip=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
+      (sug ? `<span class="sugClip" onmousedown="event.preventDefault()" onclick="ponClip(${i},'${esc(sug)}')">${esc(sug)} <i>· ${esc(LANG === "en" ? "tap to use" : "toca para ponerlo")}</i></span>` : "") +
+      `</div>`;
+  }
   /* v94: al cambiar de Escena en la toma abierta, se guarda solo el parte en
      "Tus partes" (sin descargar nada aparte) -- queda registrada la escena
      que se acaba de terminar, de forma automática y discreta. */
@@ -6764,7 +6800,12 @@ function renderTomas(){
        rubros (Óptica/Exposición/Película), agrupados solo como etiquetas
        dentro del panel (no como cajas aparte). Tiempos (tc/dur) se deja
        fuera a propósito: ese sigue siendo solo-PDF, sin botón de agregar. */
-    const RUBROS_AGREGAR = esFilm() ? ["Óptica","Exposición","Película"] : ["Óptica","Exposición"];
+    const RUBROS_AGREGAR = ["Toma"].concat(esFilm() ? ["Óptica","Exposición","Película"] : ["Óptica","Exposición"]);
+    /* v168: los campos sueltos de la Toma (Descripción, Archivo / clip, Notas)
+       también se pueden volver a poner si se quitaron con la × */
+    const clavesDeRubro = nombre => nombre === "Toma"
+      ? clavesToma.filter(k => k !== "sc" && k !== "tk" && !(esFilm() && k === "clip") && GRUPOS_CAMPOS.Tiempos.indexOf(k) < 0)
+      : GRUPOS_CAMPOS[nombre];
     /* v131: el catálogo de campos del ROLLO (ND, Espacio de color, Gamma,
        Tinte de balance de blancos, Formato de audio, Firmware, ISO base --
        los mismos que ya existían en "+ Añadir campo del rollo") también
@@ -6783,7 +6824,7 @@ function renderTomas(){
       catalogoPorGrupo[grupo].push(n);
     });
     const agregarGrupos = RUBROS_AGREGAR.map(nombre => {
-      const ocultas = GRUPOS_CAMPOS[nombre].filter(k => camposOcultos.indexOf(k) >= 0 && camposOcultosManual.indexOf(k) >= 0
+      const ocultas = clavesDeRubro(nombre).filter(k => camposOcultos.indexOf(k) >= 0 && camposOcultosManual.indexOf(k) >= 0
         && !(esFilm() && CAMPOS_SOLO_DIGITAL_GLOBAL.indexOf(k) >= 0));
       const chipsOcultas = ocultas.map(k => { const c = T_CAMPOS.find(c => c[0] === k);
         return `<button class="chip" onclick="event.preventDefault();restaurarCampoToma('${k}')">+ ${esc(traduce(c ? c[1] : k))}</button>`; }).join("");
@@ -7519,6 +7560,143 @@ function parteCSV(){
   descargar("﻿" + [cab.join(","), ...filas].join("\r\n"),
             "WALLIO_parte_" + (R.roll || "rollo") + ".csv", "text/csv");
 }
+/* ================= v168 · POSTPRODUCCIÓN (Silverstack / Avid / Resolve) ================= */
+function sugerenciaClip(i){
+  const L = S.parte.tomas || [], x = L[i]; if (!x) return "";
+  const l = x.camLetra || "A", C = configDe(l);
+  if ((C.tipo || "digital") === "film") return "";
+  for (let j = i - 1; j >= 0; j--){
+    const y = L[j]; if ((y.camLetra || "A") !== l) continue;
+    const c = String(y.clip || "").trim();
+    if (!c) return "";               /* la toma anterior de esta cámara no tiene clip: no se adivina */
+    return siguienteClip(c, y.nclip); /* misma regla que el Smartfill */
+  }
+  const r = String(C.roll || "").trim();
+  return /^[A-Z]\d{3}$/i.test(r) ? r.toUpperCase() + "C001" : "";
+}
+function ponClip(i, v){
+  if (!S.parte.tomas[i]) return;
+  S.parte.tomas[i].clip = v;
+  renderTomas(); resumenParte();
+  if (typeof guardaYa === "function") guardaYa();
+}
+/* tomas que van a postproducción: digitales, no falsas */
+function tomasPost(){
+  return (S.parte.tomas || []).map((x, i) => ({x, i, l: x.camLetra || "A", C: configDe(x.camLetra || "A")}))
+    .filter(o => (o.C.tipo || "digital") !== "film" && !o.x.falso);
+}
+function hayTomasFilm(){
+  return (S.parte.tomas || []).some(x => (configDe(x.camLetra || "A").tipo || "digital") === "film");
+}
+function pintaPost(){
+  const el = $("postEstado"); if (!el) return;
+  const en = LANG === "en", T = tomasPost(), con = T.filter(o => String(o.x.clip || "").trim());
+  const sin = T.filter(o => !String(o.x.clip || "").trim());
+  let h = "";
+  if (!T.length) h = `<div class="gris">${en ? "For digital cameras: no takes yet." : "Para cámaras digitales: aún no hay tomas."}</div>`;
+  else {
+    h = !con.length ? `<div class="gris">${en ? "No take has a clip name yet." : "Todavía ninguna toma tiene nombre de clip."}</div>` : `<div class="ok">✓ ${sin.length ? (en ? `${con.length} of ${T.length} takes have a clip name` : `${con.length} de ${T.length} tomas con nombre de clip`)
+                                         : (en ? `All ${T.length} takes have a clip name` : `Las ${T.length} tomas tienen nombre de clip`)}</div>`;
+    if (sin.length){
+      const items = sin.slice(0, 4).map(o => `<a onclick="irATomaPost(${o.i})">${esc(o.l)} · ${esc(o.x.sc || "—")}/${esc(o.x.tk || "—")}</a>`).join(" · ");
+      h += `<div class="mal">${en ? "Missing clip in" : "Falta el clip en"} ${items}${sin.length > 4 ? (en ? ` and ${sin.length - 4} more` : ` y ${sin.length - 4} más`) : ""}</div>`;
+    }
+  }
+  if (hayTomasFilm()) h += `<div class="gris">${en ? "Film takes go in the PDF and CSV only." : "Las tomas en película van solo en el PDF y el CSV."}</div>`;
+  el.innerHTML = h;
+}
+function irATomaPost(i){
+  const x = S.parte.tomas[i]; if (!x) return;
+  if ((x.camLetra || "A") !== camActiva()) cambiaCam(x.camLetra || "A");
+  document.querySelectorAll("#listaTomas details.toma[open]").forEach(d => { if (d.getAttribute("data-i") !== String(i)) d.open = false; });
+  const t = document.querySelector('#listaTomas details.toma[data-i="' + i + '"]');
+  if (!t) return;
+  t.open = true;
+  const f = t.querySelector('.f[data-k="clip"]') || t;
+  setTimeout(() => f.scrollIntoView({block: "center"}), 30);
+}
+const limpiaPost = v => String(v == null ? "" : v).replace(/[\t\r\n]+/g, " ").trim();
+function filaPost(o){
+  const x = o.x, C = o.C;
+  const wb = [x.wb || C.wb, x.cc || C.cc].filter(Boolean).join(" ");
+  return {
+    clip: String(x.clip || "").trim(), roll: C.roll || "", sc: x.sc, tk: x.tk, cam: o.l,
+    circ: x.ok ? "*" : "", lens: x.serial, focal: x.focal, t: x.t, foco: x.foco, filt: x.filt || C.filt,
+    ei: x.ei || C.ei, sh: x.shutter || C.shutter, wb, fps: x.fps || C.fps, lut: x.lut || C.lut,
+    res: x.res || C.res, body: C.body, alt: x.alt, tilt: x.tilt, pan: x.pan, tc: x.tc,
+    desc: x.desc, nota: [x.nota, x.notaEsp].filter(Boolean).join(" · ")
+  };
+}
+const POST_COLS = [["Name","clip"],["Tape","roll"],["Scene","sc"],["Take","tk"],["Camera","cam"],["Circled","circ"],
+  ["Lens","lens"],["Focal Length","focal"],["T-Stop","t"],["Focus Distance","foco"],["Filter","filt"],["ISO","ei"],
+  ["Shutter","sh"],["White Balance","wb"],["Camera FPS","fps"],["LUT","lut"],["Resolution","res"],["Camera Model","body"],
+  ["Lens Height","alt"],["Tilt","tilt"],["Pan","pan"],["Description","desc"],["Comments","nota"]];
+function nombreBasePost(){
+  const P = S.prod || {};
+  return ("WALLIO_" + [P.proyecto, P.fecha].filter(Boolean).join("_")).replace(/[^A-Za-z0-9._-]+/g, "_").replace(/_+$/, "");
+}
+function avisoPost(txt){ const el = $("postEstado"); if (el && txt) el.innerHTML = `<div class="mal">${esc(txt)}</div>`; }
+function exportaSilverstack(){
+  const T = tomasPost().filter(o => String(o.x.clip || "").trim());
+  if (!T.length){ avisoPost(LANG === "en" ? "No take has a clip name yet." : "Todavía ninguna toma tiene nombre de clip."); return; }
+  const P = S.prod || {}, props = S.parte.campos || [];
+  const cab = ["Clip Name","Reel"].concat(POST_COLS.slice(2).map(c => c[0])).concat(["Project","Date","Shooting Day"]).concat(props);
+  const q = v => '"' + limpiaPost(v).replace(/"/g, '""') + '"';
+  const filas = T.map(o => { const f = filaPost(o);
+    return POST_COLS.map(c => f[c[1]]).concat([P.proyecto, P.fecha, P.jornada]).concat(props.map(n => (o.x.extra || {})[n] || "")).map(q).join(","); });
+  compartirArchivos([{nombre: nombreBasePost() + "_Silverstack.csv", texto: "\ufeff" + [cab.map(q).join(",")].concat(filas).join("\r\n"), tipo: "text/csv"}]);
+}
+const FPS_AVID = [23.976, 24, 25, 29.97, 30, 47.952, 48, 50, 59.94, 60];
+function fpsAvid(lista){
+  const nums = lista.map(v => parseFloat(String(v || "").replace(",", "."))).filter(n => n > 0);
+  if (!nums.length) return "23.976";
+  const cuenta = {}; nums.forEach(n => cuenta[n] = (cuenta[n] || 0) + 1);
+  const moda = parseFloat(Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a])[0]);
+  const cerca = FPS_AVID.reduce((a, b) => Math.abs(b - moda) < Math.abs(a - moda) ? b : a);
+  return String(cerca);
+}
+function exportaALE(){
+  const T = tomasPost().filter(o => String(o.x.clip || "").trim());
+  if (!T.length){ avisoPost(LANG === "en" ? "No take has a clip name yet." : "Todavía ninguna toma tiene nombre de clip."); return; }
+  /* un ALE por cámara: cada ALE admite un solo FPS de proyecto */
+  const porCam = {};
+  T.forEach(o => (porCam[o.l] = porCam[o.l] || []).push(o));
+  const archivos = Object.keys(porCam).sort().map(l => {
+    const filas = porCam[l].map(filaPost);
+    const tcOk = filas.every(f => /^\d{2}:\d{2}:\d{2}[:;]\d{2}$/.test(String(f.tc || "").trim()));
+    const cols = (tcOk ? [["Start","tc"]] : []).concat(POST_COLS);
+    const lineas = ["Heading", "FIELD_DELIM\tTABS", "VIDEO_FORMAT\tCUSTOM", "AUDIO_FORMAT\t48khz",
+      "FPS\t" + fpsAvid(filas.map(f => f.fps)), "", "Column", cols.map(c => c[0]).join("\t"), "", "Data"]
+      .concat(filas.map(f => cols.map(c => limpiaPost(f[c[1]])).join("\t")));
+    return {nombre: nombreBasePost() + "_Cam" + l + ".ale", texto: lineas.join("\r\n") + "\r\n", tipo: "text/plain"};
+  });
+  compartirArchivos(archivos);
+}
+/* entrega de archivos: en la app del iPhone, una sola hoja de Compartir con
+   todos; en el navegador del móvil, Compartir si lo admite; si no, descarga */
+async function compartirArchivos(lista){
+  try {
+    const C = window.Capacitor;
+    const plug = n => C && ((C.Plugins && C.Plugins[n]) || (C.registerPlugin && C.registerPlugin(n)));
+    if (C && C.isNativePlatform && C.isNativePlatform() && plug("Filesystem") && plug("Share")){
+      const uris = [];
+      for (const a of lista){
+        const r = await plug("Filesystem").writeFile({path: a.nombre, data: a.texto, directory: "CACHE", encoding: "utf8"});
+        uris.push(r.uri);
+      }
+      await plug("Share").share({title: lista[0].nombre, files: uris});
+      return;
+    }
+    const tactil = window.matchMedia && matchMedia("(pointer:coarse)").matches;
+    if (tactil && navigator.canShare){
+      const fs = lista.map(a => new File([a.texto], a.nombre, {type: a.tipo}));
+      if (navigator.canShare({files: fs})){ await navigator.share({files: fs, title: lista[0].nombre}); return; }
+    }
+  } catch(e){
+    if (/cancel|abort/i.test(String(e && (e.message || e)))) return;
+  }
+  lista.forEach((a, k) => setTimeout(() => descargar(a.texto, a.nombre, a.tipo), k * 450));
+}
 function guardarParte(){
   const data = {format:"wlg-03-parte", version:3, prod:S.prod, roll:S.parte.roll,
                 camActiva:camActiva(), camsGuardadas:S.parte.camsGuardadas || {},
@@ -8223,7 +8401,7 @@ const EN = {"Quitar este campo":"Remove this field","Smartfill aplicado":"Smartf
 "Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado":"Redraws everything on screen without losing any data already entered",
 "Filtro":"Filter","Distancia de foco":"Focus distance","Timecode":"Timecode","Duración (s)":"Duration (s)",
 "Nota":"Note","buena":"good","Resumen del rollo":"Roll summary","escenas":"scenes","buenas":"circle takes",
-"duración":"duration","Generar":"Generate","Parte en PDF":"Report as PDF","Guardar parte":"Save report",
+"duración":"duration","Generar":"Generate","Parte en PDF":"Report as PDF","Para postproducción":"For post-production","Guardar parte":"Save report",
 "Entregas el parte":"Deliver the report","Sigues":"Next","Por si acaso":"Just in case",
 "El CSV lleva una columna por dato, con el número de serie de la óptica en cada toma, para que entre en una hoja de cálculo o en el software de laboratorio.":
  "The CSV has one column per field, with the lens serial number on every take, so it drops straight into a spreadsheet or into lab software.",
@@ -8687,7 +8865,7 @@ function guardaSiPendiente(){ if (guardadoTimer) guardaYa(); }
   /* v167: los botones de cámara se ponen al día cada vez que cambian las tomas
      (nueva, borrada, o llegada del teléfono de otro compañero) */
   { const o = window.renderTomas; if (typeof o === "function")
-      window.renderTomas = function(){ const r = o.apply(this, arguments); try { renderCamSel(); } catch(e){} return r; }; }
+      window.renderTomas = function(){ const r = o.apply(this, arguments); try { renderCamSel(); } catch(e){} try { pintaPost(); } catch(e){} return r; }; }
   setTimeout(programa, 300); setTimeout(programa, 1500);
 })();
 /* v156: la app se pone al día sola -- al volver a ella (o cada 5 min con
