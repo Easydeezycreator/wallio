@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="172">
+<meta name="wallio-ver" content="173">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -9396,9 +9396,19 @@ function kitOpciones(inp){
     return [...m.values()].sort((a, b) => zoom(a) - zoom(b) || num(a.v) - num(b.v));
   }
   if (k === "serial"){
-    const out = [], vistos = new Set();
-    (K.lentes || []).forEach(l => { const v = String(l.s || "").trim(); if (v && !vistos.has(v.toLowerCase())){ vistos.add(v.toLowerCase()); out.push({v}); } });
-    return out;
+    /* v173: los nº de serie del camera prep (CalaveraList) -- primero el de
+       la focal que lleva esta toma; después las series sin número */
+    const tEl = inp.closest(".toma"), ti = tEl ? parseInt(tEl.getAttribute("data-i"), 10) : -1;
+    const focalToma = ti >= 0 && S.parte.tomas[ti] ? String(S.parte.tomas[ti].focal || "").replace(/\s*mm\s*$/i, "").trim() : "";
+    const conSn = [], vistos = new Set();
+    (K.lentes || []).forEach(l => Object.keys(l.sn || {}).forEach(fk => {
+      const v = String(l.sn[fk] || "").trim(); if (!v || vistos.has(v.toLowerCase())) return; vistos.add(v.toLowerCase());
+      conSn.push({v, n: (l.s || "") + (fk === "*" ? "" : " · " + fk + " mm"), ok: !!focalToma && num(fk) === num(focalToma) && fk.indexOf("–") < 0 === focalToma.indexOf("–") < 0});
+    }));
+    conSn.sort((a, b) => (b.ok ? 1 : 0) - (a.ok ? 1 : 0));
+    const series = [];
+    (K.lentes || []).forEach(l => { const v = String(l.s || "").trim(); if (v && !vistos.has(v.toLowerCase())){ vistos.add(v.toLowerCase()); series.push({v}); } });
+    return conSn.map(o => ({v: o.v, n: o.n})).concat(series);
   }
   if (k === "filt" || id === "r_filt") return (K.filtros || []).map(v => ({v}));
   if (id === "r_body"){
@@ -9409,6 +9419,36 @@ function kitOpciones(inp){
   }
   return [];
 }
+/* v173: al cambiar la focal de una toma, si su nº de serie venía del kit y
+   era de OTRA focal, se cambia por el de la focal nueva (o se vacía si esa
+   focal no tiene número en el kit) -- nunca queda un número equivocado.
+   Un número escrito a mano (que no está en el kit) no se toca jamás. */
+function kitSerialSigueFocal(i){
+  const K = S.prod && S.prod.kit, t = S.parte.tomas[i]; if (!K || !t) return false;
+  const num = x => parseFloat(String(x).replace(",", ".")) || 0;
+  const foc = String(t.focal || "").replace(/\s*mm\s*$/i, "").trim();
+  const porSerie = {}, deFocal = [];
+  (K.lentes || []).forEach(l => Object.keys(l.sn || {}).forEach(fk => {
+    const v = String(l.sn[fk] || "").trim(); if (!v) return;
+    porSerie[v.toLowerCase()] = fk;
+    if (foc && fk !== "*" && (fk === foc || (fk.indexOf("–") < 0 && foc.indexOf("–") < 0 && num(fk) === num(foc)))) deFocal.push(v);
+  }));
+  const actual = String(t.serial || "").trim();
+  if (actual && !porSerie[actual.toLowerCase()]) return false;          /* escrito a mano: manda el usuario */
+  if (actual && deFocal.some(v => v.toLowerCase() === actual.toLowerCase())) return false;   /* ya es el bueno */
+  const nuevo = deFocal.length === 1 ? deFocal[0] : "";
+  if (!actual && !nuevo) return false;
+  if (deFocal.length > 1 && !actual) return false;                       /* dos ópticas con esa focal: que elija él */
+  t.serial = nuevo;
+  t._heredados = (t._heredados || []).filter(k => k !== "serial");
+  return true;
+}
+document.addEventListener("change", e => {
+  const inp = e.target, f = inp && inp.closest && inp.closest('.toma .f[data-k="focal"]');
+  if (!f) return;
+  const tEl = f.closest(".toma"), i = tEl ? parseInt(tEl.getAttribute("data-i"), 10) : -1;
+  if (i >= 0 && kitSerialSigueFocal(i)){ renderTomas(); if (typeof guardaYa === "function") guardaYa(); }
+});
 function kitPintaAviso(){
   const el = $("kitAviso"); if (!el) return;
   const K = S.prod && S.prod.kit;
