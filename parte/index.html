@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="160">
+<meta name="wallio-ver" content="161">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -7024,7 +7024,12 @@ function nuevaToma(nuevaEscena){
   if (typeof guardaYa === "function") guardaYa();
   setTimeout(() => { const e = document.querySelectorAll("#listaTomas .toma");
                      if (!e.length) return;
-                     e[e.length-1].scrollIntoView({block:"center", behavior:"smooth"});
+                     /* v161: deja la pantalla justo en el inicio de la toma nueva
+                        (su "24A / 13" arriba del todo), sin deslizarse; se
+                        repite una vez por si el ajuste de letra cambia alturas */
+                     const ir = () => { const el = document.querySelectorAll("#listaTomas .toma"); const u = el[el.length-1]; if (!u) return;
+                       window.scrollTo({top: Math.max(0, u.getBoundingClientRect().top + scrollY - 8), behavior: "auto"}); };
+                     ir(); requestAnimationFrame(() => { ir(); setTimeout(ir, 120); });
                      /* escena nueva: el foco va directo al campo Escena vacío,
                         para que se note que aquí se escribe CUÁL es (la toma ya
                         ha vuelto sola a 1) */
@@ -9180,7 +9185,7 @@ materializaDefectos();
        se abre hacia ARRIBA del campo en su lugar. */
     const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
     const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
-    const cabeAbajo = (r.bottom + 2 + alto) <= vh;
+    const cabeAbajo = (r.bottom + 2 + alto) <= vh && (r.top < vh * 0.5 || r.top - alto - 2 < 0);
     if (cabeAbajo) caja.style.top = (r.bottom + scrollY + 2) + "px";
     else caja.style.top = (r.top + scrollY - alto - 2) + "px";
     caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
@@ -9189,14 +9194,8 @@ materializaDefectos();
     /* v147: en iPhone el teclado reduce el viewport visible (visualViewport);
        si el campo queda tapado por el teclado, se desliza a la vista dentro
        del área visible real, no de window.innerHeight (que no cambia). */
-    requestAnimationFrame(() => {
-      const rr = inp.getBoundingClientRect();
-      const topLimite = 8, botLimite = vh - 8;
-      if (rr.top < topLimite || rr.bottom > botLimite){
-        inp.scrollIntoView({block: "center", behavior: "instant"});
-        recoloca();
-      }
-    });
+    /* v161: la página NUNCA se mueve al tocar un campo (orden de Waldo):
+       la lista se coloca sola encima o debajo del campo, sin desplazar nada */
     const hijos = [...caja.children];
     const ci = hijos[0].querySelector("input");
     { const m = inp.getAttribute("data-im"); if (m){ ci.setAttribute("inputmode", m); ci.setAttribute("enterkeyhint", "done"); }
@@ -9302,7 +9301,7 @@ materializaDefectos();
     const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
     ajustaAncho(r);
     const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
-    const cabeAbajo = (r.bottom + 2 + alto) <= vh;
+    const cabeAbajo = (r.bottom + 2 + alto) <= vh && (r.top < vh * 0.5 || r.top - alto - 2 < 0);
     caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
     caja.style.top = cabeAbajo ? (r.bottom + scrollY + 2) + "px" : (r.top + scrollY - alto - 2) + "px"; };
   window.addEventListener("scroll", e => {
@@ -9320,7 +9319,6 @@ materializaDefectos();
         requestAnimationFrame(() => {
           const r = activo.getBoundingClientRect();
           const vh = window.visualViewport.height;
-          if (r.top < 8 || r.bottom > vh - 8) activo.scrollIntoView({block: "center", behavior: "instant"});
           recoloca();
         });
       }
