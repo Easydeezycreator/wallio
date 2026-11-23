@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="165">
+<meta name="wallio-ver" content="166">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1362,16 +1362,18 @@ input:focus,select:focus,textarea:focus{outline:none}
    blanco con relieve suave y barra del color de la cámara a la izquierda,
    rótulo en ese color y el dato más grande y en negrita para leerlo de un
    vistazo en el teléfono. Solo cambia el aspecto: misma estructura. */
-body{--boxTint:16.5%}
+body{--boxTint:28%}
 body:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF),.toma:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF){--boxTint:43.4%}
 .toma .row > .gsec,.card.cajaRoja{background:color-mix(in srgb,var(--boxC) var(--boxTint),#fff);
   border-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
 .gsec .ghead{border-bottom-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
+/* v166: "+ Añadir campo" fuera del fondo y aire antes de Roll / magazine */
+.agFuera{margin:6px 0 22px}
+.agFuera > details.agregar{margin:0}
+.agFuera > details.agregar[open]{margin-bottom:4px}
 /* v164: fondos +50 % y cada recuadro con un 10 % del color de su cámara (Waldo) */
-/* v165: en la cámara A los recuadros vuelven a blanco; B/C/D… siguen al 10 % (Waldo) */
-body{--fTint:10%}
-body:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF),.toma.camA{--fTint:0%}
-.toma:not(.camA){--fTint:10%}
+/* v166: todos los recuadros en blanco; fondos de B/C/D… +70 % (Waldo) */
+body{--fTint:0%}
 .f{background:color-mix(in srgb,var(--boxC) var(--fTint),#fff);border:1px solid color-mix(in srgb,var(--boxC) 22%,#e6e8eb);
   border-left:4px solid var(--boxC);box-shadow:0 2px 6px color-mix(in srgb,var(--boxC) 15%,transparent);
   min-width:0}
@@ -1702,9 +1704,6 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
       <div class="f" data-gk="lut"><label>LUT <span class="xpp" onclick="ocultarCampoGen('camara','lut')">×</span></label><input id="r_lut" list="dlLut" placeholder="" autocomplete="off"></div>
       <div class="f" data-gk="codec"><label>Codec / emulsión <span class="xpp" onclick="ocultarCampoGen('camara','codec')">×</span></label><input id="r_codec" list="dlCodec" placeholder="" autocomplete="off"></div>
     </div>
-    <details class="agregar" id="camara_agregar_det"><summary>+ <span>Añadir campo</span></summary>
-      <div class="agGrupo" id="camara_agregar_panel"></div>
-    </details>
     <!-- v71: Rollo/magazine, FPS, EI, Obturador, WB, LUT y Filtros se registran
          por Toma (estructura de claqueta: Rollo -> Escena -> Toma), no aquí -->
     <div class="grid" id="filmRollo">
@@ -1722,11 +1721,17 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
       <div class="f" data-gk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoGen('rollo2','loader')">×</span></label><input id="r2_loader" list="dlLoader" autocomplete="off"></div>
       <div class="f" data-gk="dial0"><label>Contador al empezar <span class="xpp" onclick="ocultarCampoGen('rollo2','dial0')">×</span></label><input id="r2_dial0" inputmode="numeric" placeholder="" autocomplete="off"></div>
     </div>
-    <details class="agregar" id="rollo2_agregar_det"><summary>+ <span>Añadir campo</span></summary>
-      <div class="agGrupo" id="rollo2_agregar_panel"></div>
-    </details>
     <div id="rollExtra"></div>
     <div id="rollAddPanel"></div>
+  </div>
+  <!-- v166: el "+ Añadir campo" va fuera del fondo de color para que se note (Waldo) -->
+  <div class="agFuera">
+      <details class="agregar" id="camara_agregar_det"><summary>+ <span>Añadir campo</span></summary>
+        <div class="agGrupo" id="camara_agregar_panel"></div>
+    </details>
+      <details class="agregar" id="rollo2_agregar_det"><summary>+ <span>Añadir campo</span></summary>
+        <div class="agGrupo" id="rollo2_agregar_panel"></div>
+      </details>
   </div>
 
   <div class="card">
