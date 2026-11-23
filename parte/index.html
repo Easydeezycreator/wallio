@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="169">
+<meta name="wallio-ver" content="170">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -5254,6 +5254,7 @@ function cargaParte(file){
     }
     guarda();
     if (d.prod) S.prod = Object.assign({}, S.prod, d.prod);
+    S.prod.uidProy = (d.prod && d.prod.uidProy) || nuevoUidProy();
     S.parte = {roll: d.roll || {}, tomas: d.tomas || [],
                camActiva: d.camActiva || "A", camsGuardadas: d.camsGuardadas || {},
                camasActivas: d.camasActivas || null, camNombres: d.camNombres || {},
@@ -5370,6 +5371,8 @@ function proyectoNuevo(){
   recordados.propios = Object.assign({}, S.prod.propios || {});
   S.prod = Object.assign({}, recordados);
   PP_SOLO_PROYECTO.forEach(function(k){ S.prod[k] = ""; });
+  S.prod.uidProy = nuevoUidProy();          /* v170: proyecto nuevo = memoria de tomas de cero */
+  S.ultimaTomaCam = {};
   /* v124: ya no se parte siempre de la misma lista fija -- un proyecto
      nuevo nace con los campos que el dueño ya demostró que usa (recordados
      en S.prefCampos, que vive fuera de S.parte y nunca se borra), tanto
@@ -5505,6 +5508,7 @@ function ptAbre(id){
   ptArchiva(false);                       // lo de ahora no se pierde al cambiar
   const d = x.d || {};
   if (d.prod) S.prod = Object.assign({}, S.prod, d.prod);
+  S.prod.uidProy = (d.prod && d.prod.uidProy) || nuevoUidProy();
   S.parte = {roll: d.roll || {}, tomas: d.tomas || [],
              camActiva: d.camActiva || "A", camsGuardadas: d.camsGuardadas || {},
              camasActivas: d.camasActivas || null, camNombres: d.camNombres || {},
@@ -7596,12 +7600,17 @@ function recuerdaUltimasTomas(){
     vistas[l] = true;
     datos.extra = extra;
     /* se guarda POR ROLLO: la toma del rollo nuevo nunca pisa la del anterior */
-    const clave = claveRolloMem(l);
-    const m = S.ultimaTomaCam[l];
-    if (m && m.clave && m.clave !== clave) S.ultimaTomaCam[l] = {clave, datos, previo: {clave: m.clave, datos: m.datos}};
-    else S.ultimaTomaCam[l] = {clave, datos, previo: m && m.previo};
+    const clave = claveRolloMem(l), proy = proyId();
+    const m = S.ultimaTomaCam[l] && S.ultimaTomaCam[l].proy === proy ? S.ultimaTomaCam[l] : null;
+    if (m && m.clave !== clave) S.ultimaTomaCam[l] = {proy, clave, datos, previo: {clave: m.clave, datos: m.datos}};
+    else S.ultimaTomaCam[l] = {proy, clave, datos, previo: m && m.previo};
   }
 }
+/* v170: cada proyecto tiene su identificador -- la memoria de la última
+   toma SOLO sirve dentro del mismo proyecto (rollos y jornadas siguientes).
+   Un proyecto nuevo, o abrir otro de "Tus partes", empieza de cero (Waldo). */
+function nuevoUidProy(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function proyId(){ S.prod = S.prod || {}; if (!S.prod.uidProy) S.prod.uidProy = nuevoUidProy(); return S.prod.uidProy; }
 function claveRolloMem(l){
   const P = S.prod || {}, C = configDe(l);
   return [P.proyecto, P.fecha, P.jornada, C.roll].map(v => String(v || "").trim()).join("|");
@@ -7609,7 +7618,7 @@ function claveRolloMem(l){
 /* datos de la última toma de esta cámara en un rollo DISTINTO al actual */
 function memoriaOtroRollo(l){
   const m = S.ultimaTomaCam && S.ultimaTomaCam[l]; if (!m) return null;
-  if (!m.clave) return null;
+  if (!m.clave || m.proy !== proyId()) return null;   /* otro proyecto: de cero */
   if (m.clave !== claveRolloMem(l)) return m.datos;
   return m.previo ? m.previo.datos : null;
 }
