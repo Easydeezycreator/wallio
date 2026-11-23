@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="162">
+<meta name="wallio-ver" content="163">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -5516,8 +5516,12 @@ function manejaCambioRollo(valorNuevo){
   valorNuevo = (valorNuevo || "").trim();
   const anterior = (S.parte.roll && S.parte.roll.roll) || "";
   if (valorNuevo === anterior){ if (typeof ptArchiva === "function") ptArchiva(false); return; }
-  const hayTomasReales = (S.parte.tomas || []).some(t =>
-    (t.sc || "").trim() || (t.clip || "").trim() || (t.nclip || "").trim());
+  /* v163: (1) poner el rollo por PRIMERA vez a una cámara no es cambiar de
+     rollo; (2) solo cuentan las tomas de ESTA cámara -- antes, al escribir el
+     rollo de la cámara B, se vaciaban también las tomas de la cámara A */
+  const camAqui = camActiva();
+  const hayTomasReales = !!anterior && (S.parte.tomas || []).some(t => (t.camLetra || "A") === camAqui && (
+    (t.sc || "").trim() || (t.clip || "").trim() || (t.nclip || "").trim()));
   if (!hayTomasReales){
     S.parte.roll.roll = valorNuevo;
     if (typeof ptArchiva === "function") ptArchiva(false);
@@ -5533,7 +5537,9 @@ function manejaCambioRollo(valorNuevo){
   try { camsSig = JSON.parse(JSON.stringify(S.parte.camsGuardadas || {})); } catch(e){}
   const camasActivasSig = (S.parte.camasActivas || CAM_LETRAS.slice(0, 4)).slice();
   const camNombresSig = Object.assign({}, S.parte.camNombres || {});
-  S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
+  /* v163: las tomas de las OTRAS cámaras se quedan tal cual */
+  const otrasCams = (S.parte.tomas || []).filter(t => (t.camLetra || "A") !== camAqui);
+  S.parte = {roll: R, tomas: otrasCams, campos: (S.parte.campos || []).slice(),
              camposRollo: (S.parte.camposRollo || []).slice(),
              camposOcultos: (S.parte.camposOcultos || []).slice(),
              camposOcultosManual: (S.parte.camposOcultosManual || []).slice(),
@@ -6219,6 +6225,17 @@ function fillParte(){
    catálogo genérico de siempre, sin filtrar nada. */
 /* v157: la resolución se lee primero por su nombre de formato y luego en
    píxeles -- "4.6K Open Gate · 4608x3164" en vez de "4608x3164 (4.6K...)" */
+function cuerpoCanon(raw){
+  if (!raw) return raw;
+  const nz = x => String(x).toLowerCase().replace(/[^a-z0-9.]/g, "");
+  const r = nz(raw); const nombres = new Set();
+  try { FORMATS.forEach(f => nombres.add(f.m + " " + f.c)); } catch(e){}
+  try { Object.keys(CAMARA_SPECS).forEach(n => nombres.add(n)); } catch(e){}
+  try { Object.keys(CAMARA_EXTRA).forEach(n => nombres.add(n)); } catch(e){}
+  for (const n of nombres){ if (nz(n) === r) return n; }
+  for (const n of nombres){ const sinMarca = n.replace(/^\S+\s+/, ""); if (nz(sinMarca) === r) return n; }
+  return raw;
+}
 function resLegible(v){ const m = String(v).match(/^\s*(\d+)\s*x\s*(\d+)\s*\((.+)\)\s*$/); return m ? m[3] + " · " + m[1] + "x" + m[2] : v; }
 const CAMARA_SPECS = {
   "ARRI ALEXA 35": {
@@ -6312,7 +6329,7 @@ const CODECS_GEN = ["ARRIRAW","ProRes 4444 XQ","ProRes 4444","ProRes 422 HQ","X-
    ND interno se ofrecen sus pasos "Interno" + todos los "Externo"; si no
    tiene, solo "Externo"; cámara desconocida = catálogo completo. */
 function ndDeCamara(){
-  const body = ($("r_body") && $("r_body").value || "").trim();
+  const body = cuerpoCanon(($("r_body") && $("r_body").value || "").trim());
   const ex = CAMARA_EXTRA[body];
   const I = traduce("Interno"), X = traduce("Externo");
   const todos = [3,6,9,12,15,18,21,24,27,30];
@@ -6330,7 +6347,9 @@ function enCat(v){
     .replace(/\(norma\)/g, "(standard)").replace(/^Norma SMPTE /, "SMPTE ").replace(/^Varios /, "");
 }
 function filtraPorCamara(){
-  const body = ($("r_body") && $("r_body").value || "").trim();
+  /* v163: la cámara se reconoce aunque se escriba sin la marca o con otras
+     mayúsculas/espacios ("ALEXA 35", "alexa35" = "ARRI ALEXA 35") */
+  const body = cuerpoCanon(($("r_body") && $("r_body").value || "").trim());
   const spec = CAMARA_SPECS[body], ex = CAMARA_EXTRA[body];
   const mem = k => (S.memCampos && S.memCampos[k]) || [];
   const dl = (id, arr) => { const e = $(id); if (e) e.innerHTML = (id === "dlResProy" ? [...new Set(arr.map(resLegible))] : arr).map(v => `<option value="${esc(enCat(v))}">`).join(""); };
@@ -7044,8 +7063,11 @@ function nuevaToma(nuevaEscena){
                      /* v161: deja la pantalla justo en el inicio de la toma nueva
                         (su "24A / 13" arriba del todo), sin deslizarse; se
                         repite una vez por si el ajuste de letra cambia alturas */
+                     /* v163: se ve arriba la toma anterior (pequeña, ya guardada)
+                        y justo debajo la toma nueva en grande */
                      const ir = () => { const el = document.querySelectorAll("#listaTomas .toma"); const u = el[el.length-1]; if (!u) return;
-                       window.scrollTo({top: Math.max(0, u.getBoundingClientRect().top + scrollY - 8), behavior: "auto"}); };
+                       const ant = el.length > 1 ? el[el.length-2] : u;
+                       window.scrollTo({top: Math.max(0, ant.getBoundingClientRect().top + scrollY - 8), behavior: "auto"}); };
                      ir(); requestAnimationFrame(() => { ir(); setTimeout(ir, 120); });
                      /* escena nueva: el foco va directo al campo Escena vacío,
                         para que se note que aquí se escribe CUÁL es (la toma ya
