@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="170">
+<meta name="wallio-ver" content="171">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1367,6 +1367,27 @@ body:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF),.toma:not(.camB):not
 .toma .row > .gsec,.card.cajaRoja{background:color-mix(in srgb,var(--boxC) var(--boxTint),#fff);
   border-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
 .gsec .ghead{border-bottom-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
+/* v171: QR para invitar + modo solo mirar */
+#pcDentro .qrCab{font:700 15px/1.3 var(--disp,inherit)}
+#pcDentro .qrCab span{font:600 11px var(--mono);color:#2f7d4f}
+.qrTabs{display:flex;gap:18px;font:700 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;margin:10px 0 2px}
+.qrTabs span{color:var(--tx3);padding-bottom:6px;cursor:pointer;border-bottom:2px solid transparent}
+.qrTabs span.on{color:var(--tx);border-bottom-color:var(--tx)}
+.qrImg{width:210px;max-width:70vw;margin:8px auto 2px;background:#fff;line-height:0}
+.qrImg svg{width:100%;height:auto;display:block}
+.qrTxt{text-align:center;font:600 12px/1.45 var(--mono);color:var(--tx2)}
+.qrLinks{display:flex;justify-content:center;gap:16px;font:700 12px var(--mono);color:#2f7d4f;margin-top:6px}
+.qrLinks span{text-decoration:underline;cursor:pointer}
+.qrAviso{text-align:center;font:600 11px var(--mono);color:#2f7d4f;min-height:14px}
+#pc_estado{white-space:pre-line;border-top:1px solid var(--line);padding-top:9px;font:600 12px/1.7 var(--mono)}
+html.soloVer #pcDentro .qrTabs,html.soloVer #pcDentro .qrImg,html.soloVer #pcDentro .qrTxt,html.soloVer #pcDentro .qrLinks{display:none}
+#soloVerAviso{margin:11px 11px 0;font:700 12px/1.45 var(--mono);color:#2f7d4f;letter-spacing:.04em}
+#soloVerAviso span{color:var(--tx3);font-weight:600}
+html.soloVer main input,html.soloVer main textarea,html.soloVer main select,
+html.soloVer #tp_dig,html.soloVer #tp_film,html.soloVer .smartfill,html.soloVer .toma .x{pointer-events:none}
+html.soloVer details.agregar,html.soloVer .agFuera,html.soloVer .xpp,html.soloVer label span[onclick],
+html.soloVer .sugClip,html.soloVer .unidadBtn,html.soloVer .camSel button.mas,html.soloVer .smartfill,
+html.soloVer .toma .x,html.soloVer #tp_jsig,html.soloVer #btnProyNuevo{display:none!important}
 /* v168: sección Para postproducción */
 .postSec{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 .postTit{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx2);margin-bottom:10px}
@@ -1381,13 +1402,15 @@ body:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF),.toma:not(.camB):not
 .camSel button[data-cam]{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .camSel button .nl{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .camSel button .nt{display:block;font:600 8.5px/1 var(--mono);letter-spacing:.08em;margin-top:4px;opacity:.85;white-space:nowrap;text-transform:uppercase}
-.camSel button[data-cam]:not(.uso):not(.on){opacity:.55}
-.camSel button.uso:not(.on)[data-cam=A]{background:color-mix(in srgb,var(--camA) 30%,#fff)!important;border-color:var(--camA)!important}
-.camSel button.uso:not(.on)[data-cam=B]{background:color-mix(in srgb,var(--camB) 30%,#fff)!important;border-color:var(--camB)!important}
-.camSel button.uso:not(.on)[data-cam=C]{background:color-mix(in srgb,var(--camC) 30%,#fff)!important;border-color:var(--camC)!important}
-.camSel button.uso:not(.on)[data-cam=D]{background:color-mix(in srgb,var(--camD) 30%,#fff)!important;border-color:var(--camD)!important}
-.camSel button.uso:not(.on)[data-cam=E]{background:color-mix(in srgb,var(--camE) 30%,#fff)!important;border-color:var(--camE)!important}
-.camSel button.uso:not(.on)[data-cam=F]{background:color-mix(in srgb,var(--camF) 30%,#fff)!important;border-color:var(--camF)!important}
+/* v171: las cámaras SIN uso no llevan su color: un tono tenue de la cámara
+   en la que se trabaja (rojo si es la A) -- no distraen */
+.camSel button[data-cam]:not(.uso):not(.on){opacity:1;color:color-mix(in srgb,var(--boxC) 45%,transparent)!important;border-color:color-mix(in srgb,var(--boxC) 22%,transparent)!important;background:transparent!important}
+.camSel button.uso:not(.on)[data-cam=A]{background:color-mix(in srgb,var(--camA) 16%,#fff)!important;border-color:color-mix(in srgb,var(--camA) 45%,transparent)!important;opacity:.9}
+.camSel button.uso:not(.on)[data-cam=B]{background:color-mix(in srgb,var(--camB) 16%,#fff)!important;border-color:color-mix(in srgb,var(--camB) 45%,transparent)!important;opacity:.9}
+.camSel button.uso:not(.on)[data-cam=C]{background:color-mix(in srgb,var(--camC) 16%,#fff)!important;border-color:color-mix(in srgb,var(--camC) 45%,transparent)!important;opacity:.9}
+.camSel button.uso:not(.on)[data-cam=D]{background:color-mix(in srgb,var(--camD) 16%,#fff)!important;border-color:color-mix(in srgb,var(--camD) 45%,transparent)!important;opacity:.9}
+.camSel button.uso:not(.on)[data-cam=E]{background:color-mix(in srgb,var(--camE) 16%,#fff)!important;border-color:color-mix(in srgb,var(--camE) 45%,transparent)!important;opacity:.9}
+.camSel button.uso:not(.on)[data-cam=F]{background:color-mix(in srgb,var(--camF) 16%,#fff)!important;border-color:color-mix(in srgb,var(--camF) 45%,transparent)!important;opacity:.9}
 /* v166: "+ Añadir campo" fuera del fondo y aire antes de Roll / magazine */
 .agFuera{margin:6px 0 22px}
 .agFuera > details.agregar{margin:0}
@@ -1504,15 +1527,30 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
   <span id="chipVis"></span>
 </header>
 <div id="pcPanel" hidden>
-  <div class="f"><label>Introduce el nombre del proyecto</label>
-    <input id="pc_proyecto" placeholder="Name of the project" autocomplete="off"
-      onkeydown="if(event.key==='Enter')pcEntrar()"></div>
-  <button class="primary" onclick="pcEntrar()">Entrar</button>
-  <button class="ghost" onclick="pcSalir()">Salir</button>
+  <div id="pcEntrada">
+    <div class="f"><label>Introduce el nombre del proyecto</label>
+      <input id="pc_proyecto" placeholder="Name of the project" autocomplete="off"
+        onkeydown="if(event.key==='Enter')pcEntrar()"></div>
+    <button class="primary" onclick="pcEntrar()">Entrar</button>
+  </div>
+  <!-- v171: dentro de un proyecto compartido -- QR para invitar -->
+  <div id="pcDentro" hidden>
+    <div class="qrCab"><b id="qrNombre">—</b> <span id="qrEstadoTx">· compartido</span></div>
+    <div class="qrTabs" id="qrTabs">
+      <span data-m="w" onclick="pcQrModo('w')">Pueden escribir</span>
+      <span data-m="r" onclick="pcQrModo('r')">Solo mirar</span>
+    </div>
+    <div class="qrImg" id="qrImg"></div>
+    <div class="qrTxt" id="qrTxt"></div>
+    <div class="qrLinks" id="qrLinks"><span onclick="pcCopiaEnlace()">Copiar enlace</span><span onclick="pcEnviaEnlace()">Enviar</span></div>
+    <div class="qrAviso" id="qrAviso"></div>
+  </div>
   <div class="hint" id="pc_estado">—</div>
+  <button class="ghost" onclick="pcSalir()">Salir</button>
 </div>
 
 <main>
+<div id="soloVerAviso" hidden></div>
 <div id="avisoBorrador" class="rescate" hidden style="margin:11px 11px 0">
   <span id="ab_txt"></span>
   <button class="ghost" onclick="retomaBorrador()">Recuperar</button>
@@ -2178,6 +2216,9 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
 <div id="parte" class="doc"></div>
 <div id="albaran" class="doc"></div>
 
+<script>/* qrcode-generator 1.4.4 · MIT · (c) Kazuhiko Arase */
+var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,(function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1}))},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(t,r){var e=n("友");if(2!=e.length||38726!=(e[0]<<8|e[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}((function(){return qrcode}));
+</script>
 <script>
 "use strict";
 const FORMATS = [{"s":"digital","m":"ARRI","c":"ALEXA 35","f":"3.3K 6:5","w":20.22,"h":16.95,"r":"3328x2790","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA 35","f":"4.6K 16:9","w":27.99,"h":15.74,"r":"4608x2592","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA 35","f":"4.6K 2:1","w":27.99,"h":14.0,"r":"4608x2304","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA 35","f":"4K 16:9","w":23.33,"h":13.12,"r":"3840x2160","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA 35","f":"4K 2.39:1","w":23.33,"h":9.77,"r":"3840x1608","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA 35","f":"Open Gate 4.6K","w":27.99,"h":19.22,"r":"4608x3164","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA 65","f":"65 Open Gate 6.5K","w":54.12,"h":25.58,"r":"6560x3100","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA Mini","f":"Open Gate 3.4K","w":28.25,"h":18.17,"r":"3424x2202","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA Mini LF","f":"LF 16:9 UHD","w":31.68,"h":17.82,"r":"3840x2160","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA Mini LF","f":"LF 2.39:1 4.5K","w":36.7,"h":15.31,"r":"4448x1856","v":"si"},{"s":"digital","m":"ARRI","c":"ALEXA Mini LF","f":"LF Open Gate 4.5K","w":36.7,"h":25.54,"r":"4448x3096","v":"si"},{"s":"digital","m":"Sony","c":"BURANO","f":"FF 8.6K 16:9","w":35.9,"h":20.2,"r":"8632x4856","v":"si"},{"s":"digital","m":"Sony","c":"BURANO","f":"FF 8.6K 17:9","w":35.9,"h":18.9,"r":"8632x4552","v":"si"},{"s":"digital","m":"Sony","c":"BURANO","f":"S35 5.8K 17:9","w":24.0,"h":12.6,"r":"5760x3036","v":"si"},{"s":"digital","m":"Sony","c":"BURANO","f":"S35c 4K 17:9","w":17.0,"h":9.0,"r":"4096x2160","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 6K","f":"3.8K S35 16:9","w":22.8,"h":12.8,"r":"3840x2160","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 6K","f":"4K 6:5","w":24.3,"h":20.4,"r":"4096x3432","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 6K","f":"4K S35 17:9","w":24.3,"h":12.8,"r":"4096x2160","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 6K","f":"6K 17:9","w":36.0,"h":19.0,"r":"6054x3192","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 6K","f":"6K 2.39:1","w":35.9,"h":15.0,"r":"6048x2534","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 6K","f":"6K 3:2","w":35.9,"h":24.0,"r":"6048x4032","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 8.6K","f":"5.8K 17:9 (S35)","w":24.1,"h":12.7,"r":"5792x3056","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 8.6K","f":"5.8K 6:5 (S35)","w":24.1,"h":20.1,"r":"5792x4832","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 8.6K","f":"7.6K 16:9","w":31.9,"h":18.0,"r":"7680x4320","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 8.6K","f":"8.2K 17:9","w":34.1,"h":18.0,"r":"8192x4320","v":"si"},{"s":"digital","m":"Sony","c":"VENICE 2 8.6K","f":"8.6K 3:2","w":35.9,"h":24.0,"r":"8640x5760","v":"si"},{"s":"digital","m":"RED","c":"KOMODO 6K","f":"4K 17:9","w":18.02,"h":9.5,"r":"4096x2160","v":"si"},{"s":"digital","m":"RED","c":"KOMODO 6K","f":"6K 17:9","w":27.03,"h":14.26,"r":"6144x3240","v":"si"},{"s":"digital","m":"RED","c":"MONSTRO 8K VV","f":"8K VV 17:9","w":40.96,"h":21.6,"r":"8192x4320","v":"si"},{"s":"digital","m":"RED","c":"V-RAPTOR 8K VV","f":"4K 17:9 (recorte central)","w":20.48,"h":10.8,"r":"4096x2160","v":"si"},{"s":"digital","m":"RED","c":"V-RAPTOR 8K VV","f":"6K S35 17:9","w":30.72,"h":16.2,"r":"6144x3240","v":"si"},{"s":"digital","m":"RED","c":"V-RAPTOR 8K VV","f":"8K VV 17:9","w":40.96,"h":21.6,"r":"8192x4320","v":"si"},{"s":"digital","m":"RED","c":"V-RAPTOR 8K VV","f":"8K VV 2:1","w":40.96,"h":20.48,"r":"8192x4096","v":"si"},{"s":"digital","m":"RED","c":"V-RAPTOR XL 8K VV","f":"8K VV 17:9","w":40.96,"h":21.6,"r":"8192x4320","v":"si"},{"s":"digital","m":"Blackmagic","c":"URSA Cine 12K LF","f":"12K 17:9","w":35.64,"h":18.79,"r":"12288x6480","v":"si"},{"s":"digital","m":"Blackmagic","c":"URSA Cine 12K LF","f":"12K 3:2","w":35.64,"h":23.32,"r":"12288x8040","v":"si"},{"s":"digital","m":"Canon","c":"EOS C400","f":"6K FF 17:9","w":36.0,"h":19.0,"r":"6000x3164","v":"si"},{"s":"digital","m":"Canon","c":"EOS C500 Mark II","f":"5.9K FF 17:9","w":38.1,"h":20.1,"r":"5952x3140","v":"si"},{"s":"digital","m":"Panavision","c":"Millennium DXL2","f":"8K VV 17:9","w":40.96,"h":21.6,"r":"8192x4320","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRICAM ST / LT (35 mm)","f":"Academy 4-perf (N35 1.37)","w":22.0,"h":16.0,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRICAM ST / LT (35 mm)","f":"Anamórfico 4-perf (N35 Scope)","w":22.0,"h":18.6,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRICAM ST / LT (35 mm)","f":"Super 35 3-perf","w":24.9,"h":13.9,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRICAM ST / LT (35 mm)","f":"Super 35 4-perf silent","w":24.9,"h":18.7,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRIFLEX 235 (35 mm)","f":"2-perf 2.39 (Techniscope)","w":24.9,"h":9.47,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRIFLEX 235 (35 mm)","f":"Super 35 3-perf","w":24.9,"h":14.0,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRIFLEX 416 / 16SR 3 (16 mm)","f":"16 mm estándar (ventanilla ARRI)","w":10.3,"h":7.5,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRIFLEX 416 / 16SR 3 (16 mm)","f":"Super 16 (ventanilla ARRI)","w":12.35,"h":7.5,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRIFLEX 435 / 535 (35 mm)","f":"Academy 4-perf (N35 1.37)","w":22.0,"h":16.0,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRIFLEX 435 / 535 (35 mm)","f":"Anamórfico 4-perf (N35 Scope)","w":22.0,"h":18.6,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRIFLEX 435 / 535 (35 mm)","f":"N35 / DIN S35 3-perf","w":24.25,"h":14.0,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRIFLEX 435 / 535 (35 mm)","f":"Super 35 3-perf","w":24.9,"h":14.0,"r":"película","v":"si"},{"s":"pelicula","m":"ARRI","c":"ARRIFLEX 435 / 535 (35 mm)","f":"Super 35 4-perf silent","w":24.9,"h":18.7,"r":"película","v":"si"},{"s":"pelicula","m":"IMAX","c":"IMAX (65 mm horizontal)","f":"IMAX 15-perf","w":70.41,"h":52.63,"r":"película","v":"revisar"},{"s":"pelicula","m":"Norma SMPTE","c":"16 mm (norma)","f":"16 mm estándar (ST 7 / ISO 466)","w":10.26,"h":7.49,"r":"película","v":"si"},{"s":"pelicula","m":"Norma SMPTE","c":"16 mm (norma)","f":"Super 16 (ST 233 / ISO 5768)","w":12.52,"h":7.41,"r":"película","v":"si"},{"s":"pelicula","m":"Norma SMPTE","c":"35 mm (norma)","f":"Academy 4-perf","w":21.95,"h":16.0,"r":"película","v":"si"},{"s":"pelicula","m":"Norma SMPTE","c":"35 mm (norma)","f":"Anamórfico 4-perf (2x)","w":21.95,"h":18.59,"r":"película","v":"si"},{"s":"pelicula","m":"Norma SMPTE","c":"35 mm (norma)","f":"Super 35 4-perf full aperture","w":24.89,"h":18.67,"r":"película","v":"si"},{"s":"pelicula","m":"Norma SMPTE","c":"35 mm (norma)","f":"Techniscope 2-perf (ancho Academy)","w":21.95,"h":9.47,"r":"película","v":"si"},{"s":"pelicula","m":"Panavision","c":"Panaflex (35 mm)","f":"Anamórfico 4-perf","w":21.95,"h":18.59,"r":"película","v":"revisar"},{"s":"pelicula","m":"Panavision","c":"Panaflex (35 mm)","f":"Super 35 3-perf","w":24.89,"h":13.86,"r":"película","v":"revisar"},{"s":"pelicula","m":"Panavision","c":"System 65 / ARRI 765 (65 mm)","f":"65 mm 5-perf","w":52.48,"h":23.01,"r":"película","v":"revisar"},{"s":"pelicula","m":"Varios","c":"VistaVision (35 mm horizontal)","f":"VistaVision 8-perf (Paramount)","w":37.39,"h":25.32,"r":"película","v":"si"},{"s":"pelicula","m":"Varios","c":"VistaVision (35 mm horizontal)","f":"VistaVision 8-perf (variante moderna)","w":37.72,"h":24.92,"r":"película","v":"revisar"}];
@@ -5356,8 +5397,8 @@ function abreProdParte(){
    casa, DIT y los ajustes de cámara viajan a la jornada nueva.        */
 /* v62: PROYECTO NUEVO — solo en la app del camera report. Guarda lo de ahora
    en el aparato y arranca un proyecto de cero (producción, cámaras y tomas). */
-function proyectoNuevo(){
-  if (!confirm(traduce("Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?"))) return;
+function proyectoNuevo(sinPreguntar){
+  if (!sinPreguntar && !confirm(traduce("Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?"))) return;
   guarda();
   ptArchiva(false);
   if (typeof pcSalir === "function" && PC.parte) pcSalir();
@@ -7657,6 +7698,9 @@ function hayTomasFilm(){
 }
 function pintaPost(){
   const el = $("postEstado"); if (!el) return;
+  /* v171 (Waldo): el aviso de clips solo aparece después de tocar
+     "Silverstack" o "Avid · Resolve" -- nunca antes, para no distraer */
+  if (!window.POST_VISTO){ el.innerHTML = ""; return; }
   const en = LANG === "en", T = tomasPost(), con = T.filter(o => String(o.x.clip || "").trim());
   const sin = T.filter(o => !String(o.x.clip || "").trim());
   let h = "";
@@ -7704,6 +7748,7 @@ function nombreBasePost(){
 }
 function avisoPost(txt){ const el = $("postEstado"); if (el && txt) el.innerHTML = `<div class="mal">${esc(txt)}</div>`; }
 function exportaSilverstack(){
+  window.POST_VISTO = true; pintaPost();
   const T = tomasPost().filter(o => String(o.x.clip || "").trim());
   if (!T.length){ avisoPost(LANG === "en" ? "No take has a clip name yet." : "Todavía ninguna toma tiene nombre de clip."); return; }
   const P = S.prod || {}, props = S.parte.campos || [];
@@ -7723,6 +7768,7 @@ function fpsAvid(lista){
   return String(cerca);
 }
 function exportaALE(){
+  window.POST_VISTO = true; pintaPost();
   const T = tomasPost().filter(o => String(o.x.clip || "").trim());
   if (!T.length){ avisoPost(LANG === "en" ? "No take has a clip name yet." : "Todavía ninguna toma tiene nombre de clip."); return; }
   /* un ALE por cámara: cada ALE admite un solo FPS de proyecto */
@@ -8468,7 +8514,7 @@ const EN = {"Quitar este campo":"Remove this field","Smartfill aplicado":"Smartf
 "Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado":"Redraws everything on screen without losing any data already entered",
 "Filtro":"Filter","Distancia de foco":"Focus distance","Timecode":"Timecode","Duración (s)":"Duration (s)",
 "Nota":"Note","buena":"good","Resumen del rollo":"Roll summary","escenas":"scenes","buenas":"circle takes",
-"duración":"duration","Generar":"Generate","Parte en PDF":"Report as PDF","Para postproducción":"For post-production","Guardar parte":"Save report",
+"duración":"duration","Generar":"Generate","Parte en PDF":"Report as PDF","Pueden escribir":"Can write","Solo mirar":"View only","Copiar enlace":"Copy link","Enviar":"Send","Para postproducción":"For post-production","Guardar parte":"Save report",
 "Entregas el parte":"Deliver the report","Sigues":"Next","Por si acaso":"Just in case",
 "El CSV lleva una columna por dato, con el número de serie de la óptica en cada toma, para que entre en una hoja de cálculo o en el software de laboratorio.":
  "The CSV has one column per field, with the lens serial number on every take, so it drops straight into a spreadsheet or into lab software.",
@@ -9033,11 +9079,12 @@ if (PC.miLetra && !Object.keys(PC.mias).length) PC.mias[PC.miLetra] = true;   /*
 PC.firmaMia = ""; PC.firmaProd = "";
 function pcGuarda(){ try { localStorage.setItem(PC_CONF, JSON.stringify(
   { parte: PC.parte, clave: PC.clave, etiqueta: PC.etiqueta, desde: PC.desde,
-    quien: PC.quien, sinAuto: PC.sinAuto, mias: PC.mias, enNube: PC.enNube })); } catch(e){} }
+    quien: PC.quien, sinAuto: PC.sinAuto, mias: PC.mias, enNube: PC.enNube, soloVer: !!PC.soloVer })); } catch(e){} }
 function pcTomasDe(l){ return S.parte.tomas.filter(t => (t.camLetra || "A") === l); }
 function pcEsMia(l){ return !!(PC.mias && PC.mias[l]); }
 function pcMisLetras(){ return Object.keys(PC.mias || {}); }
-function pcReclama(){   /* v67: la cámara que TOCAS pasa a ser tuya; puedes llevar varias */
+function pcReclama(){
+  if (PC.soloVer) return;   /* v67: la cámara que TOCAS pasa a ser tuya; puedes llevar varias */
   if (!PC.parte) return;
   if (!pcEsMia(camActiva())){ PC.mias[camActiva()] = true; PC.firmas[camActiva()] = ""; pcGuarda(); }
 }
@@ -9063,7 +9110,8 @@ function pcQuien(){
 function pcPanel(){
   const p = $("pcPanel"); if (!p) return;
   p.hidden = !p.hidden;
-  if (!p.hidden){
+  pcPintaPanel();
+  if (!p.hidden && !PC.parte){
     const e = $("pc_proyecto");
     if (e){ e.removeAttribute("readonly");
       if (!e.value.trim()) e.value = (S.prod.proyecto || "").trim();
@@ -9094,7 +9142,8 @@ async function pcEntrar(){
   PC.sinAuto = "";
   await pcAbrir(nombre);
 }
-async function pcAbrir(nombre, silencioso){
+async function pcAbrir(nombre, silencioso, opc){
+  opc = opc || {};
   /* v58: UN solo camino — se entra si el parte ya existe (hoy, ayer o la fecha
      de Producción) y si no existe SE CREA al momento. Nadie tiene que
      «compartir primero». */
@@ -9105,6 +9154,7 @@ async function pcAbrir(nombre, silencioso){
     const fechas = [pcHoy(), pcAyer()];
     const fp = (S.prod.fecha || "").trim();
     if (fp && fechas.indexOf(fp) < 0) fechas.push(fp);
+    if (opc.fecha){ const i = fechas.indexOf(opc.fecha); if (i >= 0) fechas.splice(i, 1); fechas.unshift(opc.fecha); }
     let d = null, usada = "";
     for (const f of fechas){
       try { d = await nbPide("/rest/v1/rpc/parte_entra_simple", { p_codigo: pcClaveDe(nombre, f) }, false);
@@ -9112,6 +9162,11 @@ async function pcAbrir(nombre, silencioso){
       catch(e2){ d = null; }
     }
     if (d){ id = d.id; et = d.etiqueta || nombre; PC.clave = pcClaveDe(nombre, usada); }
+    else if (opc.soloEntrar){
+      PC.soloVer = false; pcGuarda(); pcPintaPanel();
+      pcEstado(LANG === "en" ? "That project is no longer shared." : "Ese proyecto ya no está compartido.");
+      return;
+    }
     else {
       PC.clave = pcClaveDe(nombre, pcHoy());
       id = await nbPide("/rest/v1/rpc/parte_crea_simple",
@@ -9137,8 +9192,9 @@ async function pcAbrir(nombre, silencioso){
   } catch(e){ PC.clave = ""; pcEstado((e && e.message) || traduce("sin conexión")); }
 }
 function pcSalir(){ pcPara();
+  PC.soloVer = false; document.documentElement.classList.remove("soloVer");
   PC.sinAuto = (S.prod.proyecto || "").trim();   /* v66: saliste a propósito — no re-conectar solo a ESTE */
-  PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; PC.enNube = {}; PC.mias = {}; PC.firmas = {}; pcGuarda(); pcEstado(); }
+  PC.parte = ""; PC.clave = ""; PC.etiqueta = ""; PC.desde = ""; PC.vistos = {}; PC.enNube = {}; PC.mias = {}; PC.firmas = {}; pcGuarda(); pcEstado(); pcPintaPanel(); }
 function pcArranca(){ pcPara(); PC.timer = setInterval(() => pcTick(false), 8000); }
 /* v66: el proyecto se comparte SOLO. El primero que le pone nombre lo crea en
    la nube (dueño) sin tocar nada; los demás teclean el nombre y entran.
@@ -9170,8 +9226,8 @@ async function pcTick(primera){
       const prodSrv = JSON.stringify((d0 && d0.prod) || {});
       if (d0){ pcAplica(d0, true); PC.desde = d0.ahora || ""; }
       const prodLoc = JSON.stringify(S.prod || {});
-      let prodSube = (prodLoc !== prodSrv && Object.keys(S.prod || {}).length) ? S.prod : null;
-      for (const l of pcMisLetras()){
+      let prodSube = (!PC.soloVer && prodLoc !== prodSrv && Object.keys(S.prod || {}).length) ? S.prod : null;
+      for (const l of (PC.soloVer ? [] : pcMisLetras())){
         const json = JSON.stringify(pcMioDe(l));
         await nbPide("/rest/v1/rpc/parte_sube_codigo", { p_parte: PC.parte, p_codigo: PC.clave,
           p_letra: l, p_datos: JSON.parse(json), p_quien: pcQuienCallado(),
@@ -9185,8 +9241,8 @@ async function pcTick(primera){
       PC.firmaProd = prodLoc;
     } else {
       const prod = JSON.stringify(S.prod);
-      let prodPend = prod !== PC.firmaProd ? JSON.parse(prod) : null;
-      for (const l of pcMisLetras()){
+      let prodPend = (!PC.soloVer && prod !== PC.firmaProd) ? JSON.parse(prod) : null;
+      for (const l of (PC.soloVer ? [] : pcMisLetras())){
         const json = JSON.stringify(pcMioDe(l));
         const conDatos = json !== PC.firmas[l];
         if (!conDatos && !prodPend) continue;
@@ -9233,6 +9289,7 @@ function pcAplica(d, primera){
      cámara y tú la tienes con contenido, pasa a ser tuya y sube en este mismo
      latido. Cura también a los dueños conectados desde antes del cambio. */
   CAM_LETRAS.forEach(function(l){
+    if (PC.soloVer) return;            /* v171: quien solo mira nunca aporta nada */
     if (pcEsMia(l)) return;
     const srv = cams[l] && cams[l].datos;
     const srvAlgo = !!(srv && ((srv.config && (String(srv.config.body || "").trim() ||
@@ -9299,8 +9356,108 @@ function pcEstado(txt){
     const quien = pcEsMia(l) ? traduce("tú") : ((v && v.por) || "");
     return "CAM " + l + (quien ? " · " + quien : "") + (h ? " · " + h : "");
   }).filter(Boolean).join("   ");
-  el.textContent = traduce("Compartido") + " · «" + PC.etiqueta + "»" + (tro ? "  —  " + tro : "");
+  /* v171: quién está en el proyecto, una cámara por línea (el nombre del
+     proyecto ya sale arriba, junto al QR) */
+  const lineas = CAM_LETRAS.map(l => {
+    const v = PC.vistos[l];
+    if (!v && !pcEsMia(l)) return "";
+    const quien = pcEsMia(l) ? traduce("tú") : ((v && v.por) || "");
+    const h = v && v.cuando ? new Date(v.cuando).toTimeString().slice(0, 5) : "";
+    return (LANG === "en" ? "Camera " : "Cámara ") + l + (quien ? " · " + quien : "") + (h ? " · " + h : "");
+  }).filter(Boolean);
+  el.textContent = lineas.length ? (LANG === "en" ? "In this project\n" : "En este proyecto\n") + lineas.join("\n")
+                                 : (traduce("Compartido") + " · «" + PC.etiqueta + "»" + (tro ? "  —  " + tro : ""));
+  pcPintaPanel();
 }
+/* ---------- v171 · QR para invitar ---------- */
+PC.qrModo = PC.qrModo || "w";
+function pcEnlace(modo){
+  const base = /(^|\.)wallioapp\.com$/.test(location.hostname) ? location.origin + location.pathname : "https://wallioapp.com/parte/";
+  const f = String(PC.clave || "").split("·")[1] || "";
+  return base + "#" + (modo === "r" ? "ver" : "unir") + "=" + encodeURIComponent(PC.etiqueta || S.prod.proyecto || "") + (f ? "&f=" + f : "");
+}
+function pcQrModo(m){ PC.qrModo = m === "r" ? "r" : "w"; pcPintaPanel(); }
+function pcPintaPanel(){
+  const dentro = !!PC.parte;
+  document.documentElement.classList.toggle("soloVer", !!(PC.soloVer && dentro));
+  const av = $("soloVerAviso");
+  if (av){ av.hidden = !(PC.soloVer && dentro);
+    if (!av.hidden) av.innerHTML = (LANG === "en" ? "READ ONLY · " : "SOLO LECTURA · ") + esc(PC.etiqueta || "") +
+      ` <span>· ${LANG === "en" ? "updates by itself · you can export the PDF" : "se actualiza solo · puedes sacar el PDF"}</span>`; }
+  const a = $("pcEntrada"), b = $("pcDentro"); if (!a || !b) return;
+  a.hidden = dentro; b.hidden = !dentro;
+  if (!dentro) return;
+  $("qrNombre").textContent = PC.etiqueta || "";
+  $("qrEstadoTx").textContent = PC.soloVer ? (LANG === "en" ? "· read only" : "· solo lectura") : (LANG === "en" ? "· shared" : "· compartido");
+  if (PC.soloVer) return;
+  document.querySelectorAll("#qrTabs span").forEach(x => x.classList.toggle("on", x.getAttribute("data-m") === PC.qrModo));
+  const url = pcEnlace(PC.qrModo);
+  const box = $("qrImg");
+  if (box.getAttribute("data-url") !== url){
+    try { const q = qrcode(0, "M"); q.addData(url); q.make();
+          box.innerHTML = q.createSvgTag({cellSize: 4, margin: 2, scalable: true}); }
+    catch(e){ box.innerHTML = ""; }
+    box.setAttribute("data-url", url);
+  }
+  $("qrTxt").innerHTML = (PC.qrModo === "r"
+    ? (LANG === "en" ? "Whoever scans it can only look and export the PDF. They can't change anything." : "Quien lo escanee solo puede mirar y sacar el PDF. No puede cambiar nada.")
+    : (LANG === "en" ? "Whoever scans it joins the project and can write on their camera." : "Quien lo escanee entra al proyecto y puede escribir en su cámara.")) +
+    "<br>" + (LANG === "en" ? "Scan it with the iPhone camera." : "Se escanea con la cámara del iPhone.");
+}
+function pcAvisoQr(t){ const e = $("qrAviso"); if (!e) return; e.textContent = t; clearTimeout(pcAvisoQr.t); pcAvisoQr.t = setTimeout(() => { e.textContent = ""; }, 2500); }
+async function pcCopiaEnlace(){
+  const url = pcEnlace(PC.qrModo);
+  try { await navigator.clipboard.writeText(url); }
+  catch(e){ const t = document.createElement("textarea"); t.value = url; t.setAttribute("readonly", ""); t.style.cssText = "position:fixed;left:-9999px;top:0";
+            document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch(e2){} t.remove(); }
+  pcAvisoQr(LANG === "en" ? "Link copied" : "Enlace copiado");
+}
+async function pcEnviaEnlace(){
+  const url = pcEnlace(PC.qrModo), titulo = "WALLIO · " + (PC.etiqueta || "");
+  try {
+    const C = window.Capacitor;
+    const sh = C && ((C.Plugins && C.Plugins.Share) || (C.registerPlugin && C.registerPlugin("Share")));
+    if (C && C.isNativePlatform && C.isNativePlatform() && sh){ await sh.share({title: titulo, url: url}); return; }
+    if (navigator.share){ await navigator.share({title: titulo, url: url}); return; }
+  } catch(e){ if (/cancel|abort/i.test(String(e && (e.message || e)))) return; }
+  pcCopiaEnlace();
+}
+/* al abrir un enlace o QR de invitación (#unir=… o #ver=…) */
+async function pcDesdeEnlace(){
+  const h = location.hash.replace(/^#/, "");
+  const m = h.match(/(?:^|&)(unir|ver)=([^&]*)/); if (!m) return;
+  const modo = m[1], nombre = decodeURIComponent(m[2] || "").trim();
+  const fm = h.match(/(?:^|&)f=(\d{4}-\d{2}-\d{2})/), fecha = fm ? fm[1] : "";
+  try { history.replaceState(null, "", location.pathname + location.search); } catch(e){}
+  if (!nombre) return;
+  const yaDentro = PC.parte && (PC.etiqueta || "").trim() === nombre;
+  if (yaDentro && !!PC.soloVer === (modo === "ver")) { pcPintaPanel(); return; }
+  /* si en este aparato hay OTRO proyecto con trabajo, se guarda en "Tus partes"
+     y se empieza limpio con el del enlace -- nada se mezcla */
+  const otro = (S.prod.proyecto || "").trim() !== nombre;
+  const conTrabajo = (S.parte.tomas || []).some(t => String(t.sc || t.clip || t.desc || "").trim());
+  if (PC.parte){ pcPara(); PC.parte = ""; PC.clave = ""; PC.mias = {}; PC.firmas = {}; PC.enNube = {}; PC.vistos = {}; }
+  if (otro && conTrabajo) proyectoNuevo(true);
+  if (otro){ S.prod.proyecto = nombre;
+    if (typeof fillProd === "function") fillProd();
+    if (typeof fillProdParte === "function") fillProdParte();
+    pintaTira(); updateChip(); }
+  PC.soloVer = modo === "ver"; PC.sinAuto = "";
+  pcGuarda(); pcPintaPanel();
+  await pcAbrir(nombre, true, {soloEntrar: true, fecha: fecha});
+  pcPintaPanel();
+}
+/* en solo mirar, nada que cambie datos se puede ejecutar (ni desde un botón olvidado) */
+["nuevaToma", "borrarToma", "smartfill", "ponClip", "manejaCambioRollo", "agregarCamara", "jornadaSiguiente",
+ "ocultarCampoToma", "restaurarCampoToma", "addCampoNombre", "aplicaUnidadToma", "aplicaSignoToma"].forEach(n => {
+  const o = window[n]; if (typeof o !== "function") return;
+  window[n] = function(){ if (PC.soloVer && PC.parte) return; return o.apply(this, arguments); };
+});
+document.addEventListener("focusin", ev => {
+  if (!(PC.soloVer && PC.parte)) return;
+  const t = ev.target;
+  if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && t.closest("main")) t.blur();
+}, true);
 
 /* ---------------- arranque ---------------- */
 /* el idioma manda también en la distancia de fábrica: en inglés, «Minimum» */
@@ -9314,8 +9471,11 @@ updateChip(); show("prod");
 /* v91: ya no se abre sola "Datos del proyecto" aunque esté vacío -- se entra
    directo a capturar, como en ZoeLog; la tarjeta queda plegada hasta que se
    abra a mano. */
-if (PC.parte && PC.clave){ setTimeout(() => pcTick(true), 2500); pcArranca(); }   /* v89: al abrir, foto completa de la nube */
+if (/(?:^|[#&])(unir|ver)=/.test(location.hash)) setTimeout(pcDesdeEnlace, 600);   /* v171: llegó por un QR */
+else if (PC.parte && PC.clave){ setTimeout(() => pcTick(true), 2500); pcArranca(); }   /* v89: al abrir, foto completa de la nube */
 else pcAutoProgramar();
+pcPintaPanel();
+window.addEventListener("hashchange", () => { if (/(?:^|[#&])(unir|ver)=/.test(location.hash)) pcDesdeEnlace(); });
 ["p_proyecto", "pp_proyecto"].forEach(function(id){
   const el = $(id); if (el) el.addEventListener("change", pcAutoProgramar);
 });
