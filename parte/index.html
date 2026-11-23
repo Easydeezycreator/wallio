@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="157">
+<meta name="wallio-ver" content="158">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1394,6 +1394,53 @@ body .f.restaurar,body .toma .row .f.restaurar{background:transparent;border:non
 .toma .f[data-k="wb"]{grid-column:1/-1}
 /* v157: un dato que no cabe en medio recuadro pasa a ocupar la fila entera */
 .toma .row .f.largo,.grid .f.largo{grid-column:1/-1}
+/* v158: cabecera en barra negra, una sola fila, sin recuadros (aprobada por
+   Waldo): WALLIO grande, acciones con icono, línea del color de la cámara */
+header{background:#0e1014 !important;border-bottom:4px solid var(--boxC) !important;box-shadow:0 6px 20px rgba(0,0,0,.25);
+  flex-wrap:nowrap !important;align-items:center !important;gap:2px !important;
+  padding:calc(9px + env(safe-area-inset-top)) 10px 9px 12px !important}
+header svg{filter:none !important;width:32px !important;height:32px !important;flex:0 0 32px !important;margin:0 !important}
+header .marca{flex:0 1 auto;min-width:0;margin-left:6px}
+header .wm{font:800 20px/1 'WManrope',system-ui,sans-serif !important;letter-spacing:-.01em;background:none !important;
+  -webkit-text-fill-color:#fff !important;color:#fff !important}
+header .wl{font:700 8.5px/1.3 'WManrope',system-ui,sans-serif !important;letter-spacing:.14em !important;color:var(--boxC) !important;
+  text-transform:uppercase;white-space:nowrap;margin-top:3px !important;overflow:hidden;text-overflow:ellipsis}
+header .wsv{display:block;font:600 9px/1.2 'WManrope',system-ui,sans-serif !important;letter-spacing:.02em !important;margin:2px 0 0 !important;
+  white-space:nowrap;color:#5fd39a !important;order:0 !important;align-self:auto !important;overflow:hidden;text-overflow:ellipsis}
+header .wsv:empty{display:none}
+header .sp{flex:1 1 0 !important;min-width:4px}
+header .lang{flex:0 0 auto;white-space:nowrap;border:none !important;background:transparent !important;color:#eef0f3 !important;
+  min-height:40px !important;padding:0 6px !important;font:800 11px/1 'WManrope',system-ui,sans-serif !important;letter-spacing:.05em !important;
+  display:inline-flex !important;align-items:center;gap:4px;border-radius:0 !important;text-transform:uppercase}
+header .lang[hidden]{display:none !important}
+header .lang .ic{font-size:16px;font-weight:700;color:var(--boxC);line-height:1}
+header .lang:active{opacity:.6}
+#btnLang{color:#9aa1ab !important}
+#btnNueva{color:#5fd39a !important}
+header .st,#chipVis{display:none !important}
+/* v158: la cabecera y la tira ya NO se quedan fijas arriba: al trabajar se
+   van con el scroll y el parte usa toda la pantalla; para volver a ellas,
+   scroll hacia arriba (Waldo) */
+header{position:relative !important;top:auto !important}
+.tira{position:relative !important;top:auto !important}
+html,body{scroll-padding-top:12px !important}
+@media(min-width:390px){header .wm{font-size:23px !important}
+  header svg{width:36px !important;height:36px !important;flex-basis:36px !important}
+  header{padding-top:calc(11px + env(safe-area-inset-top)) !important;padding-bottom:11px !important}}
+@media(max-width:399px){#btnProyNuevo .tx{display:none}}
+@media(max-width:389px){header .wl{letter-spacing:.05em !important}header .lang{padding:0 4px !important}}
+@media(max-width:345px){header .wl{font-size:8px !important;letter-spacing:.02em !important}header .wm{font-size:18px !important}header svg{width:28px !important;height:28px !important;flex-basis:28px !important}}
+/* con el aviso "Actualizar" visible, las acciones quedan solo con su icono */
+header:has(#btnNueva:not([hidden])) #btnProyNuevo .tx,header:has(#btnNueva:not([hidden])) #btnCompartir .tx{display:none}
+header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
+
+/* v158: en la toma abierta, cámara y escena / toma bien grandes para ver de un
+   vistazo en qué toma se trabaja; sin el aviso de "falta…" */
+.toma[open] > .th{gap:12px;padding:4px 0 8px}
+.toma[open] > .th .sl{font:800 34px/1 'WManrope',system-ui,sans-serif;letter-spacing:-.02em;color:var(--boxC)}
+.toma[open] > .th .camchip{min-width:44px;height:44px;font:800 24px/1 'WManrope',system-ui,sans-serif;border-radius:6px}
+.toma[open] > .th .meta{font:600 13px/1.35 'WManrope',system-ui,sans-serif;color:var(--tx2)}
+@media(min-width:700px){.toma[open] > .th .sl{font-size:38px}}
 .f{position:relative}
 .f > .completo{position:absolute;pointer-events:none;font:600 15px/1.3 'WManrope',system-ui,sans-serif;
   color:#0e1116;white-space:normal;overflow-wrap:anywhere;word-break:break-word;padding-top:4px}
@@ -1406,13 +1453,12 @@ body .f.restaurar,body .toma .row .f.restaurar{background:transparent;border:non
 
 <header>
   <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="#e8ebf0" stroke-linecap="butt" stroke-linejoin="round"><circle cx="24" cy="24" r="20.6" stroke-width="2.91"/><g stroke-width="2.24"><path d="M13.4 13.4 Q24 10.6 34.6 13.4 Q37.4 24 34.6 34.6 Q24 37.4 13.4 34.6 Q10.6 24 13.4 13.4 Z"/><path d="M24 11.3 L24 36.7"/><path d="M11.3 24 L36.7 24"/></g></g></svg>
-  <div><div class="wm">WALLIO</div><div class="wl">Lens Grid Platform</div></div>
+  <div class="marca"><div class="wm">WALLIO</div><div class="wl">Lens Grid Platform</div><span id="estadoGuardado" class="sv wsv"></span></div>
   <div class="sp"></div>
-  <span id="estadoGuardado" class="sv"></span>
   <button id="btnNueva" class="lang" onclick="aplicaActualizacion()" hidden style="color:#1c6a49;border-color:rgba(47,143,99,.5)">Actualizar</button>
-  <button id="btnProyNuevo" class="lang" onclick="proyectoNuevo()">Proyecto nuevo</button>
-  <button id="btnCompartir" class="lang" onclick="pcPanel()">Compartir</button>
-    <button id="btnRefrescar" class="lang" title="Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado" onclick="refrescarTodo()">Refrescar</button>
+  <button id="btnProyNuevo" class="lang" title="Proyecto nuevo" onclick="proyectoNuevo()"><span class="ic">＋</span><span class="tx">Nuevo</span></button>
+  <button id="btnCompartir" class="lang" onclick="pcPanel()"><span class="ic">↗</span><span class="tx">Compartir</span></button>
+    <button id="btnRefrescar" class="lang" title="Vuelve a pintar todo en pantalla sin perder ningún dato ya ingresado" onclick="refrescarTodo()"><span class="ic">⟳</span></button>
   <button id="btnLang" class="lang" onclick="cambiaIdioma()">EN</button>
   <div class="st"><b id="chipCov">—</b>cobertura</div>
   <span id="chipVis"></span>
@@ -6733,7 +6779,7 @@ function renderTomas(){
         return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}" data-i="${i}"${abierta ? " open" : ""}>
       <summary class="th">
         ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${esc(nombreCam(t.camLetra || "A"))}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
-        <div class="meta">${esc(meta)}${avisoFalta}</div>
+        <div class="meta">${esc(meta)}</div>
         ${smartfillBtn}
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
       </summary>
@@ -7404,7 +7450,7 @@ function descargar(texto, nombre, tipo){
 const EN = {"Quitar este campo":"Remove this field","Smartfill aplicado":"Smartfill applied","+ Archivo":"+ File","Abrir archivo":"Open file","Interno":"Internal","Externo":"External",
 "✎ escribir…":"✎ type…",
 "Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only",
-"Compartir este parte":"Share this report","Proyecto nuevo":"New project","Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?":"The current report is saved on this device and a brand NEW project starts from scratch. Sure?","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Introduce el nombre del proyecto":"Enter the project name","EL PRIMER DÍA":"THE FIRST DAY",
+"Compartir este parte":"Share this report","Proyecto nuevo":"New project","Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?":"The current report is saved on this device and a brand NEW project starts from scratch. Sure?","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Nuevo":"New","Introduce el nombre del proyecto":"Enter the project name","EL PRIMER DÍA":"THE FIRST DAY",
 "Escribe primero el Proyecto en Producción.":"Fill in the Project in Production first.",
 "Escribe el nombre del proyecto.":"Type the project name.",
 "No hay ningún parte compartido de ese proyecto (¿alguien pulsó ya Compartir?).":"There is no shared report for that project (did anyone tap Share yet?).",
@@ -8893,7 +8939,7 @@ function pcAplica(d, primera){
 }
 function pcEstado(txt){
   const b = $("btnCompartir");
-  if (b) b.textContent = PC.parte ? traduce("Compartido") : traduce("Compartir");
+  if (b) b.innerHTML = '<span class="ic">↗</span><span class="tx">' + esc(PC.parte ? traduce("Compartido") : traduce("Compartir")) + '</span>';
   const el = $("pc_estado"); if (!el) return;
   if (txt !== undefined){ el.textContent = txt; return; }
   if (!PC.parte){
