@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="164">
+<meta name="wallio-ver" content="165">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1363,12 +1363,16 @@ input:focus,select:focus,textarea:focus{outline:none}
    rótulo en ese color y el dato más grande y en negrita para leerlo de un
    vistazo en el teléfono. Solo cambia el aspecto: misma estructura. */
 body{--boxTint:16.5%}
-body:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF),.toma:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF){--boxTint:25.5%}
+body:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF),.toma:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF){--boxTint:43.4%}
 .toma .row > .gsec,.card.cajaRoja{background:color-mix(in srgb,var(--boxC) var(--boxTint),#fff);
   border-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
 .gsec .ghead{border-bottom-color:color-mix(in srgb,var(--boxC) 32%,#fff)}
 /* v164: fondos +50 % y cada recuadro con un 10 % del color de su cámara (Waldo) */
-.f{background:color-mix(in srgb,var(--boxC) 10%,#fff);border:1px solid color-mix(in srgb,var(--boxC) 22%,#e6e8eb);
+/* v165: en la cámara A los recuadros vuelven a blanco; B/C/D… siguen al 10 % (Waldo) */
+body{--fTint:10%}
+body:not(.camB):not(.camC):not(.camD):not(.camE):not(.camF),.toma.camA{--fTint:0%}
+.toma:not(.camA){--fTint:10%}
+.f{background:color-mix(in srgb,var(--boxC) var(--fTint),#fff);border:1px solid color-mix(in srgb,var(--boxC) 22%,#e6e8eb);
   border-left:4px solid var(--boxC);box-shadow:0 2px 6px color-mix(in srgb,var(--boxC) 15%,transparent);
   min-width:0}
 body .f,body .toma .row .f{padding:8px 10px 8px 11px}
