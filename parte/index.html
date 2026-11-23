@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="168">
+<meta name="wallio-ver" content="169">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -5584,7 +5584,8 @@ function manejaCambioRollo(valorNuevo){
              camposOcultos: (S.parte.camposOcultos || []).slice(),
              camposOcultosManual: (S.parte.camposOcultosManual || []).slice(),
              camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig,
-             camasActivas: camasActivasSig, camNombres: camNombresSig};
+             camasActivas: camasActivasSig, camNombres: camNombresSig,
+             clipVisibleV168: !!S.parte.clipVisibleV168};
   fillParte(); renderTomas();
   if (typeof renderCampos === "function") renderCampos();
   if (typeof renderRollExtra === "function") renderRollExtra();
@@ -7574,9 +7575,66 @@ function sugerenciaClip(i){
   const r = String(C.roll || "").trim();
   return /^[A-Z]\d{3}$/i.test(r) ? r.toUpperCase() + "C001" : "";
 }
+/* v169: lo que NO se copia de una toma a otra (identidad y lo propio de cada toma) -- igual que el Smartfill */
+const NO_COPIAR_TOMA = ["tk","sc","clip","nclip","dial","pies","mos","falso","notaEsp","ok","nota","tc","dur"];
+/* v169: memoria PERMANENTE (en S, sobrevive a cerrar la app, a un rollo,
+   jornada o proyecto nuevo) de los datos técnicos de la última toma de cada
+   cámara -- solo se actualiza con tomas que tienen algún dato técnico, así
+   la primera toma en blanco de un rollo nuevo nunca la borra */
+function recuerdaUltimasTomas(){
+  if (!S.parte || !S.parte.tomas) return;
+  S.ultimaTomaCam = S.ultimaTomaCam || {};
+  const claves = T_CLAVES.concat(["cc"]).filter(k => NO_COPIAR_TOMA.indexOf(k) < 0);
+  const vistas = {};
+  for (let j = S.parte.tomas.length - 1; j >= 0; j--){
+    const t = S.parte.tomas[j], l = t.camLetra || "A";
+    if (vistas[l] || t.falso) continue;
+    const datos = {}; let hay = false;
+    claves.forEach(k => { const v = t[k]; if (v != null && String(v).trim() !== ""){ datos[k] = v; hay = true; } });
+    const extra = {}; Object.keys(t.extra || {}).forEach(n => { if (String(t.extra[n] || "").trim()){ extra[n] = t.extra[n]; hay = true; } });
+    if (!hay) continue;
+    vistas[l] = true;
+    datos.extra = extra;
+    /* se guarda POR ROLLO: la toma del rollo nuevo nunca pisa la del anterior */
+    const clave = claveRolloMem(l);
+    const m = S.ultimaTomaCam[l];
+    if (m && m.clave && m.clave !== clave) S.ultimaTomaCam[l] = {clave, datos, previo: {clave: m.clave, datos: m.datos}};
+    else S.ultimaTomaCam[l] = {clave, datos, previo: m && m.previo};
+  }
+}
+function claveRolloMem(l){
+  const P = S.prod || {}, C = configDe(l);
+  return [P.proyecto, P.fecha, P.jornada, C.roll].map(v => String(v || "").trim()).join("|");
+}
+/* datos de la última toma de esta cámara en un rollo DISTINTO al actual */
+function memoriaOtroRollo(l){
+  const m = S.ultimaTomaCam && S.ultimaTomaCam[l]; if (!m) return null;
+  if (!m.clave) return null;
+  if (m.clave !== claveRolloMem(l)) return m.datos;
+  return m.previo ? m.previo.datos : null;
+}
+function esPrimeraTomaDeCam(i){
+  const l = (S.parte.tomas[i].camLetra || "A");
+  for (let j = 0; j < i; j++) if ((S.parte.tomas[j].camLetra || "A") === l) return false;
+  return true;
+}
 function ponClip(i, v){
-  if (!S.parte.tomas[i]) return;
-  S.parte.tomas[i].clip = v;
+  const t = S.parte.tomas[i]; if (!t) return;
+  t.clip = v;
+  /* v169 (Waldo): en la PRIMERA toma del rollo, ese mismo toque copia también
+     todos los recuadros de la última toma de esta cámara -- solo rellena lo
+     que está vacío (nunca pisa lo que ya se escribió) y queda atenuado como
+     el Smartfill, para cambiar lo que haga falta */
+  const u = esPrimeraTomaDeCam(i) && memoriaOtroRollo(t.camLetra || "A");
+  if (u){
+    t._heredados = t._heredados || [];
+    Object.keys(u).forEach(k => {
+      if (k === "extra" || NO_COPIAR_TOMA.indexOf(k) >= 0) return;
+      if (t[k] == null || String(t[k]).trim() === ""){ t[k] = u[k]; if (t._heredados.indexOf(k) < 0) t._heredados.push(k); }
+    });
+    t.extra = t.extra || {};
+    Object.keys(u.extra || {}).forEach(n => { if (!String(t.extra[n] || "").trim()) t.extra[n] = u.extra[n]; });
+  }
   renderTomas(); resumenParte();
   if (typeof guardaYa === "function") guardaYa();
 }
@@ -8865,7 +8923,7 @@ function guardaSiPendiente(){ if (guardadoTimer) guardaYa(); }
   /* v167: los botones de cámara se ponen al día cada vez que cambian las tomas
      (nueva, borrada, o llegada del teléfono de otro compañero) */
   { const o = window.renderTomas; if (typeof o === "function")
-      window.renderTomas = function(){ const r = o.apply(this, arguments); try { renderCamSel(); } catch(e){} try { pintaPost(); } catch(e){} return r; }; }
+      window.renderTomas = function(){ const r = o.apply(this, arguments); try { renderCamSel(); } catch(e){} try { pintaPost(); } catch(e){} try { recuerdaUltimasTomas(); } catch(e){} return r; }; }
   setTimeout(programa, 300); setTimeout(programa, 1500);
 })();
 /* v156: la app se pone al día sola -- al volver a ella (o cada 5 min con
