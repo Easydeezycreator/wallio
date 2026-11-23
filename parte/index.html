@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="159">
+<meta name="wallio-ver" content="160">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -7039,9 +7039,26 @@ function borrarToma(i){
   if (i < 0){ for (let j = L.length - 1; j >= 0; j--){
     if ((L[j].camLetra || "A") === camActiva()){ i = j; break; } } }
   if (i < 0) return;
+  const borrada = L[i];
   L.splice(i, 1);
+  /* v160: al BORRAR una toma, las siguientes de la misma escena y cámara
+     bajan un número para que sigan siendo consecutivas (borro la 3 → la 4
+     pasa a ser la 3). Una toma marcada FALSO no se borra, así que ahí los
+     números se conservan. Solo se tocan tomas con número entero ("3A" o
+     similares se respetan tal cual). */
+  const nB = /^\s*\d+\s*$/.test(borrada.tk || "") ? parseInt(borrada.tk, 10) : NaN;
+  if (!isNaN(nB)){
+    const cam = borrada.camLetra || "A", sc = (borrada.sc || "").trim();
+    L.forEach(o => {
+      if ((o.camLetra || "A") !== cam || (o.sc || "").trim() !== sc) return;
+      if (!/^\s*\d+\s*$/.test(o.tk || "")) return;
+      const n = parseInt(o.tk, 10); if (n > nB) o.tk = String(n - 1);
+    });
+  }
   if (typeof pcReclama === "function") pcReclama();
   renderTomas();
+  if (typeof guardaYa === "function") guardaYa();
+  if (typeof ptArchiva === "function") { try { ptArchiva(false); } catch(e){} }
 }
 function durTexto(seg){
   seg = Math.round(seg || 0);
