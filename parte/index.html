@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="158">
+<meta name="wallio-ver" content="159">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -664,6 +664,9 @@ html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){displ
 #combo .op-in input{display:block;width:100%;box-sizing:border-box;border:0;outline:0;background:transparent;
   font:italic 500 16px/1.25 var(--mono);color:var(--tx);padding:11px 13px;min-height:44px;border-radius:0;-webkit-appearance:none}
 #combo .op-in input::placeholder{color:var(--tx3)}
+#combo .op-in{display:flex;align-items:stretch}
+#combo .op-signo{flex:0 0 52px;display:flex;align-items:center;justify-content:center;font:700 22px/1 'WManrope',system-ui,sans-serif;
+  color:var(--boxC);cursor:pointer;-webkit-user-select:none;user-select:none;font-style:normal;border-left:1px solid var(--line)}
 .toma .th button.x{min-width:34px;padding:0;color:var(--tx3)}
 /* v90: en el móvil los botones de la toma bajan a su propia línea y se reparten el ancho
    (antes CÍRCULO y × se salían de la pantalla del iPhone) */
@@ -5565,7 +5568,9 @@ const CAMPOS_CLAVE = ["focal","t"];
    se dejan en teclado normal porque ahí SÍ hacen falta negativos y el
    teclado numérico del iPhone no trae signo menos. */
 const INPUTMODE_TOMA = { nclip: "numeric", dial: "numeric", pies: "decimal",
-  alt: "decimal", fps: "decimal", ei: "numeric", t: "decimal", dur: "decimal", focal: "decimal" };
+  alt: "decimal", fps: "decimal", ei: "numeric", t: "decimal", dur: "decimal", focal: "decimal",
+  /* v159: más campos que son solo número -> teclado numérico en iPhone */
+  foco: "decimal", tilt: "decimal", pan: "decimal", wb: "numeric" };
 function aprendeCampo(k, v){
   v = (v || "").trim(); if (!v) return;
   S.memCampos = S.memCampos || {};
@@ -6531,7 +6536,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
   if (k === "tilt" || k === "pan"){
     return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div class="unidadWrap">` +
-      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" ` +
+      `<input value="${v}"${l} inputmode="decimal" placeholder="${ph}" style="flex:1" ` +
       `oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
       `onfocus="this.closest('.unidadWrap').classList.add('activo')" ` +
       `onblur="this.closest('.unidadWrap').classList.remove('activo')" ` +
@@ -6560,7 +6565,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
     const quitaHerCc = `if(S.parte.tomas[${i}]._heredados)S.parte.tomas[${i}]._heredados=S.parte.tomas[${i}]._heredados.filter(x=>x!=='cc');this.classList.remove('heredado');`;
     return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div style="display:flex;gap:6px">` +
-      `<input value="${v}"${l} placeholder="${ph}" style="flex:1" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
+      `<input value="${v}"${l} inputmode="numeric" placeholder="${ph}" style="flex:1" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
       `<input value="${vcc}" list="dlCc" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" class="${herCc ? "heredado" : ""}" oninput="${quitaHerCc}S.parte.tomas[${i}].cc=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
       `</div></div>`;
   }
@@ -9023,6 +9028,7 @@ materializaDefectos();
   let activo = null, abiertoEn = 0;
   let saltaConfirma = false;
   const campoIn = () => caja.querySelector(".op-in input");
+  const tecladoPropio = inp => { const m = inp.getAttribute("data-im"); if (m) inp.setAttribute("inputmode", m); else inp.removeAttribute("inputmode"); };
   /* v155: la lista nunca se sale de la pantalla (nombres muy largos) */
   const ajustaAncho = r => {
     const cw = document.documentElement.clientWidth;
@@ -9059,12 +9065,15 @@ materializaDefectos();
     if (inp.hasAttribute("list")){
       inp.setAttribute("data-lista", inp.getAttribute("list")); inp.removeAttribute("list");
     }
+    /* v159: el teclado propio del campo (numérico o normal) se recuerda
+       en data-im para volver a él al escribir */
+    if (!inp.hasAttribute("data-im")){ const m = inp.getAttribute("inputmode"); inp.setAttribute("data-im", (m && m !== "none") ? m : ""); }
     if (inp.hasAttribute("data-lista") && !inp.hasAttribute("data-escribir")){
       /* v152: lista vacía (todavía nada que sugerir) = campo normal con
          teclado; en cuanto haya opciones vuelve a abrir la lista */
       const dl = document.getElementById(inp.getAttribute("data-lista"));
       if (dl && dl.options.length) inp.setAttribute("inputmode", "none");
-      else inp.removeAttribute("inputmode");
+      else tecladoPropio(inp);
     }
   };
   document.querySelectorAll("input[list],input[data-lista]").forEach(prepara);
@@ -9121,7 +9130,7 @@ materializaDefectos();
   const activaEscribir = inp => {
     cierra();
     inp.setAttribute("data-escribir", "1");
-    inp.removeAttribute("inputmode");
+    tecladoPropio(inp);
     cambiandoAEscribir = true;
     try { inp.blur(); } catch(e){}
     inp.focus();
@@ -9173,6 +9182,16 @@ materializaDefectos();
     });
     const hijos = [...caja.children];
     const ci = hijos[0].querySelector("input");
+    { const m = inp.getAttribute("data-im"); if (m){ ci.setAttribute("inputmode", m); ci.setAttribute("enterkeyhint", "done"); }
+      const fk = inp.closest(".f") && inp.closest(".f").getAttribute("data-k");
+      if (fk === "tilt" || fk === "pan"){
+        /* el teclado numérico del iPhone no tiene "−": botón de signo al lado */
+        const sg = document.createElement("span"); sg.className = "op-signo"; sg.textContent = "±";
+        sg.addEventListener("pointerdown", ev => { ev.preventDefault(); });
+        sg.addEventListener("click", ev => { ev.preventDefault(); const v = ci.value.trim();
+          ci.value = v.startsWith("-") || v.startsWith("−") ? v.replace(/^[-−]\s*/, "") : "-" + v; ci.focus(); });
+        hijos[0].appendChild(sg);
+      } }
     ci.addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); confirma(); } });
     ci.addEventListener("input", () => {
       const q = ci.value.toLowerCase().trim();
