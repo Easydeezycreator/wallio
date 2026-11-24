@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="180">
+<meta name="wallio-ver" content="181">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -7094,7 +7094,7 @@ document.addEventListener("click", e => {
   const a = $("camAgFuera"); if (a) a.hidden = true;
   const despues = t.getBoundingClientRect().top;
   if (Math.abs(despues - antes) > 0.5) window.scrollBy(0, despues - antes);
-  setTimeout(() => document.dispatchEvent(new Event("scroll", {bubbles: true})), 0);   /* la lista de opciones se recoloca */
+  [0, 120, 350].forEach(ms => setTimeout(() => document.dispatchEvent(new Event("scroll", {bubbles: true})), ms));   /* la lista de opciones se recoloca */
 }, true);
 const PT = {on: false};
 document.addEventListener("scroll", e => {   /* p.ej. el tabulador lleva a un campo de otra página */
@@ -10109,6 +10109,32 @@ materializaDefectos();
      de activaEscribir, que vuelve a enfocar en el mismo instante) se
      olvida el modo "escribir" -- la próxima vez que lo toquen, vuelve a
      mostrar solo la lista, sin teclado, tal como pide Waldo. */
+  /* v181: al terminar de escribir DIRECTO en un campo con lista (Enter /
+     "Listo" del teclado o al salir del campo), la lista se cierra -- antes se
+     quedaba abierta con "✎ escribir…" hasta tocar otra cosa (Waldo, Escena) */
+  document.addEventListener("keydown", e => {
+    const t = e.target; if (e.key !== "Enter" || caja.hidden || !t || t.tagName !== "INPUT" || caja.contains(t) || !t.hasAttribute("data-lista")) return;
+    e.preventDefault(); cierra(); try { activo && activo.blur(); } catch(_){}
+    try { e.target.blur(); } catch(_){}
+  }, true);
+  /* al guardar un campo (change) la toma se redibuja y el campo viejo sale del
+     documento ANTES de su blur: aquí se comprueba igual si la lista sobra */
+  document.addEventListener("change", e => {
+    const t = e.target; if (caja.hidden || !t || t.tagName !== "INPUT" || caja.contains(t) || !t.hasAttribute("data-lista")) return;
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (caja.hidden || caja.contains(a) || (a && a.tagName === "INPUT" && a.hasAttribute("data-lista") && document.contains(a))) return;
+      cierra();
+    }, 0);
+  }, true);
+  document.addEventListener("focusout", e => {
+    const t = e.target; if (caja.hidden || !t || t.tagName !== "INPUT" || caja.contains(t) || !t.hasAttribute("data-lista")) return;
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (caja.hidden || caja.contains(a) || (a && a.tagName === "INPUT" && a.hasAttribute("data-lista"))) return;
+      cierra();
+    }, 0);
+  }, true);
   document.addEventListener("focusout", e => { const t = e.target;
     if (t && t.tagName === "INPUT" && t.hasAttribute("data-lista")){
       if (t.hasAttribute("data-escribir") && !cambiandoAEscribir) comboExtraAdd(t.getAttribute("data-lista"), t.value);
