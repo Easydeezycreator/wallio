@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="176">
+<meta name="wallio-ver" content="177">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1541,6 +1541,18 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
 #listaTomas.pag>.pagNueva{flex:0 0 100%;min-height:180px;display:flex;align-items:center;justify-content:center;
   font:700 13px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:color-mix(in srgb,var(--boxC,var(--camA)) 55%,transparent)}
 html.soloVer #listaTomas.pag>.pagNueva{display:none}
+/* v177 · Cámara y rollo plegable */
+#cam_bloque>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;padding:12px 11px 10px;
+  font:650 11.5px/1 var(--ui);letter-spacing:.17em;text-transform:uppercase;color:var(--boxC);-webkit-tap-highlight-color:transparent}
+#cam_bloque>summary::-webkit-details-marker{display:none}
+#cam_bloque>summary::before{content:"+";font-size:14px;line-height:1;color:color-mix(in srgb,var(--boxC) 60%,transparent)}
+#cam_bloque[open]>summary::before{content:"–"}
+#cam_bloque[open]>summary{border-bottom:1px solid var(--boxLine);margin-bottom:8px}
+#cam_bloque>summary b{font-weight:650;color:var(--boxC)}
+#camCard>#camSelRollo{margin-top:10px}
+.agFuera[hidden]{display:none!important}
+#camCard{margin-bottom:16px}
+#camCard + .agFuera{margin-top:-10px}
 </style>
 </head>
 <body>
@@ -1772,14 +1784,16 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
     </div>
   </details>
 
-  <div class="card cajaRoja">
-    <h2>Cámara y rollo</h2>
+  <div class="card cajaRoja" id="camCard">
+    <div class="btnrow camSel" id="camSelRollo"></div>
+    <div id="camRenombrar"></div>
+    <!-- v177: los datos de cámara y rollo se rellenan una vez y casi no cambian:
+         van plegados como "Datos del proyecto" y solo se abren al tocarlos -->
+    <details id="cam_bloque"><summary><b>Cámara y rollo</b></summary>
     <div class="btnrow" id="tipoRollo">
       <button id="tp_dig" class="primary" onclick="ponTipo('digital')">Digital</button>
       <button id="tp_film" class="ghost" onclick="ponTipo('film')">Película</button>
     </div>
-    <div class="btnrow camSel" id="camSelRollo"></div>
-    <div id="camRenombrar"></div>
     <div class="grid">
       <!-- v122: se quita el campo "Cámara" suelto (A/B/C/D ya se elige arriba
            con los botones de camSelRollo, era el mismo dato repetido dos
@@ -1813,9 +1827,10 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
     </div>
     <div id="rollExtra"></div>
     <div id="rollAddPanel"></div>
+    </details>
   </div>
   <!-- v166: el "+ Añadir campo" va fuera del fondo de color para que se note (Waldo) -->
-  <div class="agFuera">
+  <div class="agFuera" id="camAgFuera" hidden>
       <details class="agregar" id="camara_agregar_det"><summary>+ <span>Añadir campo</span></summary>
         <div class="agGrupo" id="camara_agregar_panel"></div>
     </details>
@@ -1877,7 +1892,6 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
 
   <div class="card">
     <div class="btnrow addmini">
-      <button onclick="guardarParte()">+ Archivo</button>
       <button onclick="document.getElementById('partIn').click()">Abrir archivo</button>
     </div>
     <input type="file" id="partIn" accept=".json,application/json" style="display:none">
@@ -5404,12 +5418,7 @@ function pintaTira(){
   const P = S.prod, R = (S.parte && S.parte.roll) || {};
   const proy = (P.proyecto || "").trim();
   const n = cuentaTomas(camActiva()).tk;   /* v54: la tira es de TU cámara */
-  const det = [
-    P.jornada ? traduce("jornada ") + P.jornada : "",
-    P.fecha || "",
-    [R.cam, R.roll].filter(Boolean).join(" · "),
-    n ? n + " " + traduce("tomas") : traduce("sin tomas")
-  ].filter(Boolean).join("  ·  ");
+  const det = P.fecha || "";   /* v177: solo el proyecto y la fecha debajo (Waldo) */
   t.classList.toggle("vacia", !proy);
   $("tp_proy").textContent = proy || traduce("Sin proyecto");
   $("tp_det").textContent = det;
@@ -5891,6 +5900,7 @@ function ponTipo(t){ guarda(); S.parte.roll.tipo = t;
   pintaTipo(); renderTomas(); }
 function otraCamara(){
   guarda(); S.parte.roll.body = "";
+  const cb = $("cam_bloque"); if (cb) cb.open = true;
   const e = $("r_body"); if (e){ e.value = ""; e.focus(); }
 }
 function pintaTipo(){
@@ -7062,6 +7072,9 @@ function pagTrasRender(){
 /* v176: el paso de página se hace con el dedo desde aquí (no con el scroll
    nativo): la página entera lleva touch-action:pan-y para que Safari no se
    vaya "atrás" al deslizar, y eso en el iPhone bloqueaba el gesto de lado. */
+document.addEventListener("toggle", e => {
+  if (e.target && e.target.id === "cam_bloque"){ const a = $("camAgFuera"); if (a) a.hidden = !e.target.open; }
+}, true);
 const PT = {on: false};
 document.addEventListener("scroll", e => {   /* p.ej. el tabulador lleva a un campo de otra página */
   const L = e.target; if (!L || L.id !== "listaTomas" || !L.classList.contains("pag") || PT.on) return;
