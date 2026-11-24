@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="181">
+<meta name="wallio-ver" content="182">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -5682,7 +5682,7 @@ function manejaCambioRollo(valorNuevo){
              camposOcultosManual: (S.parte.camposOcultosManual || []).slice(),
              camActiva: (S.parte.camActiva || "A"), camsGuardadas: camsSig,
              camasActivas: camasActivasSig, camNombres: camNombresSig,
-             clipVisibleV168: !!S.parte.clipVisibleV168};
+             clipVisibleV168: !!S.parte.clipVisibleV168, clipOcultoV182: !!S.parte.clipOcultoV182};
   fillParte(); renderTomas();
   if (typeof renderCampos === "function") renderCampos();
   if (typeof renderRollExtra === "function") renderRollExtra();
@@ -6045,7 +6045,7 @@ const CATALOGO_SOLO_DIGITAL_GLOBAL = ["Espacio de color", "Gamma", "Firmware", "
 /* v124: lista de campos que empiezan ocultos en un proyecto NUEVO, sin
    ninguna preferencia aprendida todavía (Tiempos/tc/dur queda fuera, ese
    sigue siendo solo-PDF para siempre). */
-const CAMPOS_OCULTOS_DEFAULT = ["dial","pies","nclip","serial","lut","res"];  /* v168: "clip" ya nace visible (postproducción lo necesita) */
+const CAMPOS_OCULTOS_DEFAULT = ["dial","pies","nclip","serial","lut","res","clip"];   /* v182: File / clip solo si él lo añade */  /* v168: "clip" ya nace visible (postproducción lo necesita) */
 /* v128: Óptica (lens) y Exposición ya NO se ocultan nunca por defecto --
    el usuario pidió expresamente que esos campos aparezcan siempre justo
    después de Escena/Toma, igual en TODAS las versiones (iPhone, iPad, Mac)
@@ -6296,10 +6296,16 @@ function fillParte(){
   /* v168: "Archivo / clip" se muestra en digital (Silverstack/Avid emparejan
      por el nombre del clip). Se aplica UNA vez por parte; si el usuario lo
      quita después con la ×, se respeta. En película el CSS lo sigue ocultando. */
-  if (!esFilm() && !S.parte.clipVisibleV168){
-    S.parte.camposOcultos = (S.parte.camposOcultos || []).filter(k => k !== "clip");
-    S.parte.camposOcultosManual = (S.parte.camposOcultosManual || []).filter(k => k !== "clip");
-    S.parte.clipVisibleV168 = true;
+  /* v182: al revés que el v168 -- File / clip sale de la toma en todos los
+     partes (una vez por parte); vuelve solo si él lo añade con "+ Añadir campo" */
+  if (!S.parte.clipOcultoV182){
+    if (prefCampos().visibles.indexOf("clip") < 0){
+      S.parte.camposOcultos = S.parte.camposOcultos || [];
+      S.parte.camposOcultosManual = S.parte.camposOcultosManual || [];
+      if (S.parte.camposOcultos.indexOf("clip") < 0) S.parte.camposOcultos.push("clip");
+      if (S.parte.camposOcultosManual.indexOf("clip") < 0) S.parte.camposOcultosManual.push("clip");
+    }
+    S.parte.clipOcultoV182 = true;
   }
   /* v132: al revés -- en Película, LUT y Resolución quedan SIEMPRE ocultos
      (son conceptos de digital, nunca se usan en análogo), aunque el dueño
@@ -6740,7 +6746,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
   /* v168: Archivo / clip -- si está vacío, se sugiere el siguiente nombre
      (A001C002 → A001C003); un toque lo pone. Se puede escribir a mano igual. */
   if (k === "clip"){
-    const sug = v ? "" : sugerenciaClip(i);
+    const sug = "";   /* v182: sin el botón de sugerir/copiar (Waldo lo quitó) */
     return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<input value="${v}" placeholder="" autocapitalize="characters" oninput="S.parte.tomas[${i}].clip=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
       (sug ? `<span class="sugClip" onmousedown="event.preventDefault()" onclick="ponClip(${i},'${esc(sug)}')">${esc(sug)} <i>· ${esc(LANG === "en" ? "tap to use" : "toca para ponerlo")}</i></span>` : "") +
@@ -7094,7 +7100,7 @@ document.addEventListener("click", e => {
   const a = $("camAgFuera"); if (a) a.hidden = true;
   const despues = t.getBoundingClientRect().top;
   if (Math.abs(despues - antes) > 0.5) window.scrollBy(0, despues - antes);
-  [0, 120, 350].forEach(ms => setTimeout(() => document.dispatchEvent(new Event("scroll", {bubbles: true})), ms));   /* la lista de opciones se recoloca */
+  [0, 120, 350].forEach(ms => setTimeout(() => { if (window.comboRecoloca) window.comboRecoloca(); }, ms));   /* la lista de opciones se recoloca bajo/encima del campo */
 }, true);
 const PT = {on: false};
 document.addEventListener("scroll", e => {   /* p.ej. el tabulador lleva a un campo de otra página */
@@ -7908,6 +7914,13 @@ function pintaPost(){
 }
 function irATomaPost(i){
   const x = S.parte.tomas[i]; if (!x) return;
+  /* v182: File / clip va oculto por defecto; al ir a rellenar un clip que falta
+     para Silverstack/Avid, el recuadro aparece en este parte */
+  if ((S.parte.camposOcultos || []).indexOf("clip") >= 0){
+    S.parte.camposOcultos = S.parte.camposOcultos.filter(k => k !== "clip");
+    S.parte.camposOcultosManual = (S.parte.camposOcultosManual || []).filter(k => k !== "clip");
+    renderTomas(); if (typeof guardaYa === "function") guardaYa();
+  }
   if ((x.camLetra || "A") !== camActiva()) cambiaCam(x.camLetra || "A");
   document.querySelectorAll("#listaTomas details.toma[open]").forEach(d => { if (d.getAttribute("data-i") !== String(i)) d.open = false; });
   const t = document.querySelector('#listaTomas details.toma[data-i="' + i + '"]');
@@ -10156,6 +10169,7 @@ materializaDefectos();
     const cabeAbajo = (r.bottom + 2 + alto) <= vh && (r.top < vh * 0.5 || r.top - alto - 2 < 0);
     caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
     caja.style.top = cabeAbajo ? (r.bottom + scrollY + 2) + "px" : (r.top + scrollY - alto - 2) + "px"; };
+  window.comboRecoloca = () => { if (!caja.hidden && activo && document.contains(activo)) recoloca(); };
   window.addEventListener("scroll", e => {
     if (caja.contains(e.target)) return;
     if (activo && document.activeElement === campoIn()){ recoloca(); return; }
