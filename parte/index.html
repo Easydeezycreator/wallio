@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="183">
+<meta name="wallio-ver" content="184">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1549,6 +1549,13 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
 #cam_bloque[open]>summary::before{content:"–"}
 #cam_bloque[open]>summary{border-bottom:1px solid var(--boxLine);margin-bottom:8px}
 #cam_bloque>summary b{font-weight:650;color:var(--tx)}
+/* v184: Datos del proyecto con el mismo fondo rojo que el resto de la app */
+#pp_bloque{background:color-mix(in srgb,var(--boxC) var(--boxTint),#fff);border:1px solid color-mix(in srgb,var(--boxC) 32%,#fff);border-radius:7px}
+#pp_bloque[open]>summary{border-bottom:1px solid color-mix(in srgb,var(--boxC) 32%,#fff);margin-bottom:6px}
+#ppAgFuera{margin:-2px 11px 14px}
+/* v184: "+ Añadir campo" y "ESCENA" más oscuros para que se lean bien */
+details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--tx) 35%,transparent);font-weight:700}
+.escGrupo{color:var(--tx)}
 /* v183: "Datos del proyecto" y "Cámara y rollo" -- mismo tamaño, en negro, como encabezados */
 #cam_bloque>summary{color:var(--tx)}
 #pp_bloque>summary{padding:12px 11px 10px;font:650 11.5px/1 var(--ui);letter-spacing:.17em;color:var(--tx)}
@@ -1781,13 +1788,16 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
         <div class="f" data-ppk="loader"><label>Cargado por <span class="xpp" onclick="ocultarCampoPP('loader')">×</span></label><input id="pp_loader" autocomplete="off"></div>
         <div id="pp_grid_propios"></div>
       </div>
+    </div>
+  </details>
+  <!-- v184: "+ Añadir campo" de Datos del proyecto, fuera del fondo rojo para que se lea -->
+  <div class="agFuera" id="ppAgFuera" hidden>
       <details class="agregar" id="pp_agregar_det"><summary>+ <span>Añadir campo</span></summary>
         <div class="agGrupo" id="pp_agregar_panel"></div>
         <div class="agNuevo"><input type="text" id="pp_nuevoCampoInput" placeholder="o escribe uno nuevo…">
           <button class="chip" onclick="event.preventDefault();addCampoPP($('pp_nuevoCampoInput').value);$('pp_nuevoCampoInput').value=''">Añadir</button></div>
       </details>
-    </div>
-  </details>
+  </div>
 
   <div class="card cajaRoja" id="camCard">
     <div class="btnrow camSel" id="camSelRollo"></div>
@@ -7090,6 +7100,7 @@ function pagTrasRender(){
    vaya "atrás" al deslizar, y eso en el iPhone bloqueaba el gesto de lado. */
 document.addEventListener("toggle", e => {
   if (e.target && e.target.id === "cam_bloque"){ const a = $("camAgFuera"); if (a) a.hidden = !e.target.open; }
+  if (e.target && e.target.id === "pp_bloque"){ const a = $("ppAgFuera"); if (a) a.hidden = !e.target.open; }
 }, true);
 /* v179: "Cámara y rollo" se cierra solo al tocar fuera de su zona (la tarjeta,
    su "+ Añadir campo" y las listas de opciones que abren sus campos cuentan
