@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="186">
+<meta name="wallio-ver" content="187">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -5851,6 +5851,7 @@ function camarasEnUso(){
 function esMulticam(){ return camarasEnUso().length > 1; }
 function cambiaCam(letra){
   if (CAM_LETRAS.indexOf(letra) < 0 || letra === camActiva()){ pintaCams(); return; }
+  try { clearTimeout(PAG.tCrea); PAG.creando = false; PT.on = false; } catch(e){}   /* v187 */
   guarda();
   /* v51: BLINDAJE — se guarda y se carga por COPIA (nunca por referencia), y la
      copia guardada NO se borra al cargar: si algo se interrumpe a mitad del
@@ -7059,6 +7060,20 @@ function ponVistaTomas(v){
   const fija = () => window.scrollTo(0, Math.min(y, document.documentElement.scrollHeight - innerHeight));
   fija(); requestAnimationFrame(fija);
 }
+function ultimaTomaDeCam(cam){
+  const L = (S.parte && S.parte.tomas) || [];
+  for (let j = L.length - 1; j >= 0; j--) if ((L[j].camLetra || "A") === cam) return L[j];
+  return null;
+}
+function tomaConDatos(t){
+  if (!t) return false;
+  /* una toma copiada con Smartfill SÍ cuenta (en rodaje muchas tomas son
+     idénticas); solo una toma totalmente en blanco no crea otra detrás */
+  const lleno = v => v !== undefined && v !== null && v !== false && String(v).trim() !== "";
+  if (T_CLAVES.concat(["cc"]).some(k => k !== "tk" && lleno(t[k]))) return true;
+  if (t.ok || t.mos || t.falso || lleno(t.notaEsp)) return true;
+  return Object.values(t.extra || {}).some(lleno);
+}
 function pagTomas(){ return [...document.querySelectorAll("#listaTomas > .toma")]; }
 function pagIr(k, suave){
   const L = $("listaTomas"); if (!L) return;
@@ -7067,9 +7082,17 @@ function pagIr(k, suave){
   const x = ps[k] ? ps[k].offsetLeft - L.offsetLeft : 0;
   if (suave) L.scrollTo({left: x, behavior: "smooth"}); else L.scrollLeft = x;
   PAG.idx = k; pagPintaNav();
-  /* la última página es "+ Nueva toma": al llegar ahí se crea la siguiente */
+  /* la última página es "+ Nueva toma": al llegar ahí se crea la siguiente.
+     v187: (1) si la última toma de esta cámara está vacía, no se crea otra
+     vacía detrás -- se vuelve a ella; (2) la creación va ATADA a la cámara:
+     si en ese tercio de segundo se cambia de cámara, no se crea en la otra
+     (en el iPhone, C y D se abrían con "toma 2") */
   if (k >= pagTomas().length && !PAG.creando && !document.documentElement.classList.contains("soloVer")){
-    PAG.creando = true; setTimeout(() => nuevaToma(), suave ? 330 : 0);
+    const cam = camActiva();
+    if (!tomaConDatos(ultimaTomaDeCam(cam))){ PAG.idx = pagTomas().length - 1; setTimeout(() => pagIr(PAG.idx, true), suave ? 260 : 0); return; }
+    PAG.creando = true;
+    clearTimeout(PAG.tCrea);
+    PAG.tCrea = setTimeout(() => { PAG.creando = false; if (camActiva() === cam && vistaPag()) nuevaToma(); }, suave ? 330 : 0);
   }
 }
 function pagActual(){
