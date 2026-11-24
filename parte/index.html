@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="184">
+<meta name="wallio-ver" content="185">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1553,6 +1553,8 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
 #pp_bloque{background:color-mix(in srgb,var(--boxC) var(--boxTint),#fff);border:1px solid color-mix(in srgb,var(--boxC) 32%,#fff);border-radius:7px}
 #pp_bloque[open]>summary{border-bottom:1px solid color-mix(in srgb,var(--boxC) 32%,#fff);margin-bottom:6px}
 #ppAgFuera{margin:-2px 11px 14px}
+#r_roll::placeholder{color:var(--boxC);opacity:1;font-weight:700}
+#r_roll::-webkit-input-placeholder{color:var(--boxC);opacity:1;font-weight:700}
 /* v184: "+ Añadir campo" y "ESCENA" más oscuros para que se lean bien */
 details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--tx) 35%,transparent);font-weight:700}
 .escGrupo{color:var(--tx)}
@@ -1855,7 +1857,7 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
   </div>
 
   <div class="card">
-    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
+    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A" autocomplete="off"></div></div>
         <div id="avisoSmartfill" hidden></div>
         <div id="gruposCampos"></div>
         <div id="vistaTomas"><button data-v="lista" onclick="ponVistaTomas('lista')">↓ <span class="tv">Lista</span></button><button data-v="pag" onclick="ponVistaTomas('pag')">↔ <span class="tv">Páginas</span></button></div>
@@ -6279,6 +6281,8 @@ function migraCatalogoRollo(){
   }
 }
 function fillParte(){
+  /* v185: de ejemplo en Rollo / magazine solo la letra de la cámara, en su color */
+  { const rr = $("r_roll"); if (rr) rr.placeholder = camActiva(); }
   const P = S.prod, R = S.parte.roll;
   migraResponsables();
   migraCatalogoRollo();
