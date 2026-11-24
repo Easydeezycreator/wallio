@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="178">
+<meta name="wallio-ver" content="179">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1930,7 +1930,7 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
 <datalist id="dlEscenas"></datalist>
 <datalist id="dlT"><option>1.3</option><option>1.3 1/3</option><option>1.3 1/2</option><option>1.3 2/3</option><option>1.4</option><option>1.4 1/3</option><option>1.4 1/2</option><option>1.4 2/3</option><option>2</option><option>2 1/3</option><option>2 1/2</option><option>2 2/3</option><option>2.8</option><option>2.8 1/3</option><option>2.8 1/2</option><option>2.8 2/3</option><option>4</option><option>4 1/3</option><option>4 1/2</option><option>4 2/3</option><option>5.6</option><option>5.6 1/3</option><option>5.6 1/2</option><option>5.6 2/3</option><option>8</option><option>8 1/3</option><option>8 1/2</option><option>8 2/3</option><option>11</option><option>11 1/3</option><option>11 1/2</option><option>11 2/3</option><option>16</option><option>16 1/3</option><option>16 1/2</option><option>16 2/3</option><option>22</option><option>22 1/3</option><option>22 1/2</option><option>22 2/3</option></datalist>
 <datalist id="dlFps"><option>23.976</option><option>24</option><option>25</option><option>29.97</option><option>30</option><option>48</option><option>50</option><option>60</option><option>75</option><option>90</option><option>96</option><option>120</option></datalist>
-<datalist id="dlEi"><option>200</option><option>400</option><option>500</option><option>640</option><option>800</option><option>1280</option><option>1600</option><option>2500</option><option>3200</option></datalist>
+<datalist id="dlEi"><option>800</option><option>200</option><option>400</option><option>500</option><option>640</option><option>1280</option><option>1600</option><option>2500</option><option>3200</option></datalist>
 <datalist id="dlShutter"><option>180°</option><option>172.8°</option><option>144°</option><option>90°</option><option>45°</option><option>1/48</option><option>1/50</option><option>1/60</option><option>1/100</option><option>1/120</option></datalist>
 <datalist id="dlWb"><option>3200 K</option><option>4300 K</option><option>5600 K</option><option>6500 K</option><option>2800 K</option></datalist>
 <datalist id="dlFiltros"><option>ND .3</option><option>ND .6</option><option>ND .9</option><option>ND 1.2</option><option>ND 1.5</option><option>ND 1.8</option><option>ND 2.1</option><option>Black Pro-Mist 1/8</option><option>Black Pro-Mist 1/4</option><option>Black Pro-Mist 1/2</option><option>Black Pro-Mist 1</option><option>Glimmerglass 1/4</option><option>Polarizador</option><option>Diopter +0.5</option><option>Diopter +1</option><option>Diopter +2</option><option>Diopter +3</option><option>Hollywood Black Magic 1/4</option><option>Soft FX 1/2</option><option>Rota-Pola</option><option>Clear / UV</option></datalist>
@@ -6339,11 +6339,11 @@ function fillParte(){
     "4608x3164 (4.6K Open Gate)", "5120x2700 (5K)", "5120x2560 (5K 2:1)",
     "6144x3240 (6K)", "6144x4320 (6K 1.42:1)", "8192x4320 (8K)"
   ].concat(mem("res")))]);
-  dl("dlCc", [...new Set(["+1","+2","+3","-1","-2","-3"].concat(mem("cc")))]);
+  dl("dlCc", [...new Set(["00","+1","+2","+3","-1","-2","-3"].concat(mem("cc")))]);   /* v179: 00 = sin tinte (Waldo) */
   dl("dlCodec", mem("codec"));
   dl("dlLut", mem("lut"));
   dl("dlFps", [...new Set(["23.976","24","25","29.97","30","48","50","60","75","90","96","120"].concat(mem("fps")))]);
-  dl("dlEi", [...new Set(["200","400","500","640","800","1280","1600","2500","3200"].concat(mem("ei")))]);
+  dl("dlEi", [...new Set(["800","200","400","500","640","1280","1600","2500","3200"].concat(mem("ei")))]);
   dl("dlShutter", [...new Set(["180°","172.8°","144°","90°","45°","1/48","1/50","1/60","1/100","1/120"].concat(mem("shutter")))]);
   dl("dlWb", [...new Set(["3200 K","4300 K","5600 K","6500 K","2800 K"].concat(mem("wb")))]);
   const ndBase = ["ND .3","ND .6","ND .9","ND 1.2","ND 1.5","ND 1.8","ND 2.1"];
@@ -6526,7 +6526,7 @@ function filtraPorCamara(){
   const propios = FORMATS.filter(f => { const n = f.m + " " + f.c; return n === body || enCat(n) === body; }).map(f => f.f);
   /* al cambiar a un cuerpo desconocido se vuelve al catálogo general (mismas listas que fillParte) */
   const FPS_GEN = ["23.976","24","25","29.97","30","48","50","60","75","90","96","120"];
-  const EI_GEN = ["200","400","500","640","800","1280","1600","2500","3200"];
+  const EI_GEN = ["800","200","400","500","640","1280","1600","2500","3200"];   /* v179: 800 primero */
   const RES_GEN = ["1920x1080 (2K HD)","2048x1080 (2K DCI)","2048x858 (2K Scope)","3840x2160 (4K UHD)","4096x2160 (4K DCI)","4096x2560 (4K 1.6:1)","4608x3164 (4.6K Open Gate)","5120x2700 (5K)","5120x2560 (5K 2:1)","6144x3240 (6K)","6144x4320 (6K 1.42:1)","8192x4320 (8K)"];
   if (propios.length) dl("dlFmts", [...new Set(propios.concat(memC("fmt")))]);
   else dl("dlFmts", [...new Set(FORMATS.filter(f => film ? f.s === "pelicula" : f.s !== "pelicula").map(f => f.f).concat(film ? [] : (S.formats || []).map(f => f.fmt)).concat(mem("fmt")))]);
@@ -7075,6 +7075,22 @@ function pagTrasRender(){
 document.addEventListener("toggle", e => {
   if (e.target && e.target.id === "cam_bloque"){ const a = $("camAgFuera"); if (a) a.hidden = !e.target.open; }
 }, true);
+/* v179: "Cámara y rollo" se cierra solo al tocar fuera de su zona (la tarjeta,
+   su "+ Añadir campo" y las listas de opciones que abren sus campos cuentan
+   como dentro) */
+document.addEventListener("click", e => {
+  /* se pliega DESPUÉS del toque (no al apoyar el dedo): así el toque llega
+     siempre al campo que se tocó, y ese campo se queda quieto bajo el dedo */
+  const d = $("cam_bloque"); if (!d || !d.open) return;
+  const t = e.target; if (!t || !t.closest || !document.contains(t)) return;
+  if (t.closest("#camCard, #camAgFuera, #combo, .pcCard")) return;
+  const antes = t.getBoundingClientRect().top;
+  d.open = false;
+  const a = $("camAgFuera"); if (a) a.hidden = true;
+  const despues = t.getBoundingClientRect().top;
+  if (Math.abs(despues - antes) > 0.5) window.scrollBy(0, despues - antes);
+  setTimeout(() => document.dispatchEvent(new Event("scroll", {bubbles: true})), 0);   /* la lista de opciones se recoloca */
+}, true);
 const PT = {on: false};
 document.addEventListener("scroll", e => {   /* p.ej. el tabulador lleva a un campo de otra página */
   const L = e.target; if (!L || L.id !== "listaTomas" || !L.classList.contains("pag") || PT.on) return;
@@ -7167,7 +7183,7 @@ const SUGERENCIAS_CATALOGO = {
      fps nominal de "Cámara y rollo"), con los mismos valores que ya usa el
      FPS de toda la vida (dlFps). */
   "FPS": ["23.976", "24", "25", "29.97", "30", "48", "50", "60", "75", "90", "96", "120"],
-  "ISO base": ["100", "160", "200", "320", "400", "500", "640", "800"],
+  "ISO base": ["800", "100", "160", "200", "320", "400", "500", "640", "1280", "1600", "3200"],
   "Modo de sensor": ["Open Gate", "S35 4:3", "S35 16:9", "Full Frame", "S16", "Anamórfico 2x"]
 };
 function opcionesPara(n){
