@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="175">
+<meta name="wallio-ver" content="176">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1534,12 +1534,11 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
 #pagDots i{width:6px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--boxC,var(--camA)) 22%,transparent);cursor:pointer}
 #pagDots i.on{width:18px;background:var(--boxC,var(--camA))}
 #pagDots i.nv{background:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--boxC,var(--camA)) 35%,transparent)}
-#listaTomas.pag{display:flex;align-items:flex-start;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;gap:16px;
-  scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+#listaTomas.pag{display:flex;align-items:flex-start;overflow:hidden;gap:16px}
 #listaTomas.pag::-webkit-scrollbar{display:none}
 #listaTomas.pag>.escGrupo{display:none}
-#listaTomas.pag>.toma{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;border-bottom:0}
-#listaTomas.pag>.pagNueva{flex:0 0 100%;scroll-snap-align:start;min-height:180px;display:flex;align-items:center;justify-content:center;
+#listaTomas.pag>.toma{flex:0 0 100%;min-width:0;border-bottom:0}
+#listaTomas.pag>.pagNueva{flex:0 0 100%;min-height:180px;display:flex;align-items:center;justify-content:center;
   font:700 13px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:color-mix(in srgb,var(--boxC,var(--camA)) 55%,transparent)}
 html.soloVer #listaTomas.pag>.pagNueva{display:none}
 </style>
@@ -1742,7 +1741,6 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
 <section id="v-parte">
   <div class="tira" id="tiraParte">
     <div class="tx"><b id="tp_proy">—</b><span id="tp_det"></span></div>
-    <button onclick="abreProdParte()">Datos</button>
     <span class="xpp jsig" id="tp_jsig" onclick="jornadaSiguiente()" hidden>Jornada nueva</span>
   </div>
 
@@ -1876,11 +1874,6 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
     </div>
   </div>
 
-  <div class="card">
-    <div class="btnrow">
-      <button onclick="jornadaSiguiente()">Empezar la jornada siguiente</button>
-    </div>
-  </div>
 
   <div class="card">
     <div class="btnrow addmini">
@@ -5177,8 +5170,18 @@ const PP_ETIQUETAS = {productora:"Productora / cliente", unidad:"Unidad", jornad
   localizacion:"Localización", fecha:"Fecha", casa:"Casa de renta / propietario", director:"Director",
   dop:"Director de fotografía", ac:"Foquista", ac2:"Auxiliar · 2º AC", vtr:"VTR",
   dit:"Técnico de cámara / DIT", loader:"Cargado por"};
+const PP_OCULTOS_DEFAULT = ["jornada", "vtr", "dit", "loader"];   /* v176: solo los pone él si quiere */
 function ppOcultosGet(){
-  try { return JSON.parse(localStorage.getItem("wallio_pp_ocultos") || "[]"); } catch(e){ return []; }
+  try {
+    const raw = localStorage.getItem("wallio_pp_ocultos");
+    let arr = raw ? JSON.parse(raw) : PP_OCULTOS_DEFAULT.slice();
+    if (!localStorage.getItem("wallio_pp_v176")){
+      PP_OCULTOS_DEFAULT.forEach(k => { if (arr.indexOf(k) < 0) arr.push(k); });
+      localStorage.setItem("wallio_pp_ocultos", JSON.stringify(arr));
+      localStorage.setItem("wallio_pp_v176", "1");
+    }
+    return arr;
+  } catch(e){ return PP_OCULTOS_DEFAULT.slice(); }
 }
 function ppOcultosSet(arr){
   try { localStorage.setItem("wallio_pp_ocultos", JSON.stringify(arr)); } catch(e){}
@@ -5415,7 +5418,7 @@ function pintaTira(){
      rodajes terminan de madrugada y a las 00:30 la jornada sigue siendo la
      de ayer. */
   const js = $("tp_jsig");
-  if (js) js.hidden = !(proy && (P.fecha || "") && P.fecha < hoyLocal() && n > 0);
+  if (js) js.hidden = !(proy && n > 0);
 }
 function abreProdParte(){
   const dd = $("pp_bloque"); if (!dd) return;
@@ -7002,7 +7005,10 @@ function vistaPag(){ try { return localStorage.getItem("wallio.vistaTomas") === 
 function ponVistaTomas(v){
   try { localStorage.setItem("wallio.vistaTomas", v === "pag" ? "pag" : "lista"); } catch(e){}
   PAG.idx = -1; PAG.n = 0;
+  const y = window.scrollY;                 /* la pantalla se queda donde estaba */
   renderTomas();
+  const fija = () => window.scrollTo(0, Math.min(y, document.documentElement.scrollHeight - innerHeight));
+  fija(); requestAnimationFrame(fija);
 }
 function pagTomas(){ return [...document.querySelectorAll("#listaTomas > .toma")]; }
 function pagIr(k, suave){
@@ -7012,6 +7018,10 @@ function pagIr(k, suave){
   const x = ps[k] ? ps[k].offsetLeft - L.offsetLeft : 0;
   if (suave) L.scrollTo({left: x, behavior: "smooth"}); else L.scrollLeft = x;
   PAG.idx = k; pagPintaNav();
+  /* la última página es "+ Nueva toma": al llegar ahí se crea la siguiente */
+  if (k >= pagTomas().length && !PAG.creando && !document.documentElement.classList.contains("soloVer")){
+    PAG.creando = true; setTimeout(() => nuevaToma(), suave ? 330 : 0);
+  }
 }
 function pagActual(){
   const L = $("listaTomas"); if (!L || !L.clientWidth) return 0;
@@ -7049,17 +7059,50 @@ function pagTrasRender(){
   PAG.n = N; PAG.cam = cam; PAG.creando = false;
   pagIr(k, false);
 }
-document.addEventListener("scroll", e => {
-  const L = e.target; if (!L || L.id !== "listaTomas" || !L.classList.contains("pag")) return;
+/* v176: el paso de página se hace con el dedo desde aquí (no con el scroll
+   nativo): la página entera lleva touch-action:pan-y para que Safari no se
+   vaya "atrás" al deslizar, y eso en el iPhone bloqueaba el gesto de lado. */
+const PT = {on: false};
+document.addEventListener("scroll", e => {   /* p.ej. el tabulador lleva a un campo de otra página */
+  const L = e.target; if (!L || L.id !== "listaTomas" || !L.classList.contains("pag") || PT.on) return;
   clearTimeout(PAG.t);
-  const k = pagActual(); if (k !== PAG.idx){ PAG.idx = k; pagPintaNav(); }
-  PAG.t = setTimeout(() => {
-    const N = pagTomas().length;
-    if (pagActual() >= N && !PAG.creando && !document.documentElement.classList.contains("soloVer")){
-      PAG.creando = true; nuevaToma();
-    }
-  }, 220);
+  PAG.t = setTimeout(() => { const k = pagActual(); if (k !== PAG.idx && k < pagTomas().length){ PAG.idx = k; pagPintaNav(); } }, 150);
 }, true);
+document.addEventListener("touchstart", e => {
+  const L = $("listaTomas"); if (!L || !L.classList.contains("pag") || !L.contains(e.target) || e.touches.length !== 1) return;
+  const t = e.touches[0];
+  Object.assign(PT, {on: true, x0: t.clientX, y0: t.clientY, sl: L.scrollLeft, t0: Date.now(), dir: "", dx: 0});
+}, {passive: true});
+document.addEventListener("touchmove", e => {
+  if (!PT.on) return;
+  const L = $("listaTomas"), t = e.touches[0];
+  const dx = t.clientX - PT.x0, dy = t.clientY - PT.y0;
+  if (!PT.dir && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) PT.dir = Math.abs(dx) > Math.abs(dy) * 1.15 ? "h" : "v";
+  if (PT.dir !== "h") return;
+  e.preventDefault();                       /* mientras se pasa de página, no se mueve hacia abajo */
+  PT.dx = dx;
+  const max = L.scrollWidth - L.clientWidth;
+  L.scrollLeft = Math.max(0, Math.min(max, PT.sl - dx));
+}, {passive: false});
+document.addEventListener("touchend", () => {
+  if (!PT.on) return; PT.on = false;
+  if (PT.dir !== "h") return;
+  const L = $("listaTomas"), w = L.clientWidth + 16, rapido = Date.now() - PT.t0 < 280 && Math.abs(PT.dx) > 30;
+  let k = PAG.idx;
+  if (PT.dx < -w * 0.18 || (rapido && PT.dx < 0)) k++;
+  else if (PT.dx > w * 0.18 || (rapido && PT.dx > 0)) k--;
+  pagIr(k, true);
+}, {passive: true});
+document.addEventListener("touchcancel", () => { if (PT.on){ PT.on = false; if (PT.dir === "h") pagIr(PAG.idx, true); } }, {passive: true});
+/* trackpad del Mac: deslizar con dos dedos de lado */
+document.addEventListener("wheel", e => {
+  const L = $("listaTomas"); if (!L || !L.classList.contains("pag") || !L.contains(e.target)) return;
+  if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+  e.preventDefault();
+  if (PT.bloq) return;
+  PT.acc = (PT.acc || 0) + e.deltaX;
+  if (Math.abs(PT.acc) > 50){ const d = PT.acc > 0 ? 1 : -1; PT.acc = 0; PT.bloq = true; pagIr(PAG.idx + d, true); setTimeout(() => { PT.bloq = false; }, 550); }
+}, {passive: false});
 /* v127: catálogo de campos de rollo/cámara ya predeterminados -- antes el
    panel "+ Añadir campo del rollo" nacía vacío (solo con lo que el dueño
    ya hubiera escrito antes), así que la primera vez no mostraba nada para
@@ -9554,7 +9597,7 @@ document.addEventListener("change", e => {
 function kitPintaAviso(){
   const el = $("kitAviso"); if (!el) return;
   const K = S.prod && S.prod.kit;
-  if (!K || !S.kitAviso || S.kitAviso !== K.ts){ el.hidden = true; return; }
+  el.hidden = true; return;   /* v176: sin aviso de CalaveraList en el encabezado (Waldo) */
   const en = LANG === "en";
   const nOpt = (K.lentes || []).reduce((a, l) => a + Math.max(1, (l.f || []).length), 0);
   const partes = [(K.cams || []).length + (en ? ((K.cams || []).length === 1 ? " camera" : " cameras") : ((K.cams || []).length === 1 ? " cámara" : " cámaras")),
@@ -9587,9 +9630,14 @@ function kitDesdeEnlace(){
   const norm = x => String(x || "").trim().toLowerCase();
   const previo = S.prod && S.prod.kit;
   const mismo = (previo && previo.id && previo.id === K.id) || (norm(S.prod.proyecto) && norm(S.prod.proyecto) === norm(K.proyecto));
-  const hayTrabajo = (S.parte.tomas || []).some(t => String(t.sc || t.clip || t.desc || "").trim()) || !!norm(S.prod.proyecto);
+  /* v176: CUALQUIER dato en una toma (focal, tilt, clip...) cuenta como trabajo --
+     antes solo escena/clip/descripción, y un parte con focal o tilt sueltos se
+     reutilizaba con esos datos dentro */
+  const lleno = v => v !== undefined && v !== null && String(v).trim() !== "";
+  const hayTrabajo = (S.parte.tomas || []).some(t => T_CLAVES.concat(["cc"]).some(k => k !== "tk" && lleno(t[k]))
+                     || Object.values(t.extra || {}).some(lleno)) || !!norm(S.prod.proyecto);
   if (!mismo && hayTrabajo) proyectoNuevo(true);      /* el proyecto de antes queda en "Tus partes" */
-  ["proyecto", "productora", "casa", "director", "dop", "ac", "ac2", "dit", "vtr"].forEach(k => { if (String(K[k] || "").trim()) S.prod[k] = String(K[k]).trim(); });
+  ["proyecto", "productora", "casa", "director", "dop", "ac", "ac2"].forEach(k => { if (String(K[k] || "").trim()) S.prod[k] = String(K[k]).trim(); });
   /* v175: productora y cliente van al mismo renglón ("Producción / cliente") */
   const pc = [K.productora, K.cliente].map(x => String(x || "").trim()).filter(Boolean)
     .filter((x, j, a) => a.findIndex(y => y.toLowerCase() === x.toLowerCase()) === j);
@@ -9620,7 +9668,6 @@ function kitDesdeEnlace(){
     /* v175: hay nº de serie en el camera prep -> el renglón aparece, justo después de la focal */
     S.parte.camposOcultos = (S.parte.camposOcultos || []).filter(k => k !== "serial");
     S.parte.camposOcultosManual = (S.parte.camposOcultosManual || []).filter(k => k !== "serial");
-    (S.parte.tomas || []).forEach((t, j) => { if (!String(t.serial || "").trim()) kitSerialSigueFocal(j); });
   }
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
