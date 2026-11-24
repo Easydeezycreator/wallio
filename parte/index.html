@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="185">
+<meta name="wallio-ver" content="186">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1563,7 +1563,15 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
 #pp_bloque>summary{padding:12px 11px 10px;font:650 11.5px/1 var(--ui);letter-spacing:.17em;color:var(--tx)}
 #pp_bloque>summary b{font-weight:650;color:var(--tx)}
 @media (min-width:700px){ #pp_bloque>summary{font-size:11.5px;padding:12px 11px 10px} }
-#camCard>#camSelRollo{margin-top:10px}
+/* v186: Datos del proyecto, letras, Cámara y rollo y Rollo -- mismo ancho y alto */
+#camSelRollo{margin:0 11px 10px}
+#camRenombrar:not(:empty){margin:-4px 11px 10px}
+#camCard{margin:0 11px 9px!important;border-radius:7px;padding:0!important}
+#camCard>#cam_bloque{margin:0!important;padding:0!important;max-width:none!important}
+#camCard>#cam_bloque>summary{padding:12px 11px 10px}
+#cam_bloque[open]>*:not(summary){margin-left:12px!important;margin-right:12px!important}
+#cam_bloque[open]{padding-bottom:11px!important}
+#camAgFuera{margin-left:11px;margin-right:11px}
 .agFuera[hidden]{display:none!important}
 #camCard{margin-bottom:16px}
 #camCard + .agFuera{margin-top:-10px}
@@ -1801,9 +1809,10 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
       </details>
   </div>
 
+  <!-- v186: las letras de cámara en su propia fila, fuera de la caja -->
+  <div class="btnrow camSel" id="camSelRollo"></div>
+  <div id="camRenombrar"></div>
   <div class="card cajaRoja" id="camCard">
-    <div class="btnrow camSel" id="camSelRollo"></div>
-    <div id="camRenombrar"></div>
     <!-- v177: los datos de cámara y rollo se rellenan una vez y casi no cambian:
          van plegados como "Datos del proyecto" y solo se abren al tocarlos -->
     <details id="cam_bloque"><summary><b>Cámara y rollo</b></summary>
@@ -7015,7 +7024,7 @@ function renderTomas(){
         </div>` : "";
         return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}" data-i="${i}"${abierta ? " open" : ""}>
       <summary class="th">
-        ${esMulticam() ? `<span class="camchip cam${t.camLetra || "A"}">${esc(nombreCam(t.camLetra || "A"))}</span>` : ""}<div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
+        <span class="camchip cam${t.camLetra || "A"}">${esc(nombreCam(t.camLetra || "A"))}</span><div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}</div>
         ${smartfillBtn}
         <button class="x" onclick="event.preventDefault();event.stopPropagation();borrarToma(${i})">×</button>
@@ -7114,7 +7123,7 @@ document.addEventListener("click", e => {
      siempre al campo que se tocó, y ese campo se queda quieto bajo el dedo */
   const d = $("cam_bloque"); if (!d || !d.open) return;
   const t = e.target; if (!t || !t.closest || !document.contains(t)) return;
-  if (t.closest("#camCard, #camAgFuera, #combo, .pcCard")) return;
+  if (t.closest("#camCard, #camAgFuera, #camSelRollo, #camRenombrar, #combo, .pcCard")) return;
   const antes = t.getBoundingClientRect().top;
   d.open = false;
   const a = $("camAgFuera"); if (a) a.hidden = true;
