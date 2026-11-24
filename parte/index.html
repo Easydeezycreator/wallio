@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="187">
+<meta name="wallio-ver" content="188">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -9071,6 +9071,31 @@ function cuentaVisita(){
     .catch(function(){ pintaVisitas(null); });
 }
 
+/* v188: contador de usuarios de WALLIO (el mismo de CalaveraList).
+   Hasta ahora solo avisaba la app 1.5 del iPhone: la web y las apps 1.7/1.9
+   (que cargan esta misma página) nunca contaban. Un aviso por apertura,
+   sin datos personales ni nombres: un número al azar por aparato, idioma, versión y
+   cuántos proyectos/cámaras/tomas lleva. Solo desde wallioapp.com o la app. */
+function wRegistro(){
+  if (!BUZON_VIVO()) return;
+  /* sin nombres (Waldo): no viaja ningún nombre; sus propios aparatos
+     (foquista/2º AC "Waldo") no avisan -- se comprueba solo aquí dentro */
+  try { if ([S.prod && S.prod.ac, S.prod && S.prod.ac2, typeof PC !== "undefined" && PC.quien].some(v => /waldo/i.test(String(v || "")))) return; } catch(e){}
+  let id = "";
+  try { id = localStorage.getItem("wallio.regId") || ""; } catch(e){}
+  if (!/^[a-z0-9]{8,60}$/.test(id)){
+    id = (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)).replace(/[^a-z0-9]/g, "").slice(0, 24);
+    try { localStorage.setItem("wallio.regId", id); } catch(e){}
+  }
+  let proyectos = 0, cams = 1, tomas = 0;
+  try { proyectos = (typeof ptLee === "function" ? ptLee().length : 0) + ((S.prod && S.prod.proyecto) ? 1 : 0); } catch(e){}
+  try { cams = new Set((S.parte.tomas || []).map(t => t.camLetra || "A")).size || 1; tomas = (S.parte.tomas || []).filter(t => String(t.sc || t.desc || t.clip || "").trim()).length; } catch(e){}
+  const ver = (document.querySelector('meta[name="wallio-ver"]') || {}).content || "";
+  const cuerpo = JSON.stringify({id, native: ESAPPNATIVA(), lang: LANG,
+    version: "p" + ver, projects: proyectos, cams, takes: tomas, shared: !!(typeof PC !== "undefined" && PC.parte)});
+  try { fetch("https://calaveralist.com/api/w", {method: "POST", headers: {"Content-Type": "text/plain"}, body: cuerpo, keepalive: true}).catch(function(){}); } catch(e){}
+}
+
 function mandaComentario(){
   const texto = ($("bz_texto").value || "").trim();
   if (texto.length < 4){ bzMsg(traduce("Escribe un poco más y te leo."), "mal"); return; }
@@ -9893,7 +9918,7 @@ window.addEventListener("hashchange", () => { if (/(?:^|[#&])kit=/.test(location
 });
 window.addEventListener("online", pcAutoProgramar);
 pcEstado();
-cuentaVisita(); bzDrena();
+cuentaVisita(); bzDrena(); setTimeout(wRegistro, 1500);
 pintaFotoSerial();
 if (typeof abreEnlace === "function") abreEnlace();
 if (typeof abreEntrega === "function") abreEntrega();
