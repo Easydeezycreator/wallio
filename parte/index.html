@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="182">
+<meta name="wallio-ver" content="183">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1548,7 +1548,12 @@ html.soloVer #listaTomas.pag>.pagNueva{display:none}
 #cam_bloque>summary::before{content:"+";font-size:14px;line-height:1;color:color-mix(in srgb,var(--boxC) 60%,transparent)}
 #cam_bloque[open]>summary::before{content:"–"}
 #cam_bloque[open]>summary{border-bottom:1px solid var(--boxLine);margin-bottom:8px}
-#cam_bloque>summary b{font-weight:650;color:var(--boxC)}
+#cam_bloque>summary b{font-weight:650;color:var(--tx)}
+/* v183: "Datos del proyecto" y "Cámara y rollo" -- mismo tamaño, en negro, como encabezados */
+#cam_bloque>summary{color:var(--tx)}
+#pp_bloque>summary{padding:12px 11px 10px;font:650 11.5px/1 var(--ui);letter-spacing:.17em;color:var(--tx)}
+#pp_bloque>summary b{font-weight:650;color:var(--tx)}
+@media (min-width:700px){ #pp_bloque>summary{font-size:11.5px;padding:12px 11px 10px} }
 #camCard>#camSelRollo{margin-top:10px}
 .agFuera[hidden]{display:none!important}
 #camCard{margin-bottom:16px}
@@ -8879,6 +8884,10 @@ const IDIOMA_GUARDADO = "wallio.idioma";
 let LANG = (function(){
   const h = location.hash.replace("#", "").toLowerCase();
   if (h === "en" || h === "es") return h;              // el enlace manda
+  /* v183: al venir de CalaveraList (#kit=...&lang=xx) el parte sale en el
+     idioma de CalaveraList; WALLIO tiene español e inglés: el resto va en inglés */
+  const ml = h.match(/(?:^|&)lang=([a-z]{2})/);
+  if (ml){ const v = ml[1] === "es" ? "es" : "en"; try { localStorage.setItem(IDIOMA_GUARDADO, v); } catch(e){} return v; }
   try { const g = localStorage.getItem(IDIOMA_GUARDADO);
         if (g === "en" || g === "es") return g; } catch(e){}   // luego, lo elegido
   return "en";                                         // y si no, inglés
