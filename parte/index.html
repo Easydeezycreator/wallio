@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="174">
+<meta name="wallio-ver" content="175">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1518,6 +1518,30 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
 .f input.conCompleto{color:transparent !important;caret-color:#0e1116}
 .f:focus-within > .completo{display:none}
 .f:focus-within input.conCompleto{color:#0e1116 !important}
+/* v175 · tomas en lista (hacia abajo) o en páginas (de lado) -- elige el usuario */
+#vistaTomas{display:flex;justify-content:flex-end;gap:18px;margin:2px 2px 8px}
+#vistaTomas button{all:unset;cursor:pointer;font:700 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--boxC,var(--camA)) 38%,transparent);padding:6px 0;-webkit-tap-highlight-color:transparent}
+#vistaTomas button.on{color:var(--boxC,var(--camA));box-shadow:0 1.5px 0 var(--boxC,var(--camA))}
+#pagNav{display:flex;align-items:center;justify-content:space-between;margin:0 0 2px}
+#pagNav[hidden]{display:none}
+#pagNav button{all:unset;cursor:pointer;font:600 28px/1 var(--ui,sans-serif);color:var(--boxC,var(--camA));padding:6px 16px;-webkit-tap-highlight-color:transparent}
+#pagNav button[disabled]{opacity:.18;cursor:default}
+#pagNav .t{font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--boxC,var(--camA));text-transform:uppercase;white-space:nowrap}
+#pagNav .t b{font-size:21px;letter-spacing:0}
+#pagDots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:2px 12px 12px}
+#pagDots[hidden]{display:none}
+#pagDots i{width:6px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--boxC,var(--camA)) 22%,transparent);cursor:pointer}
+#pagDots i.on{width:18px;background:var(--boxC,var(--camA))}
+#pagDots i.nv{background:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--boxC,var(--camA)) 35%,transparent)}
+#listaTomas.pag{display:flex;align-items:flex-start;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;gap:16px;
+  scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+#listaTomas.pag::-webkit-scrollbar{display:none}
+#listaTomas.pag>.escGrupo{display:none}
+#listaTomas.pag>.toma{flex:0 0 100%;min-width:0;scroll-snap-align:start;scroll-snap-stop:always;border-bottom:0}
+#listaTomas.pag>.pagNueva{flex:0 0 100%;scroll-snap-align:start;min-height:180px;display:flex;align-items:center;justify-content:center;
+  font:700 13px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:color-mix(in srgb,var(--boxC,var(--camA)) 55%,transparent)}
+html.soloVer #listaTomas.pag>.pagNueva{display:none}
 </style>
 </head>
 <body>
@@ -1806,6 +1830,8 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
     <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A001" autocomplete="off"></div></div>
         <div id="avisoSmartfill" hidden></div>
         <div id="gruposCampos"></div>
+        <div id="vistaTomas"><button data-v="lista" onclick="ponVistaTomas('lista')">↓ <span class="tv">Lista</span></button><button data-v="pag" onclick="ponVistaTomas('pag')">↔ <span class="tv">Páginas</span></button></div>
+        <div id="pagNav" hidden></div><div id="pagDots" hidden></div>
         <div id="listaTomas"></div>
     <div id="listaCampos"></div>
   </div>
@@ -5655,7 +5681,7 @@ function manejaCambioRollo(valorNuevo){
 /* cada toma: clave, etiqueta, hereda del rollo, ancho en el editor */
 const T_CAMPOS = [
   ["sc","Escena"], ["tk","Toma"], ["desc","Descripción",null,"w"], ["clip","Archivo / clip"], ["nclip","Nº de clips"],
-  ["serial","Óptica · nº de serie","", "dlSeries"], ["focal","Focal (mm)"],
+  ["focal","Focal (mm)"], ["serial","Óptica · nº de serie","", "dlSeries"],
     ["t","Diafragma T"], ["foco","Distancia de foco"], ["filt","Filtro","filt"],
   ["dial","Contador"], ["pies","Metraje"],
   ["alt","Altura de óptica"], ["tilt","Tilt"], ["pan","Pan"],
@@ -5986,7 +6012,7 @@ const PRESETS_CAMPOS = {
    mismo mecanismo de siempre (camposOcultos/camposOcultosManual, la × de
    cada campo), solo que de golpe por bloque en vez de uno por uno */
 const GRUPOS_CAMPOS = {
-  "Óptica": ["serial","focal","t","foco","filt","alt","tilt","pan"],
+  "Óptica": ["focal","serial","t","foco","filt","alt","tilt","pan"],
   "Exposición": ["wb","ei","shutter","fps","lut","res"],
   "Película": ["dial","pies","nclip"],   /* v168: "clip" pasa a la caja de la Toma (también en digital) */
   "Tiempos": ["tc","dur"]
@@ -6041,6 +6067,7 @@ function forzarCamposOcultosDeVuelta(){
   S.parte.camposOcultosManual = S.parte.camposOcultosManual || [];
   CAMPOS_VUELVEN_A_OCULTOS.forEach(k => {
     if (pref.visibles.indexOf(k) >= 0) return;
+    if (k === "serial" && kitTieneSerial()) return;   /* v175: el kit de CalaveraList trae nº de serie */
     if (S.parte.camposOcultos.indexOf(k) < 0) S.parte.camposOcultos.push(k);
     if (S.parte.camposOcultosManual.indexOf(k) < 0) S.parte.camposOcultosManual.push(k);
   });
@@ -6061,9 +6088,13 @@ function prefCampos(){
   S.prefCampos.propiosRollo = S.prefCampos.propiosRollo || [];
   return S.prefCampos;
 }
+function kitTieneSerial(){
+  const K = S.prod && S.prod.kit;
+  return !!(K && (K.lentes || []).some(l => Object.keys(l.sn || {}).some(k => String(l.sn[k] || "").trim())));
+}
 function camposOcultosIniciales(){
   const pref = prefCampos();
-  const ocultos = CAMPOS_OCULTOS_DEFAULT.filter(k => pref.visibles.indexOf(k) < 0);
+  const ocultos = CAMPOS_OCULTOS_DEFAULT.filter(k => pref.visibles.indexOf(k) < 0 && !(k === "serial" && kitTieneSerial()));
   return { camposOcultos: ocultos.slice(), camposOcultosManual: ocultos.slice() };
 }
 function toggleGrupoCampos(nombre){
@@ -6807,7 +6838,7 @@ function renderTomas(){
     escenaAnterior = escenaAqui;
     const pft = esFilm() ? piesDeToma(i) : 0;
     const horaReal = (t.tc && S.parte.roll.tcOffset) ? "≈" + sumaTC(t.tc, S.parte.roll.tcOffset, S.parte.roll.fps) : "";
-    const meta = [t.mos ? "MOS" : "", t.notaEsp || "", t.falso ? traduce("CLIP FALSO") : "", t.desc, t.clip, t.nclip ? t.nclip + " clips" : "", t.serial, focalTxt(t.focal), t.t ? "T" + t.t : "", t.filt,
+    const meta = [t.mos ? "MOS" : "", t.notaEsp || "", t.falso ? traduce("CLIP FALSO") : "", t.desc, t.clip, t.nclip ? t.nclip + " clips" : "", focalTxt(t.focal), t.serial, t.t ? "T" + t.t : "", t.filt,
                   t.foco, t.tc, horaReal, t.dur ? t.dur + " s" : "", pft ? pft + " " + uTxt() : ""]
                  .filter(Boolean).join("  ·  ");  /* v157: sin el aviso "sin datos todavía" (Waldo) */
     const camposOcultos = S.parte.camposOcultos || [];
@@ -6925,12 +6956,13 @@ function renderTomas(){
       </div>`;
     }).join("");
     const cajaPersonalizados = propios ? `<div class="gsec"><div class="row">${propios}</div></div>` : "";
-        const abierta = i === ultimoIdx;
+        const esUltima = i === ultimoIdx;
+        const abierta = esUltima || vistaPag();   /* v175: en páginas cada toma va abierta y editable */
         /* v123: Smartfill vuelve a ser chico y discreto, en la esquina de la
            cabecera, en rojo apagado -- ya no ocupa toda la fila. Los demás
            botones (MOS/TAILS/PU/FALSO/buena) siguen en su propia fila al
            fondo de la toma. La × de borrar se queda arriba siempre. */
-        const smartfillBtn = abierta ? `<button class="smartfill" title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill →</button>` : "";
+        const smartfillBtn = esUltima ? `<button class="smartfill" title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill →</button>` : "";
         const accionesBtn = abierta ? `<div class="btnrow acciones">
           <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
           <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
@@ -6948,7 +6980,7 @@ function renderTomas(){
       <div class="row">${cajas}${cajaPersonalizados}</div>
       ${panelAgregar}
       ${accionesBtn}</details>`;
-  }).join("") : "";
+  }).join("") + (vistaPag() ? `<div class="pagNueva">${LANG === "en" ? "+ New take" : "+ Nueva toma"}</div>` : "") : "";
   $("listaTomas").classList.toggle("mc", esMulticam());
   agregarAbiertos.forEach(idx => {
     const d = document.querySelector('#listaTomas .toma[data-i="' + idx + '"] > details.agregar');
@@ -6956,7 +6988,78 @@ function renderTomas(){
   });
   renderGruposCampos();
   resumenParte(); fillParte(); updateChip(); pintaCams();
+  pagTrasRender();
 }
+/* ---------- v175 · tomas en páginas, de lado (estilo ZoeLog) ----------
+   Por defecto se trabaja como siempre: hacia abajo, en escalera. Si el
+   usuario elige "Páginas", cada toma ocupa una página completa (abierta y
+   editable) y se pasa de una a otra deslizando de lado; la última página
+   es "+ Nueva toma": al llegar ahí se crea la siguiente. La elección queda
+   recordada en ese aparato. La página NUNCA se desplaza sola hacia arriba
+   o abajo: solo cambia la página de lado. */
+const PAG = {idx: -1, n: 0, cam: "", t: 0, creando: false};
+function vistaPag(){ try { return localStorage.getItem("wallio.vistaTomas") === "pag"; } catch(e){ return false; } }
+function ponVistaTomas(v){
+  try { localStorage.setItem("wallio.vistaTomas", v === "pag" ? "pag" : "lista"); } catch(e){}
+  PAG.idx = -1; PAG.n = 0;
+  renderTomas();
+}
+function pagTomas(){ return [...document.querySelectorAll("#listaTomas > .toma")]; }
+function pagIr(k, suave){
+  const L = $("listaTomas"); if (!L) return;
+  const ps = [...L.children].filter(e => e.classList.contains("toma") || e.classList.contains("pagNueva"));
+  k = Math.max(0, Math.min(ps.length - 1, k));
+  const x = ps[k] ? ps[k].offsetLeft - L.offsetLeft : 0;
+  if (suave) L.scrollTo({left: x, behavior: "smooth"}); else L.scrollLeft = x;
+  PAG.idx = k; pagPintaNav();
+}
+function pagActual(){
+  const L = $("listaTomas"); if (!L || !L.clientWidth) return 0;
+  return Math.round(L.scrollLeft / (L.clientWidth + 16));
+}
+function pagPintaNav(){
+  const nav = $("pagNav"), dots = $("pagDots"); if (!nav || !dots) return;
+  const N = pagTomas().length, k = Math.min(PAG.idx, N), en = LANG === "en";
+  const nueva = k >= N;
+  nav.innerHTML = `<button onclick="pagIr(PAG.idx-1,true)"${k <= 0 ? " disabled" : ""} aria-label="${en ? "previous" : "anterior"}">‹</button>` +
+    `<span class="t">${nueva ? (en ? "New take" : "Nueva toma") : (en ? "Take " : "Toma ") + "<b>" + (k + 1) + "</b> / " + N}</span>` +
+    `<button onclick="pagIr(PAG.idx+1,true)"${nueva || (k >= N - 1 && document.documentElement.classList.contains("soloVer")) ? " disabled" : ""} aria-label="${en ? "next" : "siguiente"}">›</button>`;
+  if (N > 1 && N <= 30){
+    dots.innerHTML = Array.from({length: N}, (_, j) => `<i class="${j === k ? "on" : ""}" onclick="pagIr(${j},true)"></i>`).join("") +
+      (document.documentElement.classList.contains("soloVer") ? "" : `<i class="nv${nueva ? " on" : ""}" onclick="pagIr(${N},true)"></i>`);
+    dots.hidden = false;
+  } else { dots.innerHTML = ""; dots.hidden = true; }
+}
+function pagTrasRender(){
+  const L = $("listaTomas"), sel = $("vistaTomas"), nav = $("pagNav"), dots = $("pagDots"); if (!L) return;
+  const pag = vistaPag();
+  if (sel){
+    sel.querySelectorAll("button").forEach(b => b.classList.toggle("on", (b.getAttribute("data-v") === "pag") === pag));
+    const tv = sel.querySelectorAll(".tv"); if (tv.length === 2){ tv[0].textContent = LANG === "en" ? "List" : "Lista"; tv[1].textContent = LANG === "en" ? "Pages" : "Páginas"; }
+  }
+  L.classList.toggle("pag", pag);
+  if (!pag){ if (nav) nav.hidden = true; if (dots) dots.hidden = true; PAG.idx = -1; return; }
+  nav.hidden = false;
+  const N = pagTomas().length, cam = camActiva();
+  /* página a mostrar: al entrar, cambiar de cámara o crear una toma -> la última;
+     si no, la misma en la que estaba */
+  let k = PAG.idx;
+  if (k < 0 || cam !== PAG.cam || N > PAG.n) k = N - 1;
+  if (k > N - 1) k = N - 1;
+  PAG.n = N; PAG.cam = cam; PAG.creando = false;
+  pagIr(k, false);
+}
+document.addEventListener("scroll", e => {
+  const L = e.target; if (!L || L.id !== "listaTomas" || !L.classList.contains("pag")) return;
+  clearTimeout(PAG.t);
+  const k = pagActual(); if (k !== PAG.idx){ PAG.idx = k; pagPintaNav(); }
+  PAG.t = setTimeout(() => {
+    const N = pagTomas().length;
+    if (pagActual() >= N && !PAG.creando && !document.documentElement.classList.contains("soloVer")){
+      PAG.creando = true; nuevaToma();
+    }
+  }, 220);
+}, true);
 /* v127: catálogo de campos de rollo/cámara ya predeterminados -- antes el
    panel "+ Añadir campo del rollo" nacía vacío (solo con lo que el dueño
    ya hubiera escrito antes), así que la primera vez no mostraba nada para
@@ -7189,7 +7292,7 @@ function nuevaToma(nuevaEscena){
                      const ir = () => { const el = document.querySelectorAll("#listaTomas .toma"); const u = el[el.length-1]; if (!u) return;
                        const ant = el.length > 1 ? el[el.length-2] : u;
                        window.scrollTo({top: Math.max(0, ant.getBoundingClientRect().top + scrollY - 8), behavior: "auto"}); };
-                     ir(); requestAnimationFrame(() => { ir(); setTimeout(ir, 120); });
+                     if (!vistaPag()){ ir(); requestAnimationFrame(() => { ir(); setTimeout(ir, 120); }); }
                      /* escena nueva: el foco va directo al campo Escena vacío,
                         para que se note que aquí se escribe CUÁL es (la toma ya
                         ha vuelto sola a 1) */
@@ -7322,7 +7425,7 @@ function renderParte(soloLetra){
       <td>${x.falso ? `<span class="fk">CLIP FALSO</span>` : ""}${esc(x.desc || "—")}${x.mos ? ` · <span class="ne">MOS</span>` : ""}${x.notaEsp ? ` · <span class="ne">${esc(x.notaEsp)}</span>` : ""}</td>${cf ? "" : `
       <td class="mo">${esc(x.clip || "—")}${x.nclip ? `<span class="sn">${esc(x.nclip)} clips</span>` : ""}</td>`}
       <td>${esc(focalTxt(x.focal) || "—")}
-        <span class="sn">${esc(x.serial || "sin nº de serie")}${ficha ? " · con ficha WLG-02" : ""}</span></td>
+        ${x.serial ? `<span class="sn">${esc(x.serial)}${ficha ? " · con ficha WLG-02" : ""}</span>` : ""}</td>
       <td class="mo">${esc(x.t ? "T" + String(x.t).replace(/^T/i,"") : "—")}</td>
       <td class="ft">${filtroHTML(x.filt)}</td>
       <td class="mo fo">${esc(x.foco || "—")}</td>
@@ -7594,7 +7697,7 @@ function parteCSV(){
   const R = S.parte.roll, P = S.prod, props = S.parte.campos || [];
   const pr = S.parte.camposRollo || [];
   const cab = ["proyecto","fecha","jornada","camara","rollo_magazine","cuerpo","formato_rollo",
-    "codec","soporte","escena","toma","buena","descripcion","optica_serie","focal_mm","diafragma_t",
+    "codec","soporte","escena","toma","buena","descripcion","focal_mm","optica_serie","diafragma_t",
     "filtro","distancia_foco","altura_optica","tilt","roll_grados","temperatura_color","fps",
     "obturador","ei_iso","lut","resolucion","timecode","duracion_s","notas",
           "tipo","archivo_clip","mos","nota_especial","num_clips","contador","metraje_toma","laboratorio","magazine",
@@ -7604,7 +7707,7 @@ function parteCSV(){
   const filas = S.parte.tomas.map((x, i) => { /* v48: cada fila con SU cámara */
     const C = configDe(x.camLetra || "A"), cf = (C.tipo || "digital") === "film";
     return [P.proyecto, P.fecha, P.jornada, C.cam || x.camLetra || "A", C.roll, C.body,
-    C.fmt, C.codec, C.media, x.sc, x.tk, x.ok ? "si" : "no", x.desc, x.serial, x.focal, x.t,
+    C.fmt, C.codec, C.media, x.sc, x.tk, x.ok ? "si" : "no", x.desc, x.focal, x.serial, x.t,
     x.filt, x.foco, x.alt, x.tilt, x.roll, x.wb, x.fps, x.shutter, x.ei, x.lut, x.res, x.tc,
     x.dur, x.nota,
           C.tipo || "digital", x.clip, x.mos ? "si" : "no", x.notaEsp || "", x.nclip || "", x.dial, cf ? (piesDeToma(i) || "") : "",
@@ -9460,6 +9563,17 @@ function kitPintaAviso(){
     ` <span>· ${esc(partes.join(" · "))}</span><i onclick="S.kitAviso=0;kitPintaAviso();guardaYa()">×</i>`;
   el.hidden = false;
 }
+function kitFechasRodaje(txt){
+  txt = String(txt || ""); if (!txt.trim()) return null;
+  const out = [], y0 = new Date().getFullYear();
+  const pon = (y, m, d) => { y = +y; if (y < 100) y += 2000; m = +m; d = +d;
+    if (m < 1 || m > 12 || d < 1 || d > 31) return; out.push(y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0")); };
+  let m; const re1 = /(\d{4})-(\d{1,2})-(\d{1,2})/g, re2 = /\b(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2,4}))?\b/g;
+  while ((m = re1.exec(txt))) pon(m[1], m[2], m[3]);
+  if (!out.length) while ((m = re2.exec(txt))) pon(m[3] || y0, m[2], m[1]);
+  if (!out.length) return null;
+  out.sort(); return [out[0], out[out.length - 1]];
+}
 function kitDecodifica(b64){
   const t = String(b64 || "").replace(/-/g, "+").replace(/_/g, "/");
   const pad = t + "===".slice((t.length + 3) % 4);
@@ -9476,6 +9590,14 @@ function kitDesdeEnlace(){
   const hayTrabajo = (S.parte.tomas || []).some(t => String(t.sc || t.clip || t.desc || "").trim()) || !!norm(S.prod.proyecto);
   if (!mismo && hayTrabajo) proyectoNuevo(true);      /* el proyecto de antes queda en "Tus partes" */
   ["proyecto", "productora", "casa", "director", "dop", "ac", "ac2", "dit", "vtr"].forEach(k => { if (String(K[k] || "").trim()) S.prod[k] = String(K[k]).trim(); });
+  /* v175: productora y cliente van al mismo renglón ("Producción / cliente") */
+  const pc = [K.productora, K.cliente].map(x => String(x || "").trim()).filter(Boolean)
+    .filter((x, j, a) => a.findIndex(y => y.toLowerCase() === x.toLowerCase()) === j);
+  if (pc.length) S.prod.productora = pc.join(" / ");
+  /* v175: día de rodaje -- si CalaveraList trae fecha(s): antes del rodaje se
+     pone el primer día; durante el rodaje se queda hoy; texto suelto ("2 días") no toca nada */
+  const fr = kitFechasRodaje(K.rodaje);
+  { const hoy = hoyLocal(); if (fr && hoy < fr[0]) S.prod.fecha = fr[0]; else if (!String(S.prod.fecha || "").trim()) S.prod.fecha = hoy; }
   /* cámaras: el cuerpo de la carta -- solo si en WALLIO está vacío o era el del kit anterior */
   S.parte.camasActivas = camasActivas();
   const antes = {}; ((previo && previo.cams) || []).forEach(c => { antes[c.l] = cuerpoCanon(c.b || ""); });
@@ -9494,6 +9616,12 @@ function kitDesdeEnlace(){
   });
   S.parte.camasActivas.sort((a, b) => CAM_LETRAS.indexOf(a) - CAM_LETRAS.indexOf(b));
   S.prod.kit = K; S.kitAviso = K.ts;
+  if (kitTieneSerial()){
+    /* v175: hay nº de serie en el camera prep -> el renglón aparece, justo después de la focal */
+    S.parte.camposOcultos = (S.parte.camposOcultos || []).filter(k => k !== "serial");
+    S.parte.camposOcultosManual = (S.parte.camposOcultosManual || []).filter(k => k !== "serial");
+    (S.parte.tomas || []).forEach((t, j) => { if (!String(t.serial || "").trim()) kitSerialSigueFocal(j); });
+  }
   if (typeof fillProd === "function") fillProd();
   if (typeof fillProdParte === "function") fillProdParte();
   fillParte(); renderTomas(); pintaCams(); pintaTira(); updateChip(); kitPintaAviso();
