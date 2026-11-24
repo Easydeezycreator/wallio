@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="179">
+<meta name="wallio-ver" content="180">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -5184,15 +5184,20 @@ const PP_ETIQUETAS = {productora:"Productora / cliente", unidad:"Unidad", jornad
   localizacion:"Localización", fecha:"Fecha", casa:"Casa de renta / propietario", director:"Director",
   dop:"Director de fotografía", ac:"Foquista", ac2:"Auxiliar · 2º AC", vtr:"VTR",
   dit:"Técnico de cámara / DIT", loader:"Cargado por"};
-const PP_OCULTOS_DEFAULT = ["jornada", "vtr", "dit", "loader"];   /* v176: solo los pone él si quiere */
+const PP_OCULTOS_DEFAULT = ["jornada", "vtr", "dit", "loader", "unidad", "localizacion"];   /* v176: solo los pone él si quiere */
 function ppOcultosGet(){
   try {
     const raw = localStorage.getItem("wallio_pp_ocultos");
     let arr = raw ? JSON.parse(raw) : PP_OCULTOS_DEFAULT.slice();
     if (!localStorage.getItem("wallio_pp_v176")){
-      PP_OCULTOS_DEFAULT.forEach(k => { if (arr.indexOf(k) < 0) arr.push(k); });
+      ["jornada", "vtr", "dit", "loader"].forEach(k => { if (arr.indexOf(k) < 0) arr.push(k); });
       localStorage.setItem("wallio_pp_ocultos", JSON.stringify(arr));
       localStorage.setItem("wallio_pp_v176", "1");
+    }
+    if (!localStorage.getItem("wallio_pp_v180")){   /* v180: Unidad y Localización solo si él las añade */
+      ["unidad", "localizacion"].forEach(k => { if (arr.indexOf(k) < 0) arr.push(k); });
+      localStorage.setItem("wallio_pp_ocultos", JSON.stringify(arr));
+      localStorage.setItem("wallio_pp_v180", "1");
     }
     return arr;
   } catch(e){ return PP_OCULTOS_DEFAULT.slice(); }
@@ -7605,12 +7610,12 @@ function renderParte(soloLetra){
 
   <h4><span class="nn">1</span>Producción</h4>
   <div class="fl">${F("Proyecto", P.proyecto)}${F("Producción / cliente", P.productora)}
-    ${F("Unidad", P.unidad)}${F("Localización", P.localizacion)}
+    ${(P.unidad || "").trim() ? F("Unidad", P.unidad) : ""}${(P.localizacion || "").trim() ? F("Localización", P.localizacion) : ""}
     ${F("Casa de renta", P.casa)}</div>
 
   <h4><span class="nn">2</span>Responsables</h4>
   <div class="fl">${P.director ? F("Director", P.director) : ""}${F("Director de fotografía", P.dop ?? R.dop)}${F("Foquista / parte", P.ac ?? R.ac ?? P.por)}
-    ${F("Auxiliar · 2º AC", P.ac2 ?? R.ac2)}${F("VTR", P.vtr)}${film ? F("Cargado por", R.loader) : F("Técnico de cámara / DIT", P.dit)}</div>
+    ${F("Auxiliar · 2º AC", P.ac2 ?? R.ac2)}${(P.vtr || "").trim() ? F("VTR", P.vtr) : ""}${film ? ((R.loader || "").trim() ? F("Cargado por", R.loader) : "") : ((P.dit || "").trim() ? F("Técnico de cámara / DIT", P.dit) : "")}</div>
 
   ${cuerpoCams()}
 
@@ -7662,10 +7667,10 @@ function hacerParte(sola){
      pero mientras falte alguno NO se genera el PDF -- sin opción de saltarlo. */
   const P = S.prod;
   const CAMPOS_ENCABEZADO = [
-    ["proyecto", "Proyecto"], ["productora", "Productora / cliente"],
-    ["unidad", "Unidad"], ["localizacion", "Localización"], ["casa", "Casa de renta"]
+    ["proyecto", "Proyecto"], ["productora", "Productora / cliente"], ["casa", "Casa de renta"]
   ];
-  const faltan = CAMPOS_ENCABEZADO.filter(([k]) => !(P[k] || "").trim()).map(([, et]) => traduce(et));
+  const ocultosPP = ppOcultosGet();
+  const faltan = CAMPOS_ENCABEZADO.filter(([k]) => ocultosPP.indexOf(k) < 0 && !(P[k] || "").trim()).map(([, et]) => traduce(et));
   if (faltan.length){
     alert(traduce("Faltan datos de producción en el encabezado: ") + faltan.join(", ") + ".");
     abreProdParte(); return;
