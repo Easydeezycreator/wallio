@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="197">
+<meta name="wallio-ver" content="198">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -6851,6 +6851,14 @@ function completaToma(i, k, el){
   else nv = v + " " + unidadPorDefecto(i, k);
   el.value = nv; S.parte.tomas[i][k] = nv;
 }
+/* v198 (Waldo): tocar M/FT o +/− es señal de que el dato ya está bien:
+   se pone en el campo, se guarda y el rubro se cierra */
+function cierraConValor(i, k){
+  const el = document.querySelector('#listaTomas .toma[data-i="' + i + '"] .f[data-k="' + k + '"] input');
+  if (el){ el.value = S.parte.tomas[i][k]; if (document.activeElement === el) { try { el.blur(); } catch(_){} } }
+  if (typeof PUNTERO === "object" && PUNTERO) PUNTERO.el = null;
+
+}
 function aplicaUnidadToma(i, k, unidad){
   guardaUnidadUltima(k, unidad);
   const actual = String(S.parte.tomas[i][k] || "");
@@ -6858,6 +6866,7 @@ function aplicaUnidadToma(i, k, unidad){
   if (!m) return;
   S.parte.tomas[i][k] = m[0] + " " + unidad;
   if (APRENDE_TOMA.indexOf(k) >= 0) aprendeCampo(k, S.parte.tomas[i][k]);
+  cierraConValor(i, k);
   renderTomas();
 }
 /* v141: agrega el signo (+/−) y el símbolo ° al número que ya se escribió
@@ -6868,6 +6877,7 @@ function aplicaSignoToma(i, k, signo){
   if (!m) return;
   S.parte.tomas[i][k] = (signo === "-" ? "-" : "") + m[0] + "°";
   if (APRENDE_TOMA.indexOf(k) >= 0) aprendeCampo(k, S.parte.tomas[i][k]);
+  cierraConValor(i, k);
   renderTomas();
 }
 const CC_PASOS = ["-3","-2","-1","00","+1","+2","+3"];
@@ -6884,7 +6894,7 @@ function ajustaPegado(i){
   if (!i || !i.offsetParent) return;
   i.style.width = "0px";
   const w = i.scrollWidth;
-  i.style.width = Math.max(w + 3, 34) + "px";
+  i.style.width = Math.max(w + 3, i.value ? 34 : 64) + "px";
 }
 document.addEventListener("input", e => { const t = e.target; if (t && t.matches && t.matches(PEGADOS)) ajustaPegado(t); });
 document.addEventListener("toggle", e => { const d = e.target; if (d && d.open && d.classList && d.classList.contains("toma")) ruedasIni(d); }, true);
@@ -7355,9 +7365,31 @@ function renderTomas(){
 let TOMA_SEL = -1;
 const PUNTERO = {el: null, ts: 0};
 ["pointerdown", "touchstart", "mousedown"].forEach(ev => document.addEventListener(ev, e => {
-  const t = e.target && e.target.closest ? e.target.closest("#listaTomas input, #listaTomas textarea") : null;
+  let t = e.target && e.target.closest ? e.target.closest("#listaTomas input, #listaTomas textarea") : null;
+  if (!t && e.target && e.target.closest && !e.target.closest(".rueda, .unidadBtn, [onclick]")){
+    const f = e.target.closest("#listaTomas .f"); if (f) t = f.querySelector('input:not([type="hidden"]), textarea');
+  }
   PUNTERO.el = t; PUNTERO.ts = Date.now();
 }, {capture: true, passive: true}));
+/* v198 (Waldo): tocar CUALQUIER parte de un recuadro (etiqueta, hueco a la
+   derecha, debajo del número...) abre ese campo para escribir, con un solo
+   toque. Si el toque hizo que se redibujara la toma, se busca el recuadro
+   nuevo por su toma y su campo. */
+document.addEventListener("click", e => {
+  const t = e.target; if (!t || !t.closest) return;
+  if (t.closest("input, select, textarea, button, a, .rueda, .unidadBtn, [onclick], #combo")) return;
+  const f = t.closest(".f"); if (!f) return;
+  let destino = f;
+  if (!document.contains(f)){
+    const toma = f.closest(".toma[data-i]"), k = f.getAttribute("data-k");
+    destino = toma && k ? document.querySelector('#listaTomas .toma[data-i="' + toma.getAttribute("data-i") + '"] .f[data-k="' + k + '"]') : null;
+  }
+  if (!destino) return;
+  const inp = destino.querySelector('input:not([type="hidden"]), textarea, select');
+  if (!inp || inp.disabled || document.activeElement === inp) return;
+  try { inp.focus({preventScroll: true}); } catch(_){ inp.focus(); }
+  if (inp.tagName !== "SELECT"){ const n = (inp.value || "").length; try { inp.setSelectionRange(n, n); } catch(_){} }
+});
 function claveCampo(el){
   const toma = el.closest(".toma[data-i]"), f = el.closest(".f[data-k]");
   if (!toma || !f) return null;
