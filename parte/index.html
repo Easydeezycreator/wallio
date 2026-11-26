@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="194">
+<meta name="wallio-ver" content="195">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1638,6 +1638,15 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
 .agFuera[hidden]{display:none!important}
 #camCard{margin-bottom:16px}
 #camCard + .agFuera{margin-top:-10px}
+/* v195: Cámara y rollo dentro de "Datos del proyecto" */
+#ppCam{border-top:1px solid color-mix(in srgb,var(--boxC) 32%,#fff);margin-top:6px;padding-top:2px}
+.ppSec{padding:12px 11px 10px;font:650 11.5px/1 var(--ui);letter-spacing:.17em;text-transform:uppercase;color:var(--tx)}
+#ppCam #camCard{background:transparent!important;border:0!important;margin:0 0 6px!important;box-shadow:none!important}
+#ppCam #cam_bloque>summary{display:none}
+#ppCam #cam_bloque[open]>*:not(summary){margin-left:11px!important;margin-right:11px!important}
+#ppCam #camSelRollo{margin:0 11px 4px}
+#ppAgFuera{margin:4px 11px 10px}
+#ppCam #camAgFuera{margin:0 11px 10px}
 </style>
 </head>
 <body>
@@ -1862,7 +1871,7 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
         <div id="pp_grid_propios"></div>
       </div>
     </div>
-  </details>
+    <!-- v195 (Waldo): Cámara y rollo dentro del mismo cuadro: se rellena todo de una vez -->
   <!-- v184: "+ Añadir campo" de Datos del proyecto, fuera del fondo rojo para que se lea -->
   <div class="agFuera" id="ppAgFuera" hidden>
       <details class="agregar" id="pp_agregar_det"><summary>+ <span>Añadir campo</span></summary>
@@ -1872,13 +1881,12 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
       </details>
   </div>
 
+    <div id="ppCam"><div class="ppSec">Cámara y rollo</div><div id="ppCamChips"></div>
   <!-- v186: las letras de cámara en su propia fila, fuera de la caja -->
-  <div class="btnrow camSel" id="camSelRollo"></div>
-  <div id="camRenombrar"></div>
   <div class="card cajaRoja" id="camCard">
     <!-- v177: los datos de cámara y rollo se rellenan una vez y casi no cambian:
          van plegados como "Datos del proyecto" y solo se abren al tocarlos -->
-    <details id="cam_bloque"><summary><b>Cámara y rollo</b></summary>
+    <details id="cam_bloque" open><summary><b>Cámara y rollo</b></summary>
     <div class="btnrow" id="tipoRollo">
       <button id="tp_dig" class="primary" onclick="ponTipo('digital')">Digital</button>
       <button id="tp_film" class="ghost" onclick="ponTipo('film')">Película</button>
@@ -1928,6 +1936,11 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
       </details>
   </div>
 
+    </div>
+  </details>
+  <!-- v195: con el cuadro cerrado, las letras de cámara quedan como separador antes del rollo -->
+  <div class="btnrow camSel" id="camSelRollo"></div>
+  <div id="camRenombrar"></div>
   <div class="card">
     <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A" autocomplete="off" inputmode="text">
       <div id="rollSig" hidden></div></div></div>
@@ -5997,6 +6010,7 @@ function ponTipo(t){ guarda(); S.parte.roll.tipo = t;
 function otraCamara(){
   guarda(); S.parte.roll.body = "";
   const cb = $("cam_bloque"); if (cb) cb.open = true;
+  const pb = $("pp_bloque"); if (pb) pb.open = true;
   const e = $("r_body"); if (e){ e.value = ""; e.focus(); }
 }
 function pintaTipo(){
@@ -7512,7 +7526,7 @@ document.addEventListener("toggle", e => {
 document.addEventListener("click", e => {
   /* se pliega DESPUÉS del toque (no al apoyar el dedo): así el toque llega
      siempre al campo que se tocó, y ese campo se queda quieto bajo el dedo */
-  const d = $("cam_bloque"); if (!d || !d.open) return;
+  const d = $("cam_bloque"); if (!d || !d.open || d.closest("#pp_bloque")) return; /* v195: va dentro de Datos del proyecto */
   const t = e.target; if (!t || !t.closest || !document.contains(t)) return;
   if (t.closest("#camCard, #camAgFuera, #camSelRollo, #camRenombrar, #combo, .pcCard")) return;
   const antes = t.getBoundingClientRect().top;
@@ -7542,12 +7556,17 @@ function cierraBloque(d, ancla){
 document.addEventListener("click", e => {
   const d = $("pp_bloque"); if (!d || !d.open) return;
   const t = e.target; if (!t || !t.closest || !document.contains(t)) return;
-  if (t.closest("#pp_bloque, #ppAgFuera, #combo, .pcCard")) return;
+  if (t.closest("#pp_bloque, #ppAgFuera, #camSelRollo, #camRenombrar, #combo, .pcCard")) return;
   cierraBloque(d, t);
 }, true);
 document.addEventListener("toggle", e => {
   const id = e.target && e.target.id;
-  if ((id === "pp_bloque" || id === "cam_bloque") && e.target.open){
+  if (id === "pp_bloque"){   /* v195: las letras de cámara entran al cuadro al abrirlo y salen al cerrarlo */
+    const ch = $("camSelRollo"), rn = $("camRenombrar"), dd = e.target;
+    if (dd.open){ $("ppCamChips").append(ch, rn); const cb = $("cam_bloque"); if (cb) cb.open = true; const ca = $("camAgFuera"); if (ca) ca.hidden = false; }
+    else dd.after(ch, rn);
+  }
+  if (false){
     const otro = $(id === "pp_bloque" ? "cam_bloque" : "pp_bloque");
     cierraBloque(otro, e.target.querySelector("summary"));
   }
@@ -10573,7 +10592,7 @@ materializaDefectos();
   const caja = document.createElement("div"); caja.id = "combo"; caja.hidden = true;
   document.body.appendChild(caja);
   let activo = null, abiertoEn = 0;
-  let saltaConfirma = false;
+  let saltaConfirma = false, eligiendo = false;
   const campoIn = () => caja.querySelector(".op-in input");
   const tecladoPropio = inp => { const m = inp.getAttribute("data-im"); if (m) inp.setAttribute("inputmode", m); else inp.removeAttribute("inputmode"); };
   /* v155: la lista nunca se sale de la pantalla (nombres muy largos) */
@@ -10619,8 +10638,9 @@ materializaDefectos();
       /* v152: lista vacía (todavía nada que sugerir) = campo normal con
          teclado; en cuanto haya opciones vuelve a abrir la lista */
       const dl = document.getElementById(inp.getAttribute("data-lista"));
-      if (dl && dl.options.length) inp.setAttribute("inputmode", "none");
-      else tecladoPropio(inp);
+      /* v195 (Waldo): sin "✎ type…": al tocar la línea sale el teclado propio
+         del campo y a la vez la lista; escribir filtra, tocar una opción la pone */
+      tecladoPropio(inp);
     }
   };
   document.querySelectorAll("input[list],input[data-lista]").forEach(prepara);
@@ -10701,7 +10721,9 @@ materializaDefectos();
     const enKit = new Set(kitOps.map(o => o.v.toLowerCase()));
     const ops = [...dl.options].map(o => o.value)
       .filter(x => (!v || x.toLowerCase().includes(v)) && !enKit.has(x.toLowerCase()));
-    const escribirTxt = '<div class="op op-escribir op-in"><input type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="' + esc(traduce("✎ escribir…")) + '"></div>';
+    const fk0 = inp.closest(".f") && inp.closest(".f").getAttribute("data-k");
+    /* v195: tilt/pan: el teclado numérico del iPhone no tiene "−": fila ± en la lista */
+    const escribirTxt = (fk0 === "tilt" || fk0 === "pan") ? '<div class="op op-signo2">±</div>' : "";
     const e1 = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
     caja.innerHTML = escribirTxt + (kitOps.length
       ? '<div class="opTit">' + e1(LANG === "en" ? "From the shoot kit" : "Del kit del rodaje") + "</div>" +
@@ -10731,28 +10753,18 @@ materializaDefectos();
     /* v161: la página NUNCA se mueve al tocar un campo (orden de Waldo):
        la lista se coloca sola encima o debajo del campo, sin desplazar nada */
     const hijos = [...caja.children];
-    const ci = hijos[0].querySelector("input");
-    { const m = inp.getAttribute("data-im"); if (m){ ci.setAttribute("inputmode", m); ci.setAttribute("enterkeyhint", "done"); }
-      const fk = inp.closest(".f") && inp.closest(".f").getAttribute("data-k");
-      if (fk === "tilt" || fk === "pan"){
-        /* el teclado numérico del iPhone no tiene "−": botón de signo al lado */
-        const sg = document.createElement("span"); sg.className = "op-signo"; sg.textContent = "±";
-        sg.addEventListener("pointerdown", ev => { ev.preventDefault(); });
-        sg.addEventListener("click", ev => { ev.preventDefault(); const v = ci.value.trim();
-          ci.value = v.startsWith("-") || v.startsWith("−") ? v.replace(/^[-−]\s*/, "") : "-" + v; ci.focus(); });
-        hijos[0].appendChild(sg);
-      } }
-    ci.addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); confirma(); } });
-    ci.addEventListener("input", () => {
-      const q = ci.value.toLowerCase().trim();
-      [...caja.children].slice(1).forEach(d => { d.style.display = d.classList.contains("opTit") ? (q ? "none" : "") : ((!q || d.textContent.toLowerCase().includes(q)) ? "" : "none"); });
-    });
-    ci.addEventListener("blur", () => { if (!saltaConfirma) setTimeout(() => { if (!caja.hidden && document.activeElement !== ci) { if (!confirma()) cierra(); } }, 0); });
-    hijos.slice(1).filter(d => d.classList.contains("op")).forEach(d => d.onclick = () => {
+    hijos.filter(d => d.classList.contains("op-signo2")).forEach(d => d.onclick = () => {
+      const v = (inp.value || "").trim();
+      inp.value = v.startsWith("-") || v.startsWith("−") ? v.replace(/^[-−]\s*/, "") : "-" + v;
+      inp.dispatchEvent(new Event("input", {bubbles: true})); });
+    hijos.filter(d => d.classList.contains("op") && !d.classList.contains("op-signo2")).forEach(d => d.onclick = () => {
       inp.value = d.getAttribute("data-v") || d.textContent;
+      eligiendo = true;
       inp.dispatchEvent(new Event("input", {bubbles: true}));
+      eligiendo = false;
+      cierra();
       inp.dispatchEvent(new Event("change", {bubbles: true}));
-      cierra(); });
+      try { inp.blur(); } catch(_){} });
   };
   document.addEventListener("focusin", e => { const t = e.target;
     if (caja.contains(t)) return;
@@ -10762,7 +10774,7 @@ materializaDefectos();
     { const dl = document.getElementById(t.getAttribute("data-lista")); if (!dl || (!dl.options.length && !(typeof kitOpciones === "function" && kitOpciones(t).length))) return cierra(); }
     pinta(t); });
   document.addEventListener("input", e => { const t = e.target;
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && !t.hasAttribute("data-escribir")) pinta(t, true); });
+    if (!eligiendo && t.tagName === "INPUT" && t.hasAttribute("data-lista") && !t.hasAttribute("data-escribir")) pinta(t, true); });
   document.addEventListener("click", e => { const t = e.target;
     prepara(t);
     if (t.tagName !== "INPUT" || !t.hasAttribute("data-lista") || t.hasAttribute("data-escribir")) return;
@@ -10775,7 +10787,7 @@ materializaDefectos();
        pasaba directo a escribir: la lista se cerraba al instante y salía el
        teclado. Ahora solo cuenta como segundo toque si la lista ya llevaba
        abierta un momento (el usuario la vio y volvió a tocar). */
-    if (activo === t && !caja.hidden){ if (Date.now() - abiertoEn > 450) activaEscribir(t); return; }
+    if (activo === t && !caja.hidden) return; /* v195: ya no hay modo "escribir": el campo ya tiene teclado */
     { const dl = document.getElementById(t.getAttribute("data-lista")); if (!dl || (!dl.options.length && !(typeof kitOpciones === "function" && kitOpciones(t).length))) return; }
     pinta(t); });
   /* v155: Intro en "o escribe uno nuevo…" añade el campo */
@@ -10809,7 +10821,7 @@ materializaDefectos();
      campo -- así la próxima vez ya aparece en la lista. */
   document.addEventListener("change", e => { const t = e.target;
     const vacia = t.tagName === "INPUT" && t.hasAttribute("data-lista") && !((document.getElementById(t.getAttribute("data-lista")) || {}).options || []).length;
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && (t.hasAttribute("data-escribir") || vacia) && !cambiandoAEscribir){
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && !cambiandoAEscribir){ /* v195: todo lo escrito se aprende */
       comboExtraAdd(t.getAttribute("data-lista"), t.value);
     }
   });
@@ -10849,7 +10861,7 @@ materializaDefectos();
       setTimeout(() => {
         if (document.activeElement !== t && !cambiandoAEscribir){
           t.removeAttribute("data-escribir");
-          t.setAttribute("inputmode", "none");
+          tecladoPropio(t);
         }
       }, 80);
     }
