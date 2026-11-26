@@ -10,7 +10,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="200">
+<meta name="wallio-ver" content="201">
+<script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -687,6 +688,7 @@ html:not(.pfilm) .f:has(> #p_loader),html:not(.pfilm) .f:has(> #pp_loader){displ
    iPhone a veces ignoraba, p. ej. en Filtro). 16px = sin zoom en iPhone. */
 #combo{max-width:calc(100vw - 16px);box-sizing:border-box}
 #combo .op{overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+#combo.lente .op{padding:9px 10px;font-size:12px}
 #combo .op-in{padding:0;position:sticky;top:0;background:var(--panel);z-index:1}
 #combo .op-in input{display:block;width:100%;box-sizing:border-box;border:0;outline:0;background:transparent;
   font:italic 500 16px/1.25 var(--mono);color:var(--tx);padding:11px 13px;min-height:44px;border-radius:0;-webkit-appearance:none}
@@ -1562,6 +1564,10 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
 #vistaTomas button.on{color:var(--boxC,var(--camA));box-shadow:0 1.5px 0 var(--boxC,var(--camA))}
 #pagNav{display:flex;align-items:center;justify-content:space-between;margin:0 0 2px}
 #pagNav[hidden]{display:none}
+#pagNav{flex-wrap:wrap}
+#pagNav button.pagSF{flex-basis:100%;text-align:center;font:700 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:10px 0 12px;color:var(--boxC,var(--camA))}
+#pagNav button.pagSF b{font-size:16px;letter-spacing:0}
+#listaTomas.pag .toma .th button.smartfill{display:none}
 #pagNav button{all:unset;cursor:pointer;font:600 28px/1 var(--ui,sans-serif);color:var(--boxC,var(--camA));padding:6px 16px;-webkit-tap-highlight-color:transparent}
 #pagNav button[disabled]{opacity:.18;cursor:default}
 #pagNav .t{font:700 12px/1 var(--mono);letter-spacing:.14em;color:var(--boxC,var(--camA));text-transform:uppercase;white-space:nowrap}
@@ -1684,6 +1690,65 @@ body #pp_bloque .f input[type="date"]{font-size:16px;min-width:0;width:100%}
 body #pp_bloque .f,body #v-parte > .card .f{padding:5px 9px 4px 10px}
 body #pp_bloque .f label,body #v-parte > .card .f label{font-size:9.5px;letter-spacing:.08em;margin-bottom:0;line-height:1.2}
 body #pp_bloque .f input,body #pp_bloque .f select{font-size:21px;min-height:28px;line-height:1.15}
+/* ============ v201 (Waldo): TEMAS — «Noche» por defecto y «Aire» con un toque ============
+   Solo pinta la app (cabecera, main, listas, panel de compartir). El PDF (#parte)
+   NO se toca: sigue saliendo blanco. */
+html.noche{color-scheme:dark;
+ --bg:#0e1014; --panel:#151920; --line:#262c36; --line2:#262c36;
+ --tx:#e9edf2; --tx2:#aab3bf; --tx3:#7a8492; --sel:#e9edf2;
+ --camA:#e0726b; --camB:#7ea3e6; --camC:#d1b25a; --camD:#5fb07f; --camE:#b08ad0; --camF:#5fb3ba}
+html.noche,html.noche body{background:#0e1014!important;color:#e9edf2}
+html.noche body{min-height:100vh}
+html.noche main,html.noche section,html.noche .tira{background:#0e1014!important;color:#e9edf2}
+html.noche body,html.noche .toma,html.noche body.camB,html.noche body.camC,html.noche body.camD,html.noche body.camE,html.noche body.camF{--boxBg:#151920!important;--boxLine:#262c36!important}
+html.noche .toma.camB,html.noche .toma.camC,html.noche .toma.camD,html.noche .toma.camE,html.noche .toma.camF{--boxBg:#151920!important;--boxLine:#262c36!important}
+html.noche main #pp_bloque,html.noche main .card,html.noche main .card.cajaRoja,html.noche main #camCard,html.noche main #listaTomas .toma .row>.gsec,html.noche main .gsec{background:#151920!important;border:1px solid #232934!important;border-radius:0!important;box-shadow:none!important}
+html.noche main #ppCam #camCard{border:0!important;background:transparent!important}
+html.noche main .f,html.noche #pcPanel .f{background:#1b2029!important;border:0!important;border-left:3px solid var(--boxC)!important;border-radius:0!important;box-shadow:none!important}
+html.noche main .f:focus-within,html.noche #pcPanel .f:focus-within{background:#232a35!important}
+html.noche main .f label,html.noche #pcPanel .f label{color:color-mix(in srgb,var(--boxC) 72%,#fff)!important}
+html.noche main .f label span,html.noche main .xpp{color:#6b7482!important}
+html.noche main input,html.noche main select,html.noche main textarea,html.noche #pcPanel input{color:#f2f4f7!important;background:transparent!important}
+html.noche main input::placeholder,html.noche #pcPanel input::placeholder{color:#5b6472!important}
+html.noche main #r_roll,html.noche main #r_roll::placeholder{color:var(--boxC)!important}
+html.noche main #pp_bloque>summary,html.noche main #pp_bloque>summary b,html.noche main .ppSec,html.noche main #cam_bloque>summary b{color:#dfe5ec!important}
+html.noche main #pp_bloque[open]>summary,html.noche main #ppCam{border-color:#262c36!important}
+html.noche main button,html.noche main .btnrow button{background:#151920;color:#c9d1dc;border-color:#2a303b}
+html.noche main .btnrow button.primary,html.noche main #tp_dig.primary,html.noche main #tp_film.primary{background:#e9edf2!important;color:#0e1014!important}
+html.noche main #btnEnviarTodo{background:#e9edf2!important;color:#0e1014!important;border-color:#e9edf2!important}
+html.noche main .camSel button{background:#151920!important;border-color:#2a303b!important;border-radius:0!important}
+html.noche main .camSel button.on{color:#0e1014!important}
+html.noche main .camSel button.on[data-cam="A"]{background:var(--camA)!important}html.noche main .camSel button.on[data-cam="B"]{background:var(--camB)!important}html.noche main .camSel button.on[data-cam="C"]{background:var(--camC)!important}html.noche main .camSel button.on[data-cam="D"]{background:var(--camD)!important}html.noche main .camSel button.on[data-cam="E"]{background:var(--camE)!important}html.noche main .camSel button.on[data-cam="F"]{background:var(--camF)!important}
+html.noche main .gsec .ghead{border-bottom-color:#232934!important}
+html.noche main .rueda .ruedaOp{color:#8a93a0}
+html.noche main .rueda .ruedaOp.sel{color:var(--boxC)!important}
+html.noche main details.agregar>summary{color:#c9d1dc!important;border-color:#3a414d!important}
+html.noche main .agGrupo .chip,html.noche main .chip{background:#1b2029;color:#c9d1dc;border-color:#2a303b}
+html.noche #combo{background:#1b2029!important;border-color:#2a303b!important;color:#e9edf2;box-shadow:0 12px 30px rgba(0,0,0,.6)!important}
+html.noche #combo .op{color:#e9edf2!important;border-color:#262c36!important;background:transparent!important}
+html.noche #combo .op:hover,html.noche #combo .op:active{background:#232a35!important}
+html.noche #combo .opTit{color:#7a8492!important;background:#151920!important}
+html.noche #pcPanel{background:#151920!important;color:#e9edf2;border-color:#262c36!important}
+html.noche main .pt,html.noche main .empty{color:#aab3bf;border-color:#262c36!important;background:transparent}
+html.noche main .tip,html.noche main .hint{color:#aab3bf}
+html.noche main .unidadWrap .unidadBtn{color:#c9d1dc}
+/* ============ AIRE ============ */
+html.aire main #pp_bloque,html.aire main .card.cajaRoja,html.aire main #camCard,html.aire main #listaTomas .toma .row>.gsec{background:transparent!important;border:0!important;border-top:2px solid var(--boxC)!important;border-radius:0!important;box-shadow:none!important}
+html.aire main #ppCam #camCard{border-top:0!important}
+html.aire main .f,html.aire #pcPanel .f{background:#f4f5f7!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+html.aire main .f:focus-within{background:#fff!important;box-shadow:inset 0 -2px 0 var(--boxC)!important}
+html.aire main .f label{text-transform:none!important;font:600 12px/1.2 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif!important;letter-spacing:0!important;color:#8a919c!important}
+html.aire main .f label span{color:#b5bbc4!important}
+html.aire main .f input{color:#111!important}
+html.aire main .camSel button{background:transparent!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;font-size:18px!important}
+html.aire main .camSel button.on{background:transparent!important;border-bottom-color:currentColor!important}
+html.aire main .camSel button.on[data-cam="A"]{color:var(--camA)!important}html.aire main .camSel button.on[data-cam="B"]{color:var(--camB)!important}html.aire main .camSel button.on[data-cam="C"]{color:var(--camC)!important}html.aire main .camSel button.on[data-cam="D"]{color:var(--camD)!important}html.aire main .camSel button.on[data-cam="E"]{color:var(--camE)!important}html.aire main .camSel button.on[data-cam="F"]{color:var(--camF)!important}
+html.aire main #pp_bloque>summary,html.aire main .ppSec{color:#5c6670!important}
+html.aire main .gsec .ghead{border-bottom:0!important}
+html.noche main .camSel button.uso:not(.on)[data-cam=A]{background:color-mix(in srgb,var(--camA) 22%,#151920)!important;color:var(--camA)!important}html.noche main .camSel button.uso:not(.on)[data-cam=B]{background:color-mix(in srgb,var(--camB) 22%,#151920)!important;color:var(--camB)!important}html.noche main .camSel button.uso:not(.on)[data-cam=C]{background:color-mix(in srgb,var(--camC) 22%,#151920)!important;color:var(--camC)!important}html.noche main .camSel button.uso:not(.on)[data-cam=D]{background:color-mix(in srgb,var(--camD) 22%,#151920)!important;color:var(--camD)!important}html.noche main .camSel button.uso:not(.on)[data-cam=E]{background:color-mix(in srgb,var(--camE) 22%,#151920)!important;color:var(--camE)!important}html.noche main .camSel button.uso:not(.on)[data-cam=F]{background:color-mix(in srgb,var(--camF) 22%,#151920)!important;color:var(--camF)!important}
+/* botón del tema en la cabecera */
+#temaPie{text-align:center;padding:26px 0 34px}
+html body #temaPie #btnTema{background:none!important;border:0!important;box-shadow:none!important;min-height:0;padding:8px 14px;font:500 12px/1 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;letter-spacing:.06em;color:var(--tx3)!important;opacity:.7;cursor:pointer}
 </style>
 </head>
 <body>
@@ -2034,6 +2099,8 @@ body #pp_bloque .f input,body #pp_bloque .f select{font-size:21px;min-height:28p
     <div class="hint" id="pt_msg"></div>
     <div id="pt_lista"></div>
   </div>
+  <!-- v201 (Waldo): el cambio Noche / Aire, abajo del todo y muy discreto -->
+  <div id="temaPie"><button id="btnTema" onclick="cambiaTema()">☀ Aire</button></div>
 </section>
 
 <datalist id="dlBodies"></datalist>
@@ -7570,11 +7637,24 @@ function pagPintaNav(){
   nav.innerHTML = `<button onclick="pagIr(PAG.idx-1,true)"${k <= 0 ? " disabled" : ""} aria-label="${en ? "previous" : "anterior"}">‹</button>` +
     `<span class="t">${nueva ? (en ? "New take" : "Nueva toma") : (en ? "Take " : "Toma ") + "<b>" + (k + 1) + "</b> / " + N}</span>` +
     `<button onclick="pagIr(PAG.idx+1,true)"${nueva || (k >= N - 1 && document.documentElement.classList.contains("soloVer")) ? " disabled" : ""} aria-label="${en ? "next" : "siguiente"}">›</button>`;
+  /* v201 (Waldo): Smartfill en Páginas -- crea la toma siguiente con TODO lo
+     de la anterior copiado y pasa a ella (si luego se cambia la escena, la
+     toma vuelve a empezar en 1) */
+  if (!document.documentElement.classList.contains("soloVer")){
+    const u = ultimaTomaDeCam(camActiva());
+    const sig = u ? (parseInt(u.tk, 10) || 0) + 1 : 1;
+    nav.innerHTML += `<button class="pagSF" onclick="pagSmartfill()">Smartfill → ${en ? "take" : "toma"} <b>${sig}</b></button>`;
+  }
   if (N > 1 && N <= 30){
     dots.innerHTML = Array.from({length: N}, (_, j) => `<i class="${j === k ? "on" : ""}" onclick="pagIr(${j},true)"></i>`).join("") +
       (document.documentElement.classList.contains("soloVer") ? "" : `<i class="nv${nueva ? " on" : ""}" onclick="pagIr(${N},true)"></i>`);
     dots.hidden = false;
   } else { dots.innerHTML = ""; dots.hidden = true; }
+}
+function pagSmartfill(){
+  const a = document.activeElement; if (a && a.blur) { try { a.blur(); } catch(_){} }
+  if (!tomaConDatos(ultimaTomaDeCam(camActiva()))){ pagIr(pagTomas().length - 1, true); return; }
+  masToma();
 }
 function pagTrasRender(){
   const L = $("listaTomas"), sel = $("vistaTomas"), nav = $("pagNav"), dots = $("pagDots"); if (!L) return;
@@ -9753,6 +9833,17 @@ function aplicaIdioma(){
   const b = $("btnLang"); if (b) b.textContent = (LANG === "en") ? "ES" : "EN";
   if (typeof pintaUndo === "function") pintaUndo();
 }
+/* v201: Noche (por defecto) ⇄ Aire. El botón muestra el tema al que se pasa. */
+function pintaBtnTema(){ const b = document.getElementById("btnTema"); if (!b) return;
+  const noche = document.documentElement.classList.contains("noche");
+  b.textContent = noche ? (LANG === "en" ? "☀ Light" : "☀ Aire") : (LANG === "en" ? "☾ Night" : "☾ Noche"); }
+function cambiaTema(){
+  const h = document.documentElement, aNoche = !h.classList.contains("noche");
+  h.classList.toggle("noche", aNoche); h.classList.toggle("aire", !aNoche);
+  try { localStorage.setItem("wallio.tema", aNoche ? "noche" : "aire"); } catch(e){}
+  pintaBtnTema();
+}
+document.addEventListener("DOMContentLoaded", pintaBtnTema); setTimeout(pintaBtnTema, 0);
 function cambiaIdioma(){
   LANG = (LANG === "es") ? "en" : "es";
   try { localStorage.setItem(IDIOMA_GUARDADO, LANG); } catch(e){}
@@ -9765,6 +9856,7 @@ function cambiaIdioma(){
   try { if (typeof ptLista === "function") ptLista(); } catch(e){}
   try { if (typeof renderTomas === "function" && S && S.parte) renderTomas(); } catch(e){}
   try { aplicaIdioma(); } catch(e){}
+  try { pintaBtnTema(); } catch(e){}
 }
 /* el «Mínimo» de fábrica habla el idioma en uso; las tomas viajan con el nombre */
 function focosAlIdioma(){
@@ -10734,6 +10826,45 @@ materializaDefectos();
   const ks = await caches.keys();
   el.textContent = (ks.find(k => k.indexOf("wallio") === 0) || "").replace("wallio-", "WALLIO ");
 } catch(e){} })();
+/* v201 (Waldo): catálogo de ópticas de cine para quien entra directo a
+   WALLIO (sin el kit de CalaveraList): al escribir en Focal salen las que
+   coinciden -- "50" → todas las de 50 mm; "mast" → Master Prime… Elegir una
+   pone la focal y la serie de la óptica. */
+const LENTES_CAT = [
+ ["ARRI Master Prime T1.3",[12,14,16,18,21,25,27,32,35,40,50,65,75,100,135,150]],
+ ["ARRI Ultra Prime T1.9",[10,12,14,16,20,24,28,32,40,50,65,85,100,135,180]],
+ ["ARRI Signature Prime T1.8",[12,15,18,21,25,29,35,40,47,58,75,95,125,150,200,280]],
+ ["ARRI Master Anamorphic T1.9",[35,40,50,60,75,100,135,180]],
+ ["ZEISS Supreme Prime T1.5",[15,18,21,25,29,35,50,65,85,100,135,150,200]],
+ ["ZEISS Supreme Prime Radiance T1.5",[18,21,25,29,35,50,65,85,100,135]],
+ ["ZEISS CP.3 T2.1",[15,18,21,25,28,35,50,85,100,135]],
+ ["Cooke S4/i T2",[12,14,16,18,21,25,27,32,35,40,50,65,75,100,135,150,180,300]],
+ ["Cooke S7/i T2",[16,18,21,25,27,32,40,50,65,75,100,135]],
+ ["Cooke Panchro/i Classic T2.2",[18,25,32,40,50,65,75,100,135,152]],
+ ["Cooke Anamorphic/i T2.3",[25,32,40,50,65,75,100,135,180,300]],
+ ["Leica Summilux-C T1.4",[16,18,21,25,29,35,40,50,65,75,100,135]],
+ ["Leica Summicron-C T2",[15,18,21,25,29,35,40,50,75,100,135]],
+ ["Canon CN-E Prime T1.3",[14,20,24,35,50,85,135]],
+ ["Sigma Cine FF High Speed T1.5",[14,20,24,28,35,40,50,85,105,135]],
+ ["Panavision Primo T1.9",[10,14.5,17.5,21,27,35,40,50,65,75,100,125,150]],
+ ["Atlas Orion Anamorphic T2",[25,32,40,50,65,80,100]],
+ ["DZOFilm Vespid T2.1",[12,16,21,25,35,40,50,75,90,100,125]],
+ ["Angénieux Optimo",["15–40","28–76","45–120","24–290"]],
+ ["Fujinon Premista",["19–45","28–100","80–250"]],
+ ["Fujinon Cabrio",["19–90","25–300"]],
+ ["ARRI Alura",["15.5–45","18–80","30–80","45–250"]],
+ ["Canon CN-E",["14.5–60","15.5–47","30–105","30–300"]],
+ ["ZEISS LWZ.3",["21–100"]]
+];
+(function(){
+  const dl = document.createElement("datalist"); dl.id = "dlLentesCat";
+  const num = x => parseFloat(String(x)) || 0;
+  const filas = [];
+  LENTES_CAT.forEach(([serie, fs]) => fs.forEach(f => filas.push([num(f), String(f) + " mm · " + serie])));
+  filas.sort((a, b) => a[0] - b[0]);
+  filas.forEach(([, v]) => { const o = document.createElement("option"); o.value = v; dl.appendChild(o); });
+  (document.body || document.documentElement).appendChild(dl);
+})();
 /* desplegable propio: iPhone/iPad no ensenan las listas nativas — este se ve igual en todas partes */
 (function(){
   const caja = document.createElement("div"); caja.id = "combo"; caja.hidden = true;
@@ -10745,6 +10876,18 @@ materializaDefectos();
   /* v155: la lista nunca se sale de la pantalla (nombres muy largos) */
   const ajustaAncho = r => {
     const cw = document.documentElement.clientWidth;
+    /* v201: la lista de ópticas ocupa solo el ancho de su recuadro (no tapa el
+       campo de al lado) y es corta, para que el siguiente toque llegue al campo */
+    const fl = activo && activo.hasAttribute && activo.hasAttribute("data-lente") && activo.closest(".f");
+    caja.classList.toggle("lente", !!fl);
+    if (fl){ const fr = fl.getBoundingClientRect();
+      caja.style.minWidth = fr.width + "px"; caja.style.maxWidth = fr.width + "px";
+      caja.style.left = (fr.left + scrollX) + "px";
+      const mh = parseFloat(caja.style.maxHeight) || 999; if (mh > 176) caja.style.maxHeight = "176px";
+      /* encima del campo (el siguiente campo, debajo, queda libre para tocarlo) */
+      const h = Math.min(176, caja.scrollHeight || 176);
+      caja.style.top = (r.top - h - 2 > 50 ? r.top + scrollY - h - 2 : r.bottom + scrollY + 2) + "px";
+      return; }
     caja.style.maxWidth = Math.max(160, Math.min(cw - 16, Math.max(r.width, 300))) + "px";
     caja.style.left = (scrollX + 8) + "px";
     const w = caja.getBoundingClientRect().width;
@@ -10868,6 +11011,8 @@ materializaDefectos();
     const enKit = new Set(kitOps.map(o => o.v.toLowerCase()));
     const ops = [...dl.options].map(o => o.value)
       .filter(x => (!v || x.toLowerCase().includes(v)) && !enKit.has(x.toLowerCase()));
+    /* v201: primero lo que EMPIEZA por lo escrito ("50" → 50 mm antes que 150 mm) */
+    if (v) ops.sort((a, b) => (b.toLowerCase().startsWith(v) ? 1 : 0) - (a.toLowerCase().startsWith(v) ? 1 : 0));
     const fk0 = inp.closest(".f") && inp.closest(".f").getAttribute("data-k");
     /* v195: tilt/pan: el teclado numérico del iPhone no tiene "−": fila ± en la lista */
     const escribirTxt = (fk0 === "tilt" || fk0 === "pan") ? '<div class="op op-signo2">±</div>' : "";
@@ -10906,6 +11051,12 @@ materializaDefectos();
       inp.dispatchEvent(new Event("input", {bubbles: true})); });
     hijos.filter(d => d.classList.contains("op") && !d.classList.contains("op-signo2")).forEach(d => d.onclick = () => {
       inp.value = d.getAttribute("data-v") || d.textContent;
+      if (inp.hasAttribute("data-lente")){
+        const m = inp.value.match(/^([\d.,–-]+)\s*mm\s*·\s*(.+)$/);
+        if (m){ inp.value = m[1];
+          const te = inp.closest(".toma[data-i]"), ti = te ? parseInt(te.getAttribute("data-i"), 10) : -1;
+          if (ti >= 0 && S.parte.tomas[ti]) S.parte.tomas[ti].serial = m[2].replace(/\s+T[\d.]+$/, ""); }
+      }
       eligiendo = true;
       inp.dispatchEvent(new Event("input", {bubbles: true}));
       eligiendo = false;
@@ -10913,18 +11064,24 @@ materializaDefectos();
       inp.dispatchEvent(new Event("change", {bubbles: true}));
       try { inp.blur(); } catch(_){} });
   };
+  const esLente = t => t && t.tagName === "INPUT" && t.closest && t.closest('#listaTomas .f[data-k="focal"]');
+  const marcaLente = t => { if (esLente(t) && !t.hasAttribute("data-lente")){ t.setAttribute("data-lista", "dlLentesCat"); t.setAttribute("data-solo-escribir", "1"); t.setAttribute("data-lente", "1"); } };
   document.addEventListener("focusin", e => { const t = e.target;
     if (caja.contains(t)) return;
+    marcaLente(t);
     prepara(t);
+    if (t.hasAttribute && t.hasAttribute("data-solo-escribir")) return cierra();   /* v201: la lista sale solo al escribir */
     if (t.tagName !== "INPUT" || !t.hasAttribute("data-lista")) return cierra();
     if (t.hasAttribute("data-escribir")) return cierra(); /* v149: en modo escribir, sin lista */
     { const dl = document.getElementById(t.getAttribute("data-lista")); if (!dl || (!dl.options.length && !(typeof kitOpciones === "function" && kitOpciones(t).length))) return cierra(); }
     pinta(t); });
   document.addEventListener("input", e => { const t = e.target;
+    if (t.tagName === "INPUT") marcaLente(t);
+    if (!eligiendo && t.tagName === "INPUT" && t.hasAttribute("data-solo-escribir") && !(t.value || "").trim()) return cierra();
     if (!eligiendo && t.tagName === "INPUT" && t.hasAttribute("data-lista") && !t.hasAttribute("data-escribir")) pinta(t, true); });
   document.addEventListener("click", e => { const t = e.target;
     prepara(t);
-    if (t.tagName !== "INPUT" || !t.hasAttribute("data-lista") || t.hasAttribute("data-escribir")) return;
+    if (t.tagName !== "INPUT" || !t.hasAttribute("data-lista") || t.hasAttribute("data-escribir") || t.hasAttribute("data-solo-escribir")) return;
     /* v150: si el campo ya estaba abierto (el usuario ya vio la lista y
        vuelve a tocar el mismo campo porque quiere escribir), un segundo
        toque activa directamente el modo escribir -- no hace falta buscar
@@ -10968,7 +11125,7 @@ materializaDefectos();
      campo -- así la próxima vez ya aparece en la lista. */
   document.addEventListener("change", e => { const t = e.target;
     const vacia = t.tagName === "INPUT" && t.hasAttribute("data-lista") && !((document.getElementById(t.getAttribute("data-lista")) || {}).options || []).length;
-    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && !cambiandoAEscribir){ /* v195: todo lo escrito se aprende */
+    if (t.tagName === "INPUT" && t.hasAttribute("data-lista") && !t.hasAttribute("data-solo-escribir") && !cambiandoAEscribir){ /* v195: todo lo escrito se aprende */
       comboExtraAdd(t.getAttribute("data-lista"), t.value);
     }
   });
@@ -11022,7 +11179,8 @@ materializaDefectos();
     const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
     const cabeAbajo = (r.bottom + 2 + alto) <= vh && (r.top < vh * 0.5 || r.top - alto - 2 < 0);
     caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
-    caja.style.top = cabeAbajo ? (r.bottom + scrollY + 2) + "px" : (r.top + scrollY - alto - 2) + "px"; };
+    caja.style.top = cabeAbajo ? (r.bottom + scrollY + 2) + "px" : (r.top + scrollY - alto - 2) + "px";
+    if (activo.hasAttribute("data-lente")) ajustaAncho(r); };
   window.comboRecoloca = () => { if (!caja.hidden && activo && document.contains(activo)) recoloca(); };
   window.addEventListener("scroll", e => {
     if (caja.contains(e.target)) return;
