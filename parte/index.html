@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="189">
+<meta name="wallio-ver" content="190">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1398,6 +1398,13 @@ html.soloVer .sugClip,html.soloVer .unidadBtn,html.soloVer .camSel button.mas,ht
 html.soloVer .toma .x,html.soloVer #tp_jsig,html.soloVer #btnProyNuevo{display:none!important}
 /* v168: sección Para postproducción */
 .postSec{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.envHint{font-size:13px;color:var(--tx2);margin-top:8px;line-height:1.4}
+.envCams{margin-top:16px;display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 20px}
+.envCams:empty{display:none}
+.envCams .envTit{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx2)}
+.envCams a{font-weight:800;font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 2px}
+.envCams a:active{opacity:.5}
+.envCams .envSub{flex-basis:100%;font-size:13px;color:var(--tx2);line-height:1.4}
 .postTit{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx2);margin-bottom:10px}
 #postEstado{margin-top:10px;font:600 12px/1.5 var(--mono);overflow-wrap:anywhere}
 #postEstado .ok{color:#2f7d4f}
@@ -1897,19 +1904,15 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
   </div>
 
   <div class="card">
+    <!-- v190 (Waldo): UN botón manda TODO lo del día -- todas las tarjetas/rollos
+         de todas las cámaras en un solo PDF + CSV + Silverstack + ALE. Las letras
+         mandan lo mismo pero de una sola cámara. -->
     <div class="btnrow">
-      <button class="primary" onclick="hacerParte()">Parte en PDF</button>
+      <button class="primary" id="btnEnviarTodo" onclick="enviarTodo()">Enviar todo</button>
     </div>
-    <div class="btnrow addmini">
-      <button onclick="parteCSV()">CSV</button>
-    </div>
-    <!-- v168: archivos para postproducción (Silverstack / Avid / Resolve) -->
-    <div class="postSec" id="postSec">
-      <div class="postTit">Para postproducción</div>
-      <div class="btnrow addmini">
-        <button onclick="exportaSilverstack()">Silverstack · CSV</button>
-        <button onclick="exportaALE()">Avid · Resolve · ALE</button>
-      </div>
+    <div class="envHint">PDF del día con todas las tarjetas · CSV · Silverstack · Avid/Resolve (ALE)</div>
+    <div class="envCams" id="envCams"></div>
+    <div class="postSec" id="postSec" style="border-top:0;margin-top:6px;padding-top:0">
       <div id="postEstado"></div>
     </div>
   </div>
@@ -5600,6 +5603,7 @@ function ptMsg(t, clase){
   m.className = "hint" + (clase ? " " + clase : ""); m.textContent = t;
 }
 function ptLista(){
+  try { pintaEnvio(); } catch(e){}
   const c = $("pt_lista"); if (!c) return;
   const l = ptLee().slice().sort(function(a, b){ return b.t - a.t; });
   if (!l.length){
@@ -6817,6 +6821,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
          `onchange="${aprende}renderTomas()" autocomplete="off"></div>`;
 }
 function renderTomas(){
+  setTimeout(function(){ try { pintaEnvio(); } catch(e){} }, 0);
   if (typeof pintaTira === "function") setTimeout(pintaTira, 0);
   /* v130: el panel "+ Añadir campo" de cada toma ya NO se cierra solo al
      restaurar/agregar un campo -- antes, cada "+" volvía a dibujar toda la
@@ -7790,17 +7795,21 @@ async function pdfDirecto(id, nombre){
   if (_pdfEnCurso) return;
   _pdfEnCurso = true;
   const el = document.getElementById(id);
-  const quita = function(){ if (el) el.style.display = ""; document.body.className = ""; _pdfEnCurso = false; };
+  const quita = function(){ if (el){ el.style.display = ""; el.style.width = ""; el.style.margin = ""; el.style.maxWidth = ""; } document.body.className = ""; _pdfEnCurso = false; };
   nombre = String(nombre || "WALLIO.pdf").replace(/[^A-Za-z0-9._-]+/g, "_");
   try {
     avisoPDF(traduce("Generando PDF…"));
     await cargaHtml2pdf();
     el.style.display = "block";
+    /* v190: el PDF se maqueta al ancho de una hoja A4 (190 mm ≈ 718 px), igual
+       que al imprimir -- antes tomaba el ancho de la pantalla y en el iPhone se
+       cortaba el lado derecho (timecode, duración) */
+    el.style.width = "718px"; el.style.margin = "0"; el.style.maxWidth = "none";
     const blob = await window.html2pdf().set({
       margin: [10, 10, 12, 10],
       filename: nombre,
       image: { type: "jpeg", quality: 0.96 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 780 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: document.documentElement.clientWidth },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       pagebreak: { mode: ["css", "legacy"], avoid: [".rep tr", ".sig", ".sum", ".decl", ".head", ".fl > div"] }
     }).from(el).outputPdf("blob");
@@ -8039,6 +8048,183 @@ function exportaALE(){
   });
   compartirArchivos(archivos);
 }
+/* ================= v190 · ENVIAR TODO (Waldo, 26/11) =================
+   "Que vaya todo junto": todas las tarjetas/rollos del día (A001, A002, A003…,
+   B001…) de todas las cámaras en UN PDF, más el CSV, Silverstack y un ALE por
+   cámara, en una sola hoja de Compartir. Cada tarjeta sale con su hoja clásica
+   (la maqueta validada del parte individual). Cada letra hace lo mismo para
+   una sola cámara. Los partes archivados se leen de la lista de partes (ptLee);
+   si una tarjeta aparece en varios archivados (las otras cámaras viajan con el
+   parte al cambiar de rollo), manda el más reciente. */
+function rolloDeCam(d, l){
+  const R = (l === (d.camActiva || "A")) ? (d.roll || {}) : ((d.camsGuardadas || {})[l] || {});
+  return R;
+}
+function diaGrupos(soloCam){
+  if (typeof ptArchiva === "function") ptArchiva(false);
+  const P = S.prod || {}, fecha = P.fecha || "", proy = norm(P.proyecto || "");
+  const lista = ptLee().filter(x => (x.fecha || "") === fecha && (!proy || norm(x.proyecto || "") === proy) && x.d && (x.d.tomas || []).some(tomaConDatos))
+    .sort((a, b) => (a.t || 0) - (b.t || 0));
+  const grupos = {};
+  lista.forEach(x => {
+    /* solo cuenta una cámara si tiene alguna toma con datos (la toma en blanco
+       que abre cada tarjeta no es una tarjeta) */
+    const letras = [...new Set((x.d.tomas || []).filter(tomaConDatos).map(t => t.camLetra || "A"))];
+    letras.forEach(l => {
+      if (soloCam && l !== soloCam) return;
+      const roll = String(rolloDeCam(x.d, l).roll || "").trim();
+      grupos[l + "|" + roll.toUpperCase()] = {cam: l, roll: roll, t: x.t || 0, d: x.d};
+    });
+  });
+  const nat = (a, b) => String(a).localeCompare(String(b), undefined, {numeric: true, sensitivity: "base"});
+  return Object.values(grupos).sort((a, b) => a.cam === b.cam ? nat(a.roll, b.roll) : (a.cam < b.cam ? -1 : 1));
+}
+function conParte(d, fn, cam){
+  const guardado = S.parte;
+  let copia; try { copia = JSON.parse(JSON.stringify(d)); } catch(e){ copia = d; }
+  /* la cámara de la tarjeta pasa a ser la "activa" de la copia: así el nº de
+     parte, la cámara y el rollo de la hoja son los de ESA tarjeta */
+  const act = copia.camActiva || "A";
+  if (cam && cam !== act){
+    copia.camsGuardadas = copia.camsGuardadas || {};
+    copia.camsGuardadas[act] = copia.roll || {};
+    copia.roll = copia.camsGuardadas[cam] || {};
+    copia.camActiva = cam;
+  }
+  /* en el envío del día solo van las tomas con datos (no la toma en blanco de cada tarjeta) */
+  S.parte = {roll: copia.roll || {}, tomas: (copia.tomas || []).filter(tomaConDatos), campos: copia.campos || [],
+             camposRollo: copia.camposRollo || [], camActiva: copia.camActiva || "A",
+             camsGuardadas: copia.camsGuardadas || {}, camasActivas: copia.camasActivas || null,
+             camNombres: copia.camNombres || {}};
+  try { return fn(); } finally { S.parte = guardado; }
+}
+function textoSilverstack(T){
+  const P = S.prod || {}, props = S.parte.campos || [];
+  const cab = ["Clip Name","Reel"].concat(POST_COLS.slice(2).map(c => c[0])).concat(["Project","Date","Shooting Day"]).concat(props);
+  const q = v => '"' + limpiaPost(v).replace(/"/g, '""') + '"';
+  const filas = T.map(o => { const f = filaPost(o);
+    return POST_COLS.map(c => f[c[1]]).concat([P.proyecto, P.fecha, P.jornada]).concat(props.map(n => (o.x.extra || {})[n] || "")).map(q).join(","); });
+  return "﻿" + [cab.map(q).join(",")].concat(filas).join("\r\n");
+}
+function archivosALE(T, base){
+  const porCam = {};
+  T.forEach(o => (porCam[o.l] = porCam[o.l] || []).push(o));
+  return Object.keys(porCam).sort().map(l => {
+    const filas = porCam[l].map(filaPost);
+    const tcOk = filas.every(f => /^\d{2}:\d{2}:\d{2}[:;]\d{2}$/.test(String(f.tc || "").trim()));
+    const cols = (tcOk ? [["Start","tc"]] : []).concat(POST_COLS);
+    const lineas = ["Heading", "FIELD_DELIM\tTABS", "VIDEO_FORMAT\tCUSTOM", "AUDIO_FORMAT\t48khz",
+      "FPS\t" + fpsAvid(filas.map(f => f.fps)), "", "Column", cols.map(c => c[0]).join("\t"), "", "Data"]
+      .concat(filas.map(f => cols.map(c => limpiaPost(f[c[1]])).join("\t")));
+    return {nombre: base + "_Cam" + l + ".ale", texto: lineas.join("\r\n") + "\r\n", tipo: "text/plain"};
+  });
+}
+/* el CSV completo de WALLIO (todas las columnas), para las tomas que se le pasen */
+function csvCompletoFilas(soloCam){
+  const P = S.prod, props = S.parte.campos || [], pr = S.parte.camposRollo || [];
+  const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  return S.parte.tomas.map((x, i) => ({x, i})).filter(o => !soloCam || (o.x.camLetra || "A") === soloCam).map(({x, i}) => {
+    const C = configDe(x.camLetra || "A"), cf = (C.tipo || "digital") === "film";
+    return [P.proyecto, P.fecha, P.jornada, C.cam || x.camLetra || "A", C.roll, C.body,
+    C.fmt, C.codec, C.media, x.sc, x.tk, x.ok ? "si" : "no", x.desc, x.focal, x.serial, x.t,
+    x.filt, x.foco, x.alt, x.tilt, x.roll, x.wb, x.fps, x.shutter, x.ei, x.lut, x.res, x.tc,
+    x.dur, x.nota,
+          C.tipo || "digital", x.clip, x.mos ? "si" : "no", x.notaEsp || "", x.nclip || "", x.dial, cf ? (piesDeToma(i) || "") : "",
+    C.lab, C.mag, C.emul, C.lote, C.carga, cf ? (C.unidad || "ft") : "", cf ? pasoTexto(C.perf) : "", C.loader,
+    C.dial0, C.rev, C.copia, C.labnotas].concat(pr.map(n => (C.extra || {})[n] || ""))
+    .concat(props.map(n => (x.extra || {})[n] || "")).map(q).join(","); });
+}
+function csvCompletoCab(){
+  const props = S.parte.campos || [], pr = S.parte.camposRollo || [];
+  return ["proyecto","fecha","jornada","camara","rollo_magazine","cuerpo","formato_rollo",
+    "codec","soporte","escena","toma","buena","descripcion","focal_mm","optica_serie","diafragma_t",
+    "filtro","distancia_foco","altura_optica","tilt","roll_grados","temperatura_color","fps",
+    "obturador","ei_iso","lut","resolucion","timecode","duracion_s","notas",
+    "tipo","archivo_clip","mos","nota_especial","num_clips","contador","metraje_toma","laboratorio","magazine",
+    "lote","carga","unidad_medida","paso","cargado_por","contador_inicial","revelado","positivado_escaneo",
+    "instrucciones_lab"].concat(pr).concat(props).join(",");
+}
+/* lo que va a salir, sin generar nada: sirve para el PDF y para las pruebas */
+function paqueteDia(soloCam){
+  const grupos = diaGrupos(soloCam);
+  const html = [], T = [], filasCSV = [];
+  grupos.forEach(g => conParte(g.d, () => {
+    renderParte(g.cam);
+    html.push(document.getElementById("parte").innerHTML);
+    tomasPost().filter(o => o.l === g.cam).forEach(o => T.push(o));
+    csvCompletoFilas(g.cam).forEach(f => filasCSV.push(f));
+  }, g.cam));
+  return {grupos, html, T, filasCSV};
+}
+function pintaEnvio(){
+  const el = $("envCams"); if (!el) return;
+  let letras = [];
+  try {
+    const P = S.prod || {}, fecha = P.fecha || "", proy = norm(P.proyecto || "");
+    const set = new Set(camarasEnUso());
+    ptLee().forEach(x => { if ((x.fecha || "") === fecha && (!proy || norm(x.proyecto || "") === proy) && x.d)
+      (x.d.tomas || []).forEach(t => set.add(t.camLetra || "A")); });
+    letras = CAM_LETRAS.filter(l => set.has(l));
+  } catch(e){ letras = camarasEnUso(); }
+  if (letras.length < 2){ el.innerHTML = ""; return; }
+  el.innerHTML = `<span class="envTit">${esc(traduce("Por cámara"))}</span>` +
+    letras.map(l => `<a style="color:var(--cam${l})" onclick="enviarTodo('${l}')">${l}</a>`).join("") +
+    `<span class="envSub">${esc(traduce("Cada letra envía el PDF de esa cámara, con todas sus tarjetas del día, y todos sus archivos."))}</span>`;
+}
+let _envEnCurso = false;
+async function enviarTodo(soloCam){
+  if (_envEnCurso) return;
+  const en = LANG === "en";
+  /* mismas comprobaciones que el PDF de siempre */
+  const P = S.prod;
+  const CAMPOS_ENCABEZADO = [["proyecto", "Proyecto"], ["productora", "Productora / cliente"], ["casa", "Casa de renta"]];
+  const ocultosPP = ppOcultosGet();
+  const faltan = CAMPOS_ENCABEZADO.filter(([k]) => ocultosPP.indexOf(k) < 0 && !(P[k] || "").trim()).map(([, et]) => traduce(et));
+  if (faltan.length){ alert(traduce("Faltan datos de producción en el encabezado: ") + faltan.join(", ") + "."); abreProdParte(); return; }
+  const hayAqui = (S.parte.tomas || []).some(t => !soloCam || (t.camLetra || "A") === soloCam);
+  if (hayAqui && !String(configDe(soloCam || camActiva()).roll || "").trim()){ alert(traduce("Falta el número de rollo o magazine.")); show("parte"); return; }
+  _envEnCurso = true;
+  const el = document.getElementById("parte");
+  try {
+    const pk = paqueteDia(soloCam);
+    if (!pk.grupos.length){ alert(traduce("El parte no tiene ninguna toma.")); show("parte"); return; }
+    /* el colchón final evita que html2pdf recorte las firmas de la última tarjeta */
+    el.innerHTML = pk.html.join('<div class="saltoTarjeta" style="page-break-before:always;break-before:page;height:0"></div>') + '<div style="height:260px"></div>';
+    if (typeof aplicaIdioma === "function") aplicaIdioma();
+    const base = nombreBasePost() + (soloCam ? "_Cam" + soloCam : "");
+    const archivos = [];
+    archivos.push({nombre: base + ".csv", texto: "﻿" + [csvCompletoCab()].concat(pk.filasCSV).join("\r\n"), tipo: "text/csv"});
+    const conClip = pk.T.filter(o => String(o.x.clip || "").trim());
+    if (conClip.length){
+      archivos.push({nombre: base + "_Silverstack.csv", texto: textoSilverstack(conClip), tipo: "text/csv"});
+      archivosALE(conClip, nombreBasePost()).forEach(a => archivos.push(a));
+    } else if (pk.T.length){
+      avisoPost(en ? "Silverstack and ALE were not included: no take has a clip name yet." : "No van Silverstack ni ALE: todavía ninguna toma tiene nombre de clip.");
+    }
+    window.ULTIMO_ENVIO = {pdf: base + ".pdf", archivos: archivos.map(a => a.nombre), tarjetas: pk.grupos.map(g => g.cam + " " + (g.roll || "—"))};
+    if (window.ENVIO_SECO) return;   /* pruebas: se mira qué saldría, sin generar el PDF */
+    avisoPDF(traduce("Generando PDF…"));
+    await cargaHtml2pdf();
+    el.style.display = "block"; el.style.width = "718px"; el.style.margin = "0"; el.style.maxWidth = "none";
+    const blob = await window.html2pdf().set({
+      margin: [10, 10, 12, 10], filename: base + ".pdf",
+      image: { type: "jpeg", quality: 0.96 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: document.documentElement.clientWidth },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css", "legacy"], before: [".saltoTarjeta"], avoid: [".rep tr", ".sig", ".sum", ".decl", ".head", ".fl > div"] }
+    }).from(el).outputPdf("blob");
+    el.style.display = "";
+    avisoPDF("");
+    await compartirArchivos([{nombre: base + ".pdf", blob: blob, tipo: "application/pdf"}].concat(archivos));
+    if (typeof ptArchiva === "function") ptArchiva(false);
+  } catch(e){
+    avisoPDF("");
+    if (!/cancel|abort/i.test(String(e && (e.message || e)))) alert(traduce("No se pudo generar el PDF. Vuelve a intentarlo."));
+  } finally {
+    if (el){ el.style.display = ""; el.style.width = ""; el.style.margin = ""; el.style.maxWidth = ""; }
+    document.body.className = ""; _envEnCurso = false;
+  }
+}
 /* entrega de archivos: en la app del iPhone, una sola hoja de Compartir con
    todos; en el navegador del móvil, Compartir si lo admite; si no, descarga */
 async function compartirArchivos(lista){
@@ -8048,7 +8234,9 @@ async function compartirArchivos(lista){
     if (C && C.isNativePlatform && C.isNativePlatform() && plug("Filesystem") && plug("Share")){
       const uris = [];
       for (const a of lista){
-        const r = await plug("Filesystem").writeFile({path: a.nombre, data: a.texto, directory: "CACHE", encoding: "utf8"});
+        const r = a.blob
+          ? await plug("Filesystem").writeFile({path: a.nombre, data: await blobABase64(a.blob), directory: "CACHE"})
+          : await plug("Filesystem").writeFile({path: a.nombre, data: a.texto, directory: "CACHE", encoding: "utf8"});
         uris.push(r.uri);
       }
       await plug("Share").share({title: lista[0].nombre, files: uris});
@@ -8056,13 +8244,17 @@ async function compartirArchivos(lista){
     }
     const tactil = window.matchMedia && matchMedia("(pointer:coarse)").matches;
     if (tactil && navigator.canShare){
-      const fs = lista.map(a => new File([a.texto], a.nombre, {type: a.tipo}));
+      const fs = lista.map(a => new File([a.blob || a.texto], a.nombre, {type: a.tipo}));
       if (navigator.canShare({files: fs})){ await navigator.share({files: fs, title: lista[0].nombre}); return; }
     }
   } catch(e){
     if (/cancel|abort/i.test(String(e && (e.message || e)))) return;
   }
-  lista.forEach((a, k) => setTimeout(() => descargar(a.texto, a.nombre, a.tipo), k * 450));
+  lista.forEach((a, k) => setTimeout(() => {
+    if (a.blob){ const u = URL.createObjectURL(a.blob), e = document.createElement("a"); e.href = u; e.download = a.nombre;
+      document.body.appendChild(e); e.click(); e.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000); }
+    else descargar(a.texto, a.nombre, a.tipo);
+  }, k * 450));
 }
 function guardarParte(){
   const data = {format:"wlg-03-parte", version:3, prod:S.prod, roll:S.parte.roll,
@@ -8086,7 +8278,7 @@ function descargar(texto, nombre, tipo){
 /* ================= BILINGÜE ES / EN ================= */
 const EN = {"Quitar este campo":"Remove this field","Smartfill aplicado":"Smartfill applied","+ Archivo":"+ File","Abrir archivo":"Open file","Interno":"Internal","Externo":"External",
 "✎ escribir…":"✎ type…",
-"Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only",
+"Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only","Enviar todo":"Send everything","PDF del día con todas las tarjetas · CSV · Silverstack · Avid/Resolve (ALE)":"Day PDF with every card · CSV · Silverstack · Avid/Resolve (ALE)","Por cámara":"By camera","Cada letra envía el PDF de esa cámara, con todas sus tarjetas del día, y todos sus archivos.":"Each letter sends that camera's PDF, with all its cards of the day, and all its files.",
 "Compartir este parte":"Share this report","Proyecto nuevo":"New project","Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?":"The current report is saved on this device and a brand NEW project starts from scratch. Sure?","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Nuevo":"New","Introduce el nombre del proyecto":"Enter the project name","EL PRIMER DÍA":"THE FIRST DAY",
 "Escribe primero el Proyecto en Producción.":"Fill in the Project in Production first.",
 "Escribe el nombre del proyecto.":"Type the project name.",
