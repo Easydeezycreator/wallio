@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="195">
+<meta name="wallio-ver" content="196">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1647,6 +1647,40 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
 #ppCam #camSelRollo{margin:0 11px 4px}
 #ppAgFuera{margin:4px 11px 10px}
 #ppCam #camAgFuera{margin:0 11px 10px}
+/* v196 (Waldo): recuadros compactos, valores juntos */
+body #listaTomas .toma .row{gap:5px}
+body #listaTomas .toma .row > .gsec{padding:6px 8px 7px;margin-bottom:7px}
+body #listaTomas .gsec .ghead{padding-bottom:2px;margin-bottom:5px}
+body #listaTomas .grid{gap:5px}
+body #listaTomas .f{padding:5px 9px 4px 10px}
+body #listaTomas .f label{font-size:9.5px;letter-spacing:.08em;margin-bottom:0;line-height:1.2}
+body #listaTomas .f input{font-size:21px;min-height:28px;line-height:1.15}
+body #listaTomas .f[data-k="notas"] input,body #listaTomas .f[data-k="notas"] textarea{min-height:26px}
+body #listaTomas .f[data-k="t"] .unidadWrap,body #listaTomas .f[data-k="wb"] > div{justify-content:flex-start;gap:2px!important}
+body #listaTomas .f[data-k="t"] input,body #listaTomas .f[data-k="wb"] input{flex:0 0 auto!important}
+body #listaTomas .rueda{border-left:0;width:40px;height:28px}
+body #listaTomas .rueda .ruedaOp{height:28px;font-size:14px}
+body #listaTomas .rueda.cc{width:38px}
+body #listaTomas .f[data-k="shutter"] .unidadWrap{justify-content:flex-start;gap:8px}
+body #listaTomas .f[data-k="shutter"] input{flex:0 0 auto!important}
+body #listaTomas .unidadWrap .angulo{width:22px;height:22px}
+body #listaTomas .f textarea{min-height:26px}
+/* v196: los recuadros llenan siempre la fila (nada de huecos) */
+body #listaTomas .toma .gsec > .row{display:flex;flex-wrap:wrap;gap:5px}
+body #listaTomas .toma .gsec > .row > .f{flex:1 1 140px;min-width:0}
+body #listaTomas .toma .gsec > .row > .f.w{flex-basis:100%}
+@media(min-width:520px){body #listaTomas .toma .gsec > .row > .f{flex-basis:110px}
+ body #listaTomas .toma .gsec > .row > .f.w{flex:3 1 300px}}
+/* v196: lo mismo en Datos del proyecto, Cámara y rollo y Rollo/magazine */
+body #pp_bloque .grid{display:flex;flex-wrap:wrap;gap:5px;margin-left:11px;margin-right:11px}
+body #pp_bloque .grid > .f{flex:1 1 140px;min-width:0}
+body #pp_bloque .grid > .f.wide{flex-basis:100%}
+@media(min-width:520px){body #pp_bloque .grid > .f{flex-basis:170px}}
+body #pp_grid_propios{display:contents}
+body #pp_bloque .f input[type="date"]{font-size:16px;min-width:0;width:100%}
+body #pp_bloque .f,body #v-parte > .card .f{padding:5px 9px 4px 10px}
+body #pp_bloque .f label,body #v-parte > .card .f label{font-size:9.5px;letter-spacing:.08em;margin-bottom:0;line-height:1.2}
+body #pp_bloque .f input,body #pp_bloque .f select{font-size:21px;min-height:28px;line-height:1.15}
 </style>
 </head>
 <body>
@@ -6841,7 +6875,20 @@ function ruedaHTML(vals, actual, accion, etiquetas, clase){
     `<div class="ruedaIn">` + vals.map((v, k) => `<div class="ruedaOp${k === idx ? " sel" : ""}">${esc((etiquetas || vals)[k])}</div>`).join("") + `</div></div>`;
 }
 /* deja cada rueda en su valor (sin animación) y escucha cuando se suelta */
+/* v196 (Waldo): el valor ocupa solo lo que mide, y lo que lo acompaña
+   (tercio, CC, ángulo del obturador) va pegado a él */
+const PEGADOS = '.f[data-k="t"] input,.f[data-k="wb"] input,.f[data-k="shutter"] input';
+function ajustaPegado(i){
+  if (!i || !i.offsetParent) return;
+  i.style.width = "0px";
+  const w = i.scrollWidth;
+  i.style.width = Math.max(w + 3, 34) + "px";
+}
+document.addEventListener("input", e => { const t = e.target; if (t && t.matches && t.matches(PEGADOS)) ajustaPegado(t); });
+document.addEventListener("toggle", e => { const d = e.target; if (d && d.open && d.classList && d.classList.contains("toma")) ruedasIni(d); }, true);
+window.addEventListener("resize", () => document.querySelectorAll("#listaTomas " + PEGADOS.split(",").join(",#listaTomas ")).forEach(ajustaPegado));
 function ruedasIni(raiz){
+  (raiz || document).querySelectorAll(PEGADOS).forEach(ajustaPegado);
   (raiz || document).querySelectorAll(".rueda:not([data-ok])").forEach(r => {
     if (!r.offsetHeight) return;           /* oculta: se prepara cuando se vea */
     r.setAttribute("data-ok", "1");
