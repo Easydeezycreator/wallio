@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="191">
+<meta name="wallio-ver" content="192">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1476,7 +1476,10 @@ header .wl{font:700 8.5px/1.3 'WManrope',system-ui,sans-serif !important;letter-
   text-transform:uppercase;white-space:nowrap;margin-top:3px !important;overflow:hidden;text-overflow:ellipsis}
 header .wsv{display:block;font:600 9px/1.2 'WManrope',system-ui,sans-serif !important;letter-spacing:.02em !important;margin:2px 0 0 !important;
   white-space:nowrap;color:#5fd39a !important;order:0 !important;align-self:auto !important;overflow:hidden;text-overflow:ellipsis}
-header .wsv:empty{display:none}
+/* v192: el aviso "guardado" ya no cambia el alto de la cabecera (antes, al
+   aparecer, empujaba toda la página ~10 px hacia abajo) -- se reserva su línea */
+header .wsv:empty{display:block;visibility:hidden}
+header .wsv:empty::before{content:"\00a0"}
 header .sp{flex:1 1 0 !important;min-width:4px}
 header .lang{flex:0 0 auto;white-space:nowrap;border:none !important;background:transparent !important;color:#eef0f3 !important;
   min-height:40px !important;padding:0 6px !important;font:800 11px/1 'WManrope',system-ui,sans-serif !important;letter-spacing:.05em !important;
@@ -1565,8 +1568,12 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
 #idxTomas .ixEsc{display:inline-block;font:700 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--tx2);cursor:pointer;padding:6px 0;-webkit-tap-highlight-color:transparent}
 #idxTomas .ixEsc span{color:var(--boxC,var(--camA))}
 #idxTomas .ixMas:active,#idxTomas .ixTk:active,#idxTomas .ixEsc:active{opacity:.5}
-#rollSig{margin-top:8px;font:800 13px/1 var(--mono);letter-spacing:.1em;color:var(--boxC,var(--camA));cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 0}
-#rollSig:active{opacity:.5}
+#r_roll{scroll-margin:0}
+.f:has(>#rollSig){position:relative}
+/* va en la línea de la etiqueta, a la derecha: no empuja nada hacia abajo */
+#rollSig{position:absolute;right:12px;top:9px;margin:0;font:700 10px/1 var(--mono);letter-spacing:.08em;color:var(--tx2);padding:2px 0;white-space:nowrap}
+@media(max-width:379px){#rollSig .rsTxt{display:none}}
+#rollSig .rsCancel{color:var(--boxC,var(--camA));cursor:pointer;padding:4px 2px;-webkit-tap-highlight-color:transparent}
 #listaTomas.pag>.toma{flex:0 0 100%;min-width:0;border-bottom:0}
 #listaTomas.pag>.pagNueva{flex:0 0 100%;min-height:180px;display:flex;align-items:center;justify-content:center;
   font:700 13px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:color-mix(in srgb,var(--boxC,var(--camA)) 55%,transparent)}
@@ -6235,9 +6242,48 @@ function wireParte(){
      ESE rollo (la identidad de "Tus partes" es fecha+rollo) -- así lo
      tecleado no se queda huérfano en un rollo "sin-rollo" */
   const erRoll = $("r_roll");
-  if (erRoll) erRoll.addEventListener("change", () => {
-    manejaCambioRollo(erRoll.value);
-  });
+  if (erRoll){
+    /* v192 (Waldo): Rollo / magazine
+       - se escribe solo el número; al dar ✓ o tocar fuera se completa con la
+         letra de la cámara y los ceros: 1 -> A001, 12 -> A012
+       - si la tarjeta actual ya tiene tomas, al tocar el campo aparece ya el
+         número siguiente (A002), editable; ✓ o tocar fuera empieza esa
+         tarjeta; "Cancelar" deja la actual */
+    erRoll.setAttribute("inputmode", "numeric");
+    erRoll.addEventListener("focus", () => {
+      ROLL_EDIT = {prev: String((S.parte.roll || {}).roll || "").trim(), cancel: false, nueva: false};
+      if (ROLL_EDIT.prev && rolloTieneTomas()){
+        ROLL_EDIT.nueva = true;
+        erRoll.value = siguienteRollo(ROLL_EDIT.prev);
+        setTimeout(() => { try { erRoll.select(); } catch(e){} }, 0);
+      }
+      pintaRollSig();
+    });
+    erRoll.addEventListener("input", () => pintaRollSig());
+    erRoll.addEventListener("keydown", ev => { if (ev.key === "Enter"){ ev.preventDefault(); erRoll.blur(); } });
+    /* el "change" de siempre: si se está escribiendo, lo resuelve el blur de
+       abajo; si llega sin foco (otra parte del código), se aplica tal cual */
+    erRoll.addEventListener("change", ev => {
+      ev.stopImmediatePropagation();
+      if (ROLL_EDIT) return;
+      const v = formateaRollo(erRoll.value); erRoll.value = v;
+      if (v) manejaCambioRollo(v);
+      if (typeof materializaDefectos === "function") materializaDefectos();
+    });
+    erRoll.addEventListener("blur", () => {
+      const E = ROLL_EDIT || {prev: "", cancel: false}; ROLL_EDIT = null;
+      let v = formateaRollo(erRoll.value);
+      if (E.cancel || !v) v = E.prev;
+      erRoll.value = v;
+      pintaRollSig();
+      if (v !== E.prev){
+        const y = window.scrollY;
+        manejaCambioRollo(v);
+        if (typeof materializaDefectos === "function") materializaDefectos();
+        const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija); setTimeout(fija, 150);
+      }
+    });
+  }
   const eb = $("r_body");
   if (eb) eb.onchange = () => {
     const v = eb.value.trim(); if (!v) return;
@@ -6832,7 +6878,7 @@ function campoToma(i, k, etiqueta, lista, ancho){
     return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div style="display:flex;gap:6px">` +
       `<input value="${v}"${l} inputmode="numeric" placeholder="${ph}" style="flex:1" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
-      `<input value="${vcc}" list="dlCc" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" class="${herCc ? "heredado" : ""}" oninput="${quitaHerCc}S.parte.tomas[${i}].cc=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
+      `<input value="${vcc}" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" class="${herCc ? "heredado" : ""}" oninput="${quitaHerCc}S.parte.tomas[${i}].cc=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
       `</div></div>`;
   }
   /* v102: cualquier corrección en una toma ya hecha (duración, toma, etc.)
@@ -6915,7 +6961,9 @@ function renderTomas(){
                      alt: "dlAlt", tilt: "dlTilt", pan: "dlPan" };
   /* v191 (Waldo): los campos que son solo número usan directamente el
      teclado de números del iPhone, sin la lista "escribir…" */
-  ["focal","t","alt","tilt","pan","fps","shutter","ei","wb","nclip"].forEach(k => { delete T_LISTAS[k]; });
+  /* v192 (Waldo): en la toma ningún campo lleva lista ni "✎ escribir…":
+     se toca y se escribe (o sale el teclado de números) */
+  Object.keys(T_LISTAS).forEach(k => { delete T_LISTAS[k]; });
   const compacto = !vistaPag();
   if (compacto){
     if (TOMA_SEL >= 0 && (!L[TOMA_SEL] || (L[TOMA_SEL].camLetra || "A") !== camActiva())) TOMA_SEL = -1;
@@ -7042,7 +7090,7 @@ function renderTomas(){
       const idProp = "dlProp_" + pi;
       const opcionesProp = opcionesPara(n);
       return `<div class="f" data-k="prop_${pi}"><label>${esc(traduce(n))} <span style="cursor:pointer;opacity:.55" title="${esc(traduce("Quitar este campo"))}" onclick="event.stopPropagation();event.preventDefault();quitarCampo(${pi})">×</span></label>
-        <input value="${esc((t.extra || {})[n] || "")}" list="${idProp}"
+        <input value="${esc((t.extra || {})[n] || "")}"
           oninput="if(!S.parte.tomas[${i}].extra)S.parte.tomas[${i}].extra={};S.parte.tomas[${i}].extra['${esc(n)}']=this.value"
           onchange="aprendeExtra(${pi},this.value)" autocomplete="off">
         <datalist id="${idProp}">${opcionesProp.map(o => `<option value="${esc(o)}">`).join("")}</datalist>
@@ -7140,24 +7188,27 @@ function masEscena(){
   setTimeout(() => { const sc = document.querySelector('#listaTomas .toma.sel .f[data-k="sc"] input');
     if (sc){ sc.removeAttribute("readonly"); try { sc.focus({preventScroll: true}); } catch(e){ sc.focus(); } } }, 60);
 }
-/* "+ Siguiente · A002": un toque y empieza la tarjeta siguiente (como el
-   Reload de ZoeLog). El número se puede escribir a mano igual que antes. */
+/* v192: rollo / magazine -- ver el campo r_roll. Mientras se está
+   cambiando de tarjeta, debajo se ve "Tarjeta nueva A002 · Cancelar". */
+let ROLL_EDIT = null;
+function rolloTieneTomas(){
+  return (S.parte.tomas || []).some(t => (t.camLetra || "A") === camActiva() && ((t.sc || "").trim() || (t.clip || "").trim() || (t.nclip || "").trim()));
+}
+function formateaRollo(v){
+  v = String(v || "").trim().toUpperCase();
+  if (/^\d+$/.test(v)) v = camActiva() + (v.length < 3 ? ("000" + v).slice(-3) : v);
+  return v;
+}
 function pintaRollSig(){
   const el = $("rollSig"); if (!el) return;
-  const r = String((S.parte.roll || {}).roll || "").trim();
-  const hay = (S.parte.tomas || []).some(t => (t.camLetra || "A") === camActiva() && tomaConDatos(t) && ((t.sc || "").trim() || (t.clip || "").trim()));
-  if (!r || !hay){ el.hidden = true; el.innerHTML = ""; return; }
+  const i = $("r_roll");
+  if (!ROLL_EDIT || !ROLL_EDIT.nueva || !i){ el.hidden = true; el.innerHTML = ""; return; }
+  const en = LANG === "en", v = formateaRollo(i.value);
   el.hidden = false;
-  el.innerHTML = `+ ${LANG === "en" ? "NEXT" : "SIGUIENTE"} · ${esc(siguienteRollo(r))}`;
-  el.onclick = function(){
-    const i = $("r_roll"); if (!i) return;
-    const y = window.scrollY;
-    i.value = siguienteRollo(String((S.parte.roll || {}).roll || "").trim());
-    i.dispatchEvent(new Event("input", {bubbles: true}));
-    i.dispatchEvent(new Event("change", {bubbles: true}));
-    TOMA_SEL = -1; renderTomas();
-    const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija); setTimeout(fija, 120);
-  };
+  el.innerHTML = `<span class="rsTxt">${en ? "NEW CARD" : "TARJETA NUEVA"} · </span><span class="rsCancel">${en ? "CANCEL" : "CANCELAR"}</span>`;
+  const c = el.querySelector(".rsCancel");
+  const cancela = ev => { ev.preventDefault(); if (ROLL_EDIT) ROLL_EDIT.cancel = true; i.blur(); };
+  c.addEventListener("pointerdown", cancela); c.addEventListener("mousedown", cancela);
 }
 /* ---------- v175 · tomas en páginas, de lado (estilo ZoeLog) ----------
    Por defecto se trabaja como siempre: hacia abajo, en escalera. Si el
@@ -7264,8 +7315,13 @@ document.addEventListener("click", e => {
   const t = e.target; if (!t || !t.closest || !document.contains(t)) return;
   if (t.closest("#camCard, #camAgFuera, #camSelRollo, #camRenombrar, #combo, .pcCard")) return;
   const antes = t.getBoundingClientRect().top;
+  /* v192: si al plegarse la página queda más corta, se deja el hueco abajo
+     para que lo tocado no se mueva (antes saltaba al final de la página) */
+  const alto0 = document.documentElement.scrollHeight;
   d.open = false;
   const a = $("camAgFuera"); if (a) a.hidden = true;
+  const perdido = alto0 - document.documentElement.scrollHeight;
+  if (perdido > 0) document.body.style.minHeight = (alto0) + "px";
   const despues = t.getBoundingClientRect().top;
   if (Math.abs(despues - antes) > 0.5) window.scrollBy(0, despues - antes);
   [0, 120, 350].forEach(ms => setTimeout(() => { if (window.comboRecoloca) window.comboRecoloca(); }, ms));   /* la lista de opciones se recoloca bajo/encima del campo */
@@ -7526,6 +7582,8 @@ function nuevaToma(nuevaEscena){
      usuario escriba cuál es la nueva); el número de toma sigue la cuenta. */
   if (nuevaEscena) t.sc = "";
   t.tk = String((parseInt(t.tk, 10) || 0) + 1);
+  /* v192 (Waldo): "+ Escena nueva" pone la Toma en 1 en ese mismo momento */
+  if (nuevaEscena) t.tk = "1";
   /* v111: campos que quedaron copiados tal cual de la toma anterior (sin que
      el usuario los haya tocado todavía en ESTA toma) se marcan para pintarse
      atenuados -- en cuanto se toca uno, deja de estar "heredado" y se ve
@@ -10237,7 +10295,12 @@ document.querySelectorAll("input").forEach(e => {
   if (e.id && e.id.indexOf("nb_") === 0) return;
   if (e.type === "file" || e.type === "date") return;
   e.setAttribute("readonly", "");
-  e.addEventListener("focus", () => e.removeAttribute("readonly"), {once: true});
+  /* v192: se quita ya al primer toque (antes del foco) para que el teclado
+     salga con un solo toque en el iPhone */
+  const suelta = () => e.removeAttribute("readonly");
+  e.addEventListener("pointerdown", suelta, {once: true});
+  e.addEventListener("touchstart", suelta, {once: true, passive: true});
+  e.addEventListener("focus", suelta, {once: true});
 });
 /* v50: tocar un campo con contenido lo deja seleccionado entero — lo que
    teclees lo sustituye sin borrar a mano; tocar sin teclear no pierde nada */
