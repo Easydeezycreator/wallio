@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="196">
+<meta name="wallio-ver" content="197">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1677,6 +1677,8 @@ body #pp_bloque .grid > .f{flex:1 1 140px;min-width:0}
 body #pp_bloque .grid > .f.wide{flex-basis:100%}
 @media(min-width:520px){body #pp_bloque .grid > .f{flex-basis:170px}}
 body #pp_grid_propios{display:contents}
+/* digital: solo opciones de digital; película: solo las de película (no tocar) */
+html:not(.pfilm) body #filmRollo{display:none!important}
 body #pp_bloque .f input[type="date"]{font-size:16px;min-width:0;width:100%}
 body #pp_bloque .f,body #v-parte > .card .f{padding:5px 9px 4px 10px}
 body #pp_bloque .f label,body #v-parte > .card .f label{font-size:9.5px;letter-spacing:.08em;margin-bottom:0;line-height:1.2}
