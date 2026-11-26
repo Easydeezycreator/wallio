@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="192">
+<meta name="wallio-ver" content="193">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -160,6 +160,17 @@ section{display:none}section.on{display:block}
 .unidadWrap.activo .unidadBtn{display:inline-block}
 .unidadWrap input{min-width:0}
 .unidadWrap .unidadBtn:active{color:var(--boxC)}
+/* v193: los tercios salen justo debajo del campo T, por encima de lo demás
+   (no empujan nada ni le quitan sitio al número) */
+.f[data-k="t"]{position:relative}
+.f[data-k="t"] .fracs{display:none;position:absolute;left:-1px;right:-1px;top:calc(100% - 1px);z-index:6;
+  background:var(--panel,#fff);border:1px solid var(--boxC,var(--camA));justify-content:space-around;padding:4px 0;
+  box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.f[data-k="t"] .unidadWrap.activo .fracs{display:flex}
+.f[data-k="t"] .fracs .unidadBtn.frac{display:inline-block;font:700 15px/1 var(--mono);letter-spacing:0;padding:10px 8px;opacity:1;color:var(--boxC,var(--camA))}
+.unidadWrap .angulo{flex:0 0 auto;width:26px;height:26px;color:var(--boxC,var(--camA));opacity:.85}
+span.angulo{display:none}
+@media(max-width:359px){.unidadWrap .angulo{width:18px;height:18px}}
 
 /* v118: "Cámara y rollo" y "Laboratorio" llevan la misma caja roja discreta
    que los grupos de la toma, para que todo el parte se vea consistente.
@@ -1568,7 +1579,7 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
 #idxTomas .ixEsc{display:inline-block;font:700 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--tx2);cursor:pointer;padding:6px 0;-webkit-tap-highlight-color:transparent}
 #idxTomas .ixEsc span{color:var(--boxC,var(--camA))}
 #idxTomas .ixMas:active,#idxTomas .ixTk:active,#idxTomas .ixEsc:active{opacity:.5}
-#r_roll{scroll-margin:0}
+#r_roll{scroll-margin:0;color:var(--boxC,var(--camA))!important;font-weight:700}
 .f:has(>#rollSig){position:relative}
 /* va en la línea de la etiqueta, a la derecha: no empuja nada hacia abajo */
 #rollSig{position:absolute;right:12px;top:9px;margin:0;font:700 10px/1 var(--mono);letter-spacing:.08em;color:var(--tx2);padding:2px 0;white-space:nowrap}
@@ -6252,7 +6263,8 @@ function wireParte(){
     erRoll.setAttribute("inputmode", "numeric");
     erRoll.addEventListener("focus", () => {
       ROLL_EDIT = {prev: String((S.parte.roll || {}).roll || "").trim(), cancel: false, nueva: false};
-      if (ROLL_EDIT.prev && rolloTieneTomas()){
+      /* v193 (Waldo): al tocar SIEMPRE se propone la siguiente (A001 -> A002 -> A003…) */
+      if (ROLL_EDIT.prev){
         ROLL_EDIT.nueva = true;
         erRoll.value = siguienteRollo(ROLL_EDIT.prev);
         setTimeout(() => { try { erRoll.select(); } catch(e){} }, 0);
@@ -6769,6 +6781,7 @@ function completaToma(i, k, el){
   if (!/^[+−-]?\d+(?:[.,]\d+)?$/.test(v)) return;
   let nv;
   if (k === "tilt" || k === "pan") nv = v.replace(/^\+/, "").replace("−", "-") + "°";
+  else if (k === "shutter") nv = v.replace(",", ".") + "°";
   else nv = v + " " + unidadPorDefecto(i, k);
   el.value = nv; S.parte.tomas[i][k] = nv;
 }
@@ -6790,6 +6803,28 @@ function aplicaSignoToma(i, k, signo){
   S.parte.tomas[i][k] = (signo === "-" ? "-" : "") + m[0] + "°";
   if (APRENDE_TOMA.indexOf(k) >= 0) aprendeCampo(k, S.parte.tomas[i][k]);
   renderTomas();
+}
+function aplicaTercioToma(i, f){
+  const actual = String(S.parte.tomas[i].t || "").trim();
+  const m = actual.match(/^(.*?)(?:\s+(1\/3|1\/2|2\/3))?$/);
+  const base = (m ? m[1] : actual).trim();
+  if (!base) return;
+  const ya = m && m[2];
+  S.parte.tomas[i].t = ya === f ? base : base + " " + f;
+  if (S.parte.tomas[i]._heredados) S.parte.tomas[i]._heredados = S.parte.tomas[i]._heredados.filter(x => x !== "t");
+  renderTomas();
+  setTimeout(() => { const inp = document.querySelector('#listaTomas .toma[data-i="' + i + '"] .f[data-k="t"] input');
+    if (inp){ try { inp.focus({preventScroll: true}); } catch(e){} } }, 0);
+}
+function anguloSVG(v){
+  const m = String(v || "").match(/^\s*(\d+(?:[.,]\d+)?)\s*°?\s*$/);
+  if (!m) return '<span class="angulo"></span>';
+  const g = Math.max(0, Math.min(360, parseFloat(m[1].replace(",", "."))));
+  const r = 9, a = (g - 90) * Math.PI / 180;
+  const x = 10 + r * Math.cos(a), y = 10 + r * Math.sin(a);
+  const sector = g >= 360 ? `<circle cx="10" cy="10" r="${r}" fill="currentColor"/>` :
+    g <= 0 ? "" : `<path d="M10 10 L10 1 A${r} ${r} 0 ${g > 180 ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)} Z" fill="currentColor"/>`;
+  return `<svg class="angulo" viewBox="0 0 20 20" aria-label="${g}°"><circle cx="10" cy="10" r="${r}" fill="none" stroke="currentColor" stroke-width="1.2"/>${sector}</svg>`;
 }
 function campoToma(i, k, etiqueta, lista, ancho){
   const v = esc(S.parte.tomas[i][k] || "");
@@ -6868,6 +6903,30 @@ function campoToma(i, k, etiqueta, lista, ancho){
     return `<div class="f${ancho ? " w" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<input value="${v}"${l} placeholder="${ph}" oninput="S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
       `onchange="recalculaTomaPorEscena(${i});renderTomas();if(typeof ptArchiva==='function')ptArchiva(false);" autocomplete="off"></div>`;
+  }
+  /* v193 (Waldo): Diafragma T -- se escribe el número (1.4) y, al tocar el
+     campo, aparecen los tercios y medios pasos 1/3 · 1/2 · 2/3 para
+     añadirlos con un toque (otro toque al mismo lo quita) */
+  if (k === "t"){
+    const fr = `<div class="fracs">` + ["1/3","1/2","2/3"].map(f => `<span class="unidadBtn frac" onmousedown="event.preventDefault()" onclick="aplicaTercioToma(${i},'${f}')">${f}</span>`).join("") + `</div>`;
+    return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+      `<div class="unidadWrap">` +
+      `<input value="${v}" inputmode="decimal" placeholder="${ph}" style="flex:1" ` +
+      `oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
+      `onfocus="this.closest('.unidadWrap').classList.add('activo')" ` +
+      `onblur="this.closest('.unidadWrap').classList.remove('activo')" ` +
+      `onchange="${APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : ""}renderTomas()" autocomplete="off">` +
+      fr + `</div></div>`;
+  }
+  /* v193 (Waldo): Obturador -- el número lleva su ° solo y se ve el ángulo
+     dibujado a la derecha (180° = medio círculo) */
+  if (k === "shutter"){
+    return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+      `<div class="unidadWrap">` +
+      `<input value="${v}" inputmode="decimal" placeholder="${ph}" style="flex:1" ` +
+      `oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte();var g=this.parentNode.querySelector('.angulo');if(g)g.outerHTML=anguloSVG(this.value)" ` +
+      `onchange="completaToma(${i},'${k}',this);${APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : ""}renderTomas()" autocomplete="off">` +
+      anguloSVG(S.parte.tomas[i][k]) + `</div></div>`;
   }
   /* v87: el tinte (CC) vive dentro del campo de balance de blancos, no como
      campo propio -- Waldo lo pidio asi: un solo bloque "wb" con dos inputs */
@@ -7145,6 +7204,7 @@ function renderTomas(){
 let TOMA_SEL = -1;
 function pintaIdxTomas(idxCam, compacto){
   const box = $("idxTomas"); if (!box) return;
+  aseguraRollo();
   pintaRollSig();
   if (!compacto || !idxCam.length){ box.innerHTML = ""; return; }
   const L = S.parte.tomas, en = LANG === "en";
@@ -7155,6 +7215,10 @@ function pintaIdxTomas(idxCam, compacto){
   const ultima = L[idxCam[idxCam.length - 1]];
   const sigTk = (parseInt(ultima.tk, 10) || 0) + 1;
   const marca = t => t.notaEsp === "PU" ? "PU" : t.notaEsp === "TAILS" ? "TAILS" : t.mos ? "MOS" : t.ok ? "✓" : "";
+  /* v193 (Waldo): solo se ven los números de la escena que se está rodando;
+     las escenas anteriores dejan la pantalla y quedan guardadas en el parte
+     (y en el PDF) */
+  filas.splice(0, filas.length - 1);
   box.innerHTML = filas.map((f, fi) =>
     `<div class="ixRow"><div class="ixSc">${esc(traduce("Escena"))}<b>${esc(f.sc || "—")}</b></div>` +
     f.tomas.map(i => { const t = L[i]; const m = marca(t);
@@ -7182,6 +7246,9 @@ function masToma(){
 }
 function masEscena(){
   const y = window.scrollY;
+  /* lo rodado hasta aquí queda guardado antes de empezar la escena nueva */
+  if (typeof ptArchiva === "function") ptArchiva(false);
+  if (typeof guardaYa === "function") guardaYa();
   nuevaToma(true);
   TOMA_SEL = S.parte.tomas.length - 1; renderTomas();
   const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija);
@@ -7198,6 +7265,17 @@ function formateaRollo(v){
   v = String(v || "").trim().toUpperCase();
   if (/^\d+$/.test(v)) v = camActiva() + (v.length < 3 ? ("000" + v).slice(-3) : v);
   return v;
+}
+/* v193 (Waldo): cada cámara arranca ya con su rollo 001 (A001, B001, C001…)
+   en su letra y color, sin teclear nada */
+function aseguraRollo(){
+  if (!S.parte || !S.parte.roll) return;
+  if (ROLL_EDIT) return;
+  if (!String(S.parte.roll.roll || "").trim()){
+    S.parte.roll.roll = camActiva() + "001";
+    const i = $("r_roll"); if (i) i.value = S.parte.roll.roll;
+    if (typeof autoguarda === "function") autoguarda();
+  }
 }
 function pintaRollSig(){
   const el = $("rollSig"); if (!el) return;
@@ -7584,6 +7662,18 @@ function nuevaToma(nuevaEscena){
   t.tk = String((parseInt(t.tk, 10) || 0) + 1);
   /* v192 (Waldo): "+ Escena nueva" pone la Toma en 1 en ese mismo momento */
   if (nuevaEscena) t.tk = "1";
+  /* v193 (Waldo): en una escena nueva solo pasan T, filtro, balance de
+     blancos (y su CC), ISO, obturador y FPS -- lo demás (focal, óptica, foco,
+     altura, tilt, pan, descripción, notas…) empieza en limpio, que es lo que
+     suele cambiar de una escena a otra. El nombre de clip sigue su cuenta. */
+  const PASA_ESCENA = ["t","filt","wb","cc","ei","shutter","fps"];
+  if (nuevaEscena){
+    T_CLAVES.concat(["cc"]).forEach(k => {
+      if (PASA_ESCENA.indexOf(k) >= 0 || k === "tk" || k === "clip") return;
+      t[k] = (typeof t[k] === "boolean") ? false : "";
+    });
+    t.extra = {};
+  }
   /* v111: campos que quedaron copiados tal cual de la toma anterior (sin que
      el usuario los haya tocado todavía en ESTA toma) se marcan para pintarse
      atenuados -- en cuanto se toca uno, deja de estar "heredado" y se ve
@@ -8228,6 +8318,14 @@ function exportaALE(){
    una sola cámara. Los partes archivados se leen de la lista de partes (ptLee);
    si una tarjeta aparece en varios archivados (las otras cámaras viajan con el
    parte al cambiar de rollo), manda el más reciente. */
+/* v193: para el PDF del día solo cuentan las tomas que de verdad se rodaron
+   (con escena, clip, descripción, nota o marca) -- no la toma que nace sola
+   al empezar una tarjeta con lo técnico heredado */
+function tomaReal(t){
+  if (!t) return false;
+  const lleno = v => v !== undefined && v !== null && String(v).trim() !== "";
+  return lleno(t.sc) || lleno(t.clip) || lleno(t.desc) || lleno(t.nota) || lleno(t.notaEsp) || !!t.ok || !!t.mos || !!t.falso;
+}
 function rolloDeCam(d, l){
   const R = (l === (d.camActiva || "A")) ? (d.roll || {}) : ((d.camsGuardadas || {})[l] || {});
   return R;
@@ -8235,13 +8333,13 @@ function rolloDeCam(d, l){
 function diaGrupos(soloCam){
   if (typeof ptArchiva === "function") ptArchiva(false);
   const P = S.prod || {}, fecha = P.fecha || "", proy = norm(P.proyecto || "");
-  const lista = ptLee().filter(x => (x.fecha || "") === fecha && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d && (x.d.tomas || []).some(tomaConDatos))
+  const lista = ptLee().filter(x => (x.fecha || "") === fecha && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d && (x.d.tomas || []).some(tomaReal))
     .sort((a, b) => (a.t || 0) - (b.t || 0));
   const grupos = {};
   lista.forEach(x => {
     /* solo cuenta una cámara si tiene alguna toma con datos (la toma en blanco
        que abre cada tarjeta no es una tarjeta) */
-    const letras = [...new Set((x.d.tomas || []).filter(tomaConDatos).map(t => t.camLetra || "A"))];
+    const letras = [...new Set((x.d.tomas || []).filter(tomaReal).map(t => t.camLetra || "A"))];
     letras.forEach(l => {
       if (soloCam && l !== soloCam) return;
       const roll = String(rolloDeCam(x.d, l).roll || "").trim();
@@ -8264,7 +8362,7 @@ function conParte(d, fn, cam){
     copia.camActiva = cam;
   }
   /* en el envío del día solo van las tomas con datos (no la toma en blanco de cada tarjeta) */
-  S.parte = {roll: copia.roll || {}, tomas: (copia.tomas || []).filter(tomaConDatos), campos: copia.campos || [],
+  S.parte = {roll: copia.roll || {}, tomas: (copia.tomas || []).filter(tomaReal), campos: copia.campos || [],
              camposRollo: copia.camposRollo || [], camActiva: copia.camActiva || "A",
              camsGuardadas: copia.camsGuardadas || {}, camasActivas: copia.camasActivas || null,
              camNombres: copia.camNombres || {}};
