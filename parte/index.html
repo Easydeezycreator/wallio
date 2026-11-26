@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="199">
+<meta name="wallio-ver" content="200">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -493,7 +493,8 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 #parte h4{margin:6px 0 3px}
 #parte .sum > div{padding:6px 12px}
 #parte .sum b{font-size:17pt}
-#parte .sig{margin-top:8px;page-break-inside:avoid}
+#parte .sig{margin-top:8px;page-break-inside:avoid;padding-top:8px}
+/* v200: colchón blanco al empezar cada tarjeta y las firmas: nunca queda una tira de letras al pie de la hoja */
 #parte .sig .box{height:30px}
 #parte .decl{padding:7px 12px;font-size:8.9pt;line-height:1.42}
 /* ---- rediseño del parte impreso: papel con aire, doble filete, numeros en caja ---- */
@@ -8298,6 +8299,46 @@ function blobABase64(b){
     r.onerror = ko; r.readAsDataURL(b);
   });
 }
+/* v200 (Waldo): el PDF lo pagina WALLIO, no html2pdf (html2pdf se desviaba
+   unos píxeles por hoja y partía filas de tomas y firmas, o dejaba una tira
+   de la tarjeta siguiente al pie). Hoja A4 con márgenes 10/12 mm = 1039 px
+   de alto a 718 px de ancho: ninguna fila, firma, resumen ni encabezado
+   cruza el corte; cada tarjeta empieza en hoja nueva con un colchón blanco. */
+const PDF_HOJA = Math.floor((297 - 10 - 12) * 96 / 25.4);
+function paginaPDF(el){
+  el.querySelectorAll(".pdfPad").forEach(x => x.remove());
+  /* html2pdf corta cada hoja a (ancho real del lienzo) × alto/ancho de la hoja:
+     se usa el ancho que de verdad mide el parte, no el teórico */
+  /* el lienzo se fuerza a 718 px (html2canvas width:718) → hoja = floor(1436 × 275/190) / 2 */
+  const H = Math.floor(1436 * (297 - 10 - 12) / 190) / 2, COL = 8;
+  window.__pdfH = H;
+  const base = () => el.getBoundingClientRect().top;
+  const items = [...el.querySelectorAll(".saltoTarjeta, .rep tr, .sig, .sum, .decl, .head, .fl")];
+  for (const it of items){
+    if (!it.isConnected || !it.offsetParent && it.tagName !== "TR") continue;
+    const b0 = base(), r = it.getBoundingClientRect();
+    const top = r.top - b0, bot = r.bottom - b0;
+    if (it.classList.contains("saltoTarjeta")){
+      it.style.height = "0px";
+      const t = it.getBoundingClientRect().top - base();
+      const sig = (Math.floor(t / H) + 1) * H;
+      it.style.height = Math.max(0, sig - t + 16) + "px";
+      continue;
+    }
+    if (r.height <= 0 || r.height > H - 40) continue;
+    const pIni = Math.floor(top / H), pFin = Math.floor((bot - 0.5) / H);
+    if (pFin <= pIni) continue;
+    const alto = (pIni + 1) * H - top + COL;
+    let pad;
+    if (it.tagName === "TR"){
+      pad = document.createElement("tr"); pad.className = "pdfPad";
+      pad.innerHTML = '<td colspan="40" style="height:' + alto + 'px;padding:0;border:0;background:#fff"></td>';
+    } else {
+      pad = document.createElement("div"); pad.className = "pdfPad"; pad.style.height = alto + "px";
+    }
+    it.parentNode.insertBefore(pad, it);
+  }
+}
 let _pdfEnCurso = false;
 async function pdfDirecto(id, nombre){
   if (_pdfEnCurso) return;
@@ -8313,13 +8354,14 @@ async function pdfDirecto(id, nombre){
        que al imprimir -- antes tomaba el ancho de la pantalla y en el iPhone se
        cortaba el lado derecho (timecode, duración) */
     el.style.width = "718px"; el.style.margin = "0"; el.style.maxWidth = "none";
+    paginaPDF(el);
     const blob = await window.html2pdf().set({
       margin: [10, 10, 12, 10],
       filename: nombre,
       image: { type: "jpeg", quality: 0.96 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: document.documentElement.clientWidth },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: document.documentElement.clientWidth, width: 718 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["css", "legacy"], avoid: [".rep tr", ".sig", ".sum", ".decl", ".head", ".fl > div"] }
+      pagebreak: { mode: [] }
     }).from(el).outputPdf("blob");
     el.style.display = "";
     const C = window.Capacitor;
@@ -8707,7 +8749,7 @@ async function enviarTodo(soloCam){
     const pk = paqueteDia(soloCam);
     if (!pk.grupos.length){ alert(traduce("El parte no tiene ninguna toma.")); show("parte"); return; }
     /* el colchón final evita que html2pdf recorte las firmas de la última tarjeta */
-    el.innerHTML = pk.html.join('<div class="saltoTarjeta" style="page-break-before:always;break-before:page;height:0"></div>') + '<div style="height:260px"></div>';
+    el.innerHTML = '<div style="height:16px"></div>' + pk.html.join('<div class="saltoTarjeta" style="height:0"></div>') + '<div style="height:260px"></div>';
     if (typeof aplicaIdioma === "function") aplicaIdioma();
     const base = nombreBasePost() + (soloCam ? "_Cam" + soloCam : "");
     const archivos = [];
@@ -8724,12 +8766,13 @@ async function enviarTodo(soloCam){
     avisoPDF(traduce("Generando PDF…"));
     await cargaHtml2pdf();
     el.style.display = "block"; el.style.width = "718px"; el.style.margin = "0"; el.style.maxWidth = "none";
+    paginaPDF(el);
     const blob = await window.html2pdf().set({
       margin: [10, 10, 12, 10], filename: base + ".pdf",
       image: { type: "jpeg", quality: 0.96 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: document.documentElement.clientWidth },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: document.documentElement.clientWidth, width: 718 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["css", "legacy"], before: [".saltoTarjeta"], avoid: [".rep tr", ".sig", ".sum", ".decl", ".head", ".fl > div"] }
+      pagebreak: { mode: [] }
     }).from(el).outputPdf("blob");
     el.style.display = "";
     avisoPDF("");
@@ -9661,6 +9704,9 @@ function traduce(s){
 /* v199 (Waldo): al pasar a español NADA se queda en inglés. Lo que se pintó
    ya en inglés (abriendo la app en inglés) no tiene su español guardado:
    se busca al revés en el diccionario. */
+/* v200: los textos que el código elige con «en ? … : …» también se traducen al cambiar de idioma */
+const EN_PARES = {"Deshacer": "Undo", "Mínimo": "Minimum", "toca para ponerlo": "tap to use", "+ Nueva toma": "+ New take", "TOMA": "TAKE", "ESCENA NUEVA": "NEW SCENE", "TARJETA NUEVA": "NEW CARD", "CANCELAR": "CANCEL", "anterior": "previous", "Nueva toma": "New take", "Toma ": "Take ", "siguiente": "next", "Lista": "List", "Páginas": "Pages", "Para cámaras digitales: aún no hay tomas.": "For digital cameras: no takes yet.", "Todavía ninguna toma tiene nombre de clip.": "No take has a clip name yet.", "Falta el clip en": "Missing clip in", "Las tomas en película van solo en el PDF y el CSV.": "Film takes go in the PDF and CSV only.", "No van Silverstack ni ALE: todavía ninguna toma tiene nombre de clip.": "Silverstack and ALE were not included: no take has a clip name yet.", "Ese proyecto ya no está compartido.": "That project is no longer shared.", "Cámara ": "Camera ", "cámara ": "camera ", " ópticas": " lenses", " filtros": " filters", "KIT DE CALAVERALIST · ": "CALAVERALIST KIT · ", "SOLO LECTURA · ": "READ ONLY · ", "se actualiza solo · puedes sacar el PDF": "updates by itself · you can export the PDF", "· solo lectura": "· read only", "· compartido": "· shared", "Quien lo escanee solo puede mirar y sacar el PDF. No puede cambiar nada.": "Whoever scans it can only look and export the PDF. They can't change anything.", "Quien lo escanee entra al proyecto y puede escribir en su cámara.": "Whoever scans it joins the project and can write on their camera.", "Se escanea con la cámara del iPhone.": "Scan it with the iPhone camera.", "Enlace copiado": "Link copied", "Del kit del rodaje": "From the shoot kit", "Todo el catálogo": "Full catalogue"};
+for (const k in EN_PARES) if (EN[k] === undefined) EN[k] = EN_PARES[k];
 let ES_DE = null;
 const ES_RX = [[/^· saved (\d\d:\d\d)$/, "· guardado $1"]];
 function aEspanol(s){
@@ -9715,6 +9761,10 @@ function cambiaIdioma(){
   if (typeof focosAlIdioma === "function") focosAlIdioma();
   if (typeof stockDeLaOptica === "function") stockDeLaOptica();
   if (typeof juegoDelStock === "function") juegoDelStock();
+  /* v200: lo que se pinta con datos (lista de partes, tomas) se vuelve a pintar en el idioma nuevo */
+  try { if (typeof ptLista === "function") ptLista(); } catch(e){}
+  try { if (typeof renderTomas === "function" && S && S.parte) renderTomas(); } catch(e){}
+  try { aplicaIdioma(); } catch(e){}
 }
 /* el «Mínimo» de fábrica habla el idioma en uso; las tomas viajan con el nombre */
 function focosAlIdioma(){
