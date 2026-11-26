@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="193">
+<meta name="wallio-ver" content="194">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -160,6 +160,21 @@ section{display:none}section.on{display:block}
 .unidadWrap.activo .unidadBtn{display:inline-block}
 .unidadWrap input{min-width:0}
 .unidadWrap .unidadBtn:active{color:var(--boxC)}
+/* v194: rueda que sube y baja (T 1/3·1/2·2/3, CC −3…+3) */
+.rueda{position:relative;flex:0 0 auto;width:52px;height:34px;overflow-y:auto;scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-y;overscroll-behavior:contain;
+  border-left:1px solid var(--line2);
+  -webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+.rueda::-webkit-scrollbar{display:none}
+.rueda .ruedaIn{padding:0}
+.rueda .ruedaOp{height:34px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;
+  font:700 15px/1 var(--mono);color:var(--tx3,#999)}
+.rueda .ruedaOp.sel{color:var(--boxC,var(--camA))}
+.rueda.cc{width:56px}
+.rueda{background:
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 5L4 0L8 5' fill='%23999'/%3E%3C/svg%3E") no-repeat center 1px,
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0L4 5L8 0' fill='%23999'/%3E%3C/svg%3E") no-repeat center calc(100% - 1px)}
+.f[data-k="t"] .rueda,.f[data-k="wb"] .rueda{align-self:center}
 /* v193: los tercios salen justo debajo del campo T, por encima de lo demás
    (no empujan nada ni le quitan sitio al número) */
 .f[data-k="t"]{position:relative}
@@ -5830,6 +5845,7 @@ function aprendeExtra2(n, v){
 }
 function tomaVacia(){
   const t = {}; T_CLAVES.forEach(k => t[k] = "");
+  t.cc = "00";   /* v194: el CC arranca siempre en 00 */
   T_CAMPOS.forEach(([k,,hereda]) => { if (hereda && S.parte.roll[hereda]) t[k] = S.parte.roll[hereda]; });
   /* v74: ya no se copia el serial/focal de la ultima optica seleccionada en
      Emitir un grid a una toma nueva -- eso era dato "fantasma" que Waldo no
@@ -6804,6 +6820,66 @@ function aplicaSignoToma(i, k, signo){
   if (APRENDE_TOMA.indexOf(k) >= 0) aprendeCampo(k, S.parte.tomas[i][k]);
   renderTomas();
 }
+const CC_PASOS = ["-3","-2","-1","00","+1","+2","+3"];
+function ruedaHTML(vals, actual, accion, etiquetas, clase){
+  const idx = Math.max(0, vals.indexOf(actual));
+  return `<div class="rueda${clase ? " " + clase : ""}" data-idx="${idx}" data-accion="${esc(accion)}" data-vals="${esc(JSON.stringify(vals))}">` +
+    `<div class="ruedaIn">` + vals.map((v, k) => `<div class="ruedaOp${k === idx ? " sel" : ""}">${esc((etiquetas || vals)[k])}</div>`).join("") + `</div></div>`;
+}
+/* deja cada rueda en su valor (sin animación) y escucha cuando se suelta */
+function ruedasIni(raiz){
+  (raiz || document).querySelectorAll(".rueda:not([data-ok])").forEach(r => {
+    if (!r.offsetHeight) return;           /* oculta: se prepara cuando se vea */
+    r.setAttribute("data-ok", "1");
+    const h = () => (r.querySelector(".ruedaOp") || {}).offsetHeight || 34;
+    r.scrollTop = (+r.getAttribute("data-idx") || 0) * h();
+    let to = null, toque = 0;
+    /* solo cuenta lo que mueve el usuario (dedo, ratón, rueda del ratón) */
+    ["pointerdown", "touchstart", "wheel"].forEach(ev => r.addEventListener(ev, () => { toque = Date.now(); }, {passive: true}));
+    r.addEventListener("scroll", () => {
+      clearTimeout(to);
+      to = setTimeout(() => {
+        if (!toque || Date.now() - toque > 6000){ r.scrollTop = (+r.getAttribute("data-idx") || 0) * h(); return; }
+        const k = Math.round(r.scrollTop / h());
+        const vals = JSON.parse(r.getAttribute("data-vals") || "[]");
+        if (k < 0 || k >= vals.length || k === +r.getAttribute("data-idx")) return;
+        r.setAttribute("data-idx", k);
+        r.querySelectorAll(".ruedaOp").forEach((o, j) => o.classList.toggle("sel", j === k));
+        try { (new Function("VAL", r.getAttribute("data-accion")))(vals[k]); } catch(e){}
+      }, 140);
+    }, {passive: true});
+  });
+}
+function ponTBase(i, base){
+  const t = S.parte.tomas[i]; if (!t) return;
+  /* el tercio sale de la rueda (así, si se borra el número para escribir
+     otro, el tercio elegido no se pierde) */
+  const r = document.querySelector('#listaTomas .toma[data-i="' + i + '"] .f[data-k="t"] .rueda');
+  let fr = "";
+  if (r){ try { fr = JSON.parse(r.getAttribute("data-vals"))[+r.getAttribute("data-idx") || 0] || ""; } catch(e){} }
+  else { const m = String(t.t || "").match(/\s+(1\/3|1\/2|2\/3)$/); fr = m ? m[1] : ""; }
+  base = String(base || "").trim();
+  t.t = base ? base + (fr ? " " + fr : "") : "";
+  resumenParte();
+}
+function ponTFrac(i, f){
+  const t = S.parte.tomas[i]; if (!t) return;
+  const base = String(t.t || "").replace(/\s+(1\/3|1\/2|2\/3)$/, "").trim();
+  t.t = base ? (f ? base + " " + f : base) : "";
+  if (t._heredados) t._heredados = t._heredados.filter(x => x !== "t");
+  resumenParte(); actualizaMetaToma(i); if (typeof autoguarda === "function") autoguarda();
+}
+function ponCC(i, v){
+  const t = S.parte.tomas[i]; if (!t) return;
+  t.cc = v;
+  if (t._heredados) t._heredados = t._heredados.filter(x => x !== "cc");
+  resumenParte(); if (typeof autoguarda === "function") autoguarda();
+}
+/* refresca solo la línea de resumen de la toma (sin redibujar sus campos) */
+function actualizaMetaToma(i){
+  const t = S.parte.tomas[i]; const el = document.querySelector('#listaTomas .toma[data-i="' + i + '"] .th .meta'); if (!t || !el) return;
+  el.textContent = [t.mos ? "MOS" : "", t.notaEsp || "", t.desc, t.clip, focalTxt(t.focal), t.serial, t.t ? "T" + t.t : "", t.filt, t.foco].filter(Boolean).join("  ·  ");
+}
 function aplicaTercioToma(i, f){
   const actual = String(S.parte.tomas[i].t || "").trim();
   const m = actual.match(/^(.*?)(?:\s+(1\/3|1\/2|2\/3))?$/);
@@ -6908,15 +6984,17 @@ function campoToma(i, k, etiqueta, lista, ancho){
      campo, aparecen los tercios y medios pasos 1/3 · 1/2 · 2/3 para
      añadirlos con un toque (otro toque al mismo lo quita) */
   if (k === "t"){
-    const fr = `<div class="fracs">` + ["1/3","1/2","2/3"].map(f => `<span class="unidadBtn frac" onmousedown="event.preventDefault()" onclick="aplicaTercioToma(${i},'${f}')">${f}</span>`).join("") + `</div>`;
+    /* v194 (Waldo): junto al número, una rueda que sube y baja con
+       — · 1/3 · 1/2 · 2/3 (tercios y medios pasos) */
+    const mt = String(S.parte.tomas[i].t || "").match(/^(.*?)(?:\s+(1\/3|1\/2|2\/3))?$/);
+    const base = esc(mt ? mt[1].trim() : (S.parte.tomas[i].t || ""));
+    const fr = (mt && mt[2]) || "";
     return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div class="unidadWrap">` +
-      `<input value="${v}" inputmode="decimal" placeholder="${ph}" style="flex:1" ` +
-      `oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" ` +
-      `onfocus="this.closest('.unidadWrap').classList.add('activo')" ` +
-      `onblur="this.closest('.unidadWrap').classList.remove('activo')" ` +
+      `<input value="${base}" inputmode="decimal" placeholder="${ph}" style="flex:1" ` +
+      `oninput="${quitaHeredado}ponTBase(${i},this.value)" ` +
       `onchange="${APRENDE_TOMA.indexOf(k) >= 0 ? `aprendeCampo('${k}',this.value);` : ""}renderTomas()" autocomplete="off">` +
-      fr + `</div></div>`;
+      ruedaHTML(["", "1/3", "1/2", "2/3"], fr, `ponTFrac(${i},VAL)`, ["—", "1/3", "1/2", "2/3"]) + `</div></div>`;
   }
   /* v193 (Waldo): Obturador -- el número lleva su ° solo y se ve el ángulo
      dibujado a la derecha (180° = medio círculo) */
@@ -6931,13 +7009,16 @@ function campoToma(i, k, etiqueta, lista, ancho){
   /* v87: el tinte (CC) vive dentro del campo de balance de blancos, no como
      campo propio -- Waldo lo pidio asi: un solo bloque "wb" con dos inputs */
   if (k === "wb"){
+    if (!String(S.parte.tomas[i].cc || "").trim()) S.parte.tomas[i].cc = "00";
     const vcc = esc(S.parte.tomas[i].cc || "");
     const herCc = (S.parte.tomas[i]._heredados || []).indexOf("cc") >= 0;
     const quitaHerCc = `if(S.parte.tomas[${i}]._heredados)S.parte.tomas[${i}]._heredados=S.parte.tomas[${i}]._heredados.filter(x=>x!=='cc');this.classList.remove('heredado');`;
     return `<div class="f${ancho ? " w" : ""}${claseHer}" data-k="${k}"><label>${etiqueta}${x}</label>` +
       `<div style="display:flex;gap:6px">` +
       `<input value="${v}"${l} inputmode="numeric" placeholder="${ph}" style="flex:1" oninput="${quitaHeredado}S.parte.tomas[${i}].${k}=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
-      `<input value="${vcc}" placeholder="CC" title="${esc(traduce("CC (tinte)"))}" style="width:64px" class="${herCc ? "heredado" : ""}" oninput="${quitaHerCc}S.parte.tomas[${i}].cc=this.value;resumenParte()" onchange="renderTomas()" autocomplete="off">` +
+      /* v194 (Waldo): el CC es una rueda que sube y baja: −3 … 00 … +3, con
+         00 siempre por defecto */
+      ruedaHTML(CC_PASOS, S.parte.tomas[i].cc || "00", `ponCC(${i},VAL)`, CC_PASOS, "cc") +
       `</div></div>`;
   }
   /* v102: cualquier corrección en una toma ya hecha (duración, toma, etc.)
@@ -7030,6 +7111,11 @@ function renderTomas(){
     if (TOMA_SEL < 0 && idxCam.length === 1 && !tomaConDatos(L[idxCam[0]])) TOMA_SEL = idxCam[0];
   }
   let escenaAnterior = null;
+  /* v194 (Waldo): un solo toque cambia de campo -- antes, al salir de un
+     campo la lista se redibujaba entera y el campo que se tocaba desaparecía
+     bajo el dedo (había que tocar dos veces). Ahora el campo que se está
+     tocando (o escribiendo) se conserva vivo dentro de la lista nueva. */
+  const vivo = campoVivo();
   $("listaTomas").innerHTML = idxCam.length ? idxCam.map(i => {
     const t = L[i];
     const escenaAqui = (t.sc || "").trim();
@@ -7183,6 +7269,8 @@ function renderTomas(){
       ${panelAgregar}
       ${accionesBtn}</details>`;
   }).join("") + (vistaPag() ? `<div class="pagNueva">${LANG === "en" ? "+ New take" : "+ Nueva toma"}</div>` : "") : "";
+  reponeCampoVivo(vivo);
+  ruedasIni($("listaTomas"));
   $("listaTomas").classList.toggle("mc", esMulticam());
   $("listaTomas").classList.toggle("compacto", compacto);
   pintaIdxTomas(idxCam, compacto);
@@ -7202,6 +7290,40 @@ function renderTomas(){
    tocarlo otra vez la cierra. "+ Escena nueva" crea la toma y la abre en la
    Escena para escribirla. La página NUNCA se mueve sola. */
 let TOMA_SEL = -1;
+const PUNTERO = {el: null, ts: 0};
+["pointerdown", "touchstart", "mousedown"].forEach(ev => document.addEventListener(ev, e => {
+  const t = e.target && e.target.closest ? e.target.closest("#listaTomas input, #listaTomas textarea") : null;
+  PUNTERO.el = t; PUNTERO.ts = Date.now();
+}, {capture: true, passive: true}));
+function claveCampo(el){
+  const toma = el.closest(".toma[data-i]"), f = el.closest(".f[data-k]");
+  if (!toma || !f) return null;
+  const n = [...f.querySelectorAll("input, textarea")].indexOf(el);
+  return {i: toma.getAttribute("data-i"), k: f.getAttribute("data-k"), n};
+}
+function campoVivo(){
+  const L = $("listaTomas"); if (!L) return null;
+  const a = document.activeElement;
+  const el = (a && L.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName)) ? a
+    : (PUNTERO.el && L.contains(PUNTERO.el) && Date.now() - PUNTERO.ts < 800 ? PUNTERO.el : null);
+  if (!el) return null;
+  const c = claveCampo(el); if (!c) return null;
+  return {el, c, activo: el === a};
+}
+function reponeCampoVivo(v){
+  if (!v) return;
+  const L = $("listaTomas");
+  const f = L.querySelector('.toma[data-i="' + v.c.i + '"] .f[data-k="' + v.c.k + '"]'); if (!f) return;
+  const nuevo = [...f.querySelectorAll("input, textarea")][v.c.n]; if (!nuevo) return;
+  /* el campo vivo toma el valor nuevo (si no se está escribiendo en él) y
+     ocupa el sitio del recién dibujado, con sus mismos atributos */
+  if (!v.activo) v.el.value = nuevo.value;
+  ["oninput", "onchange", "onfocus", "onblur", "inputmode", "placeholder", "style", "class"].forEach(at => {
+    if (nuevo.hasAttribute(at)) v.el.setAttribute(at, nuevo.getAttribute(at)); else v.el.removeAttribute(at);
+  });
+  nuevo.replaceWith(v.el);
+  if (v.activo && document.activeElement !== v.el){ try { v.el.focus({preventScroll: true}); } catch(e){} }
+}
 function pintaIdxTomas(idxCam, compacto){
   const box = $("idxTomas"); if (!box) return;
   aseguraRollo();
@@ -7315,7 +7437,8 @@ function tomaConDatos(t){
   /* una toma copiada con Smartfill SÍ cuenta (en rodaje muchas tomas son
      idénticas); solo una toma totalmente en blanco no crea otra detrás */
   const lleno = v => v !== undefined && v !== null && v !== false && String(v).trim() !== "";
-  if (T_CLAVES.concat(["cc"]).some(k => k !== "tk" && lleno(t[k]))) return true;
+  /* v194: el CC "00" es el valor de fábrica, no cuenta como dato */
+  if (T_CLAVES.concat(["cc"]).some(k => k !== "tk" && !(k === "cc" && String(t[k]).trim() === "00") && lleno(t[k]))) return true;
   if (t.ok || t.mos || t.falso || lleno(t.notaEsp)) return true;
   return Object.values(t.extra || {}).some(lleno);
 }
@@ -7403,6 +7526,31 @@ document.addEventListener("click", e => {
   const despues = t.getBoundingClientRect().top;
   if (Math.abs(despues - antes) > 0.5) window.scrollBy(0, despues - antes);
   [0, 120, 350].forEach(ms => setTimeout(() => { if (window.comboRecoloca) window.comboRecoloca(); }, ms));   /* la lista de opciones se recoloca bajo/encima del campo */
+}, true);
+/* v194 (Waldo): "Datos del proyecto" igual que "Cámara y rollo": se cierra al
+   tocar fuera; y al abrir uno de los dos se cierra el otro -- un solo toque,
+   lo escrito queda guardado y lo tocado no se mueve bajo el dedo */
+function cierraBloque(d, ancla){
+  if (!d || !d.open) return;
+  const antes = ancla ? ancla.getBoundingClientRect().top : 0;
+  const alto0 = document.documentElement.scrollHeight;
+  d.open = false;
+  const ag = d.id === "pp_bloque" ? $("ppAgFuera") : $("camAgFuera"); if (ag) ag.hidden = true;
+  if (alto0 > document.documentElement.scrollHeight) document.body.style.minHeight = alto0 + "px";
+  if (ancla){ const despues = ancla.getBoundingClientRect().top; if (Math.abs(despues - antes) > 0.5) window.scrollBy(0, despues - antes); }
+}
+document.addEventListener("click", e => {
+  const d = $("pp_bloque"); if (!d || !d.open) return;
+  const t = e.target; if (!t || !t.closest || !document.contains(t)) return;
+  if (t.closest("#pp_bloque, #ppAgFuera, #combo, .pcCard")) return;
+  cierraBloque(d, t);
+}, true);
+document.addEventListener("toggle", e => {
+  const id = e.target && e.target.id;
+  if ((id === "pp_bloque" || id === "cam_bloque") && e.target.open){
+    const otro = $(id === "pp_bloque" ? "cam_bloque" : "pp_bloque");
+    cierraBloque(otro, e.target.querySelector("summary"));
+  }
 }, true);
 const PT = {on: false};
 document.addEventListener("scroll", e => {   /* p.ej. el tabulador lleva a un campo de otra página */
