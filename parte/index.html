@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="198">
+<meta name="wallio-ver" content="199">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -9601,6 +9601,7 @@ const EN = {"Quitar este campo":"Remove this field","Smartfill aplicado":"Smartf
 };
 /* patrones con números dentro */
 const EN_RX = [
+  [/^· guardado (\d\d:\d\d)$/, "· saved $1"],
  [/^([\d.]+)× anamórfica$/, "$1× anamorphic"],
  [/^([\d.]+)× · esférica$/, "$1× · spherical"],
  [/^TE251 rejilla de distorsión(.*)$/, "TE251 distortion grid$1"],
@@ -9657,6 +9658,21 @@ function traduce(s){
   for (const [rx, rep] of EN_RX) if (rx.test(k)) return pre + k.replace(rx, rep) + post;
   return s;
 }
+/* v199 (Waldo): al pasar a español NADA se queda en inglés. Lo que se pintó
+   ya en inglés (abriendo la app en inglés) no tiene su español guardado:
+   se busca al revés en el diccionario. */
+let ES_DE = null;
+const ES_RX = [[/^· saved (\d\d:\d\d)$/, "· guardado $1"]];
+function aEspanol(s){
+  if (s == null) return s;
+  if (!ES_DE){ ES_DE = {}; for (const k in EN){ const v = EN[k]; if (typeof v === "string" && ES_DE[v] === undefined) ES_DE[v] = k; } }
+  const k = String(s).trim().replace(/\s+/g, " ");
+  if (!k) return s;
+  const pre = String(s).match(/^\s*/)[0], post = String(s).match(/\s*$/)[0];
+  if (ES_DE[k] !== undefined && EN[k] === undefined) return pre + ES_DE[k] + post;
+  for (const [rx, rep] of ES_RX) if (rx.test(k)) return pre + k.replace(rx, rep) + post;
+  return s;
+}
 const RAICES = () => [document.querySelector("header"), document.querySelector("main"),
                       document.querySelector("nav"), $("ficha"), $("parte"), $("albaran"), $("pcPanel")].filter(Boolean);
 function pinta(nodo){
@@ -9666,20 +9682,20 @@ function pinta(nodo){
   if (nodo.nodeType === 3) lista.push(nodo);
   for (const t of lista){
     if (t.__o === undefined) t.__o = t.nodeValue;
-    t.nodeValue = (LANG === "en") ? traduce(t.__o) : t.__o;
+    t.nodeValue = (LANG === "en") ? traduce(t.__o) : aEspanol(t.__o);
   }
   const els = nodo.nodeType === 1 ? [nodo, ...nodo.querySelectorAll("[placeholder]")] : [];
   for (const e of els){
     if (!e.getAttribute || !e.hasAttribute("placeholder")) continue;
     if (e.__op === undefined) e.__op = e.getAttribute("placeholder");
-    e.setAttribute("placeholder", (LANG === "en") ? traduce(e.__op) : e.__op);
+    e.setAttribute("placeholder", (LANG === "en") ? traduce(e.__op) : aEspanol(e.__op));
   }
   /* v144: los title= (tooltips) tampoco se quedan a medio traducir */
   const elsT = nodo.nodeType === 1 ? [nodo, ...nodo.querySelectorAll("[title]")] : [];
   for (const e of elsT){
     if (!e.getAttribute || !e.hasAttribute("title")) continue;
     if (e.__ot === undefined) e.__ot = e.getAttribute("title");
-    e.setAttribute("title", (LANG === "en") ? traduce(e.__ot) : e.__ot);
+    e.setAttribute("title", (LANG === "en") ? traduce(e.__ot) : aEspanol(e.__ot));
   }
 }
 function aplicaIdioma(){
