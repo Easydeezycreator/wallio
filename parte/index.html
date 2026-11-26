@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="202">
+<meta name="wallio-ver" content="203">
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
 <style>
@@ -1732,13 +1732,17 @@ html.noche #pcPanel{background:#151920!important;color:#e9edf2;border-color:#262
 html.noche main .pt,html.noche main .empty{color:#aab3bf;border-color:#262c36!important;background:transparent}
 html.noche main .tip,html.noche main .hint{color:#aab3bf}
 html.noche main .unidadWrap .unidadBtn{color:#c9d1dc}
+/* v203: textos que estaban en negro fijo (la línea completa de un valor largo, el cursor) */
+html.noche .f > .completo{color:#f2f4f7!important}
+html.noche .f input.conCompleto{caret-color:#f2f4f7!important}
+html.noche .f:focus-within input.conCompleto{color:#f2f4f7!important}
 /* ============ AIRE ============ */
 html.aire main #pp_bloque,html.aire main .card.cajaRoja,html.aire main #camCard,html.aire main #listaTomas .toma .row>.gsec{background:transparent!important;border:0!important;border-top:2px solid var(--boxC)!important;border-radius:0!important;box-shadow:none!important}
 html.aire main #ppCam #camCard{border-top:0!important}
 html.aire main .f,html.aire #pcPanel .f{background:#f4f5f7!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 html.aire main .f:focus-within{background:#fff!important;box-shadow:inset 0 -2px 0 var(--boxC)!important}
-html.aire main .f label{text-transform:none!important;font:600 12px/1.2 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif!important;letter-spacing:0!important;color:#8a919c!important}
-html.aire main .f label span{color:#b5bbc4!important}
+html.aire main .f label{text-transform:none!important;font:600 12px/1.2 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif!important;letter-spacing:0!important;color:#5f6773!important}
+html.aire main .f label span{color:#8a919c!important}
 html.aire main .f input{color:#111!important}
 html.aire main .camSel button{background:transparent!important;border:0!important;border-bottom:2px solid transparent!important;border-radius:0!important;font-size:18px!important}
 html.aire main .camSel button.on{background:transparent!important;border-bottom-color:currentColor!important}
@@ -1746,6 +1750,7 @@ html.aire main .camSel button.on[data-cam="A"]{color:var(--camA)!important}html.
 html.aire main #pp_bloque>summary,html.aire main .ppSec{color:#5c6670!important}
 html.aire main .gsec .ghead{border-bottom:0!important}
 html.noche main .camSel button.uso:not(.on)[data-cam=A]{background:color-mix(in srgb,var(--camA) 22%,#151920)!important;color:var(--camA)!important}html.noche main .camSel button.uso:not(.on)[data-cam=B]{background:color-mix(in srgb,var(--camB) 22%,#151920)!important;color:var(--camB)!important}html.noche main .camSel button.uso:not(.on)[data-cam=C]{background:color-mix(in srgb,var(--camC) 22%,#151920)!important;color:var(--camC)!important}html.noche main .camSel button.uso:not(.on)[data-cam=D]{background:color-mix(in srgb,var(--camD) 22%,#151920)!important;color:var(--camD)!important}html.noche main .camSel button.uso:not(.on)[data-cam=E]{background:color-mix(in srgb,var(--camE) 22%,#151920)!important;color:var(--camE)!important}html.noche main .camSel button.uso:not(.on)[data-cam=F]{background:color-mix(in srgb,var(--camF) 22%,#151920)!important;color:var(--camF)!important}
+html.aire #pc_estado,html.aire main .hint{color:#5f6773}
 /* botón del tema en la cabecera */
 #temaPie{text-align:center;padding:26px 0 34px}
 html body #temaPie #btnTema{background:none!important;border:0!important;box-shadow:none!important;min-height:0;padding:8px 14px;font:500 12px/1 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;letter-spacing:.06em;color:var(--tx3)!important;opacity:.7;cursor:pointer}
