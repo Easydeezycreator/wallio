@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="190">
+<meta name="wallio-ver" content="191">
 <title>WALLIO · Camera Report</title>
 <style>
 :root{
@@ -1544,6 +1544,29 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
 #listaTomas.pag{display:flex;align-items:flex-start;overflow:hidden;gap:16px}
 #listaTomas.pag::-webkit-scrollbar{display:none}
 #listaTomas.pag>.escGrupo{display:none}
+/* v191 (Waldo): en Lista, las tomas se ven como números por escena; solo se
+   abre la que se toca. Páginas queda igual. */
+#listaTomas.compacto>.toma{display:none}
+#listaTomas.compacto>.toma.sel{display:block}
+#listaTomas.compacto>.escGrupo{display:none}
+#idxTomas{padding:6px 0 2px}
+#idxTomas:empty{display:none}
+#idxTomas .ixRow{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 16px;margin:4px 0 12px}
+#idxTomas .ixSc{width:100%;font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx2)}
+#idxTomas .ixSc b{font:800 17px/1 var(--mono);letter-spacing:-.01em;color:var(--tx);margin-left:6px;text-transform:none}
+#idxTomas .ixTk{font:800 22px/1 var(--mono);color:var(--tx);padding:6px 2px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:3px solid transparent;min-width:22px;text-align:center}
+#idxTomas .ixTk sup{font:700 9px/1 var(--mono);letter-spacing:.06em;color:var(--boxC,var(--camA));margin-left:2px}
+#idxTomas .ixTk.on{color:var(--boxC,var(--camA));border-bottom-color:var(--boxC,var(--camA))}
+#idxTomas .ixTk.falso{text-decoration:line-through;opacity:.45}
+#idxTomas .ixTk.nuevo{animation:ixNuevo 1.6s ease-out}
+@keyframes ixNuevo{0%{color:var(--boxC,var(--camA));transform:scale(1.25)}100%{transform:none}}
+#idxTomas .ixMas{font:800 22px/1 var(--mono);color:var(--boxC,var(--camA));cursor:pointer;padding:6px 2px 4px;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+#idxTomas .ixMas small{font:700 11px/1 var(--mono);letter-spacing:.12em;margin-left:4px}
+#idxTomas .ixEsc{display:inline-block;font:700 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--tx2);cursor:pointer;padding:6px 0;-webkit-tap-highlight-color:transparent}
+#idxTomas .ixEsc span{color:var(--boxC,var(--camA))}
+#idxTomas .ixMas:active,#idxTomas .ixTk:active,#idxTomas .ixEsc:active{opacity:.5}
+#rollSig{margin-top:8px;font:800 13px/1 var(--mono);letter-spacing:.1em;color:var(--boxC,var(--camA));cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 0}
+#rollSig:active{opacity:.5}
 #listaTomas.pag>.toma{flex:0 0 100%;min-width:0;border-bottom:0}
 #listaTomas.pag>.pagNueva{flex:0 0 100%;min-height:180px;display:flex;align-items:center;justify-content:center;
   font:700 13px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:color-mix(in srgb,var(--boxC,var(--camA)) 55%,transparent)}
@@ -1873,11 +1896,13 @@ details.agregar > summary{color:var(--tx);border-color:color-mix(in srgb,var(--t
   </div>
 
   <div class="card">
-    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A" autocomplete="off"></div></div>
+    <div class="grid"><div class="f"><label>Rollo / magazine</label><input id="r_roll" placeholder="A" autocomplete="off" inputmode="text">
+      <div id="rollSig" hidden></div></div></div>
         <div id="avisoSmartfill" hidden></div>
         <div id="gruposCampos"></div>
         <div id="vistaTomas"><button data-v="lista" onclick="ponVistaTomas('lista')">↓ <span class="tv">Lista</span></button><button data-v="pag" onclick="ponVistaTomas('pag')">↔ <span class="tv">Páginas</span></button></div>
         <div id="pagNav" hidden></div><div id="pagDots" hidden></div>
+        <div id="idxTomas"></div>
         <div id="listaTomas"></div>
     <div id="listaCampos"></div>
   </div>
@@ -5752,7 +5777,9 @@ const CAMPOS_CLAVE = ["focal","t"];
 const INPUTMODE_TOMA = { nclip: "numeric", dial: "numeric", pies: "decimal",
   alt: "decimal", fps: "decimal", ei: "numeric", t: "decimal", dur: "decimal", focal: "decimal",
   /* v159: más campos que son solo número -> teclado numérico en iPhone */
-  foco: "decimal", tilt: "decimal", pan: "decimal", wb: "numeric" };
+  foco: "decimal", tilt: "decimal", pan: "decimal", wb: "numeric",
+  /* v191: obturador y nº de toma también con el teclado de números */
+  shutter: "decimal", tk: "numeric" };
 function aprendeCampo(k, v){
   v = (v || "").trim(); if (!v) return;
   S.memCampos = S.memCampos || {};
@@ -6886,6 +6913,15 @@ function renderTomas(){
                      wb: "dlWb", cc: "dlCc", fps: "dlFps", shutter: "dlShutter", ei: "dlEi", lut: "dlLut",
                      res: "dlResProy", focal: "dlFocal", nclip: "dlNclip",
                      alt: "dlAlt", tilt: "dlTilt", pan: "dlPan" };
+  /* v191 (Waldo): los campos que son solo número usan directamente el
+     teclado de números del iPhone, sin la lista "escribir…" */
+  ["focal","t","alt","tilt","pan","fps","shutter","ei","wb","nclip"].forEach(k => { delete T_LISTAS[k]; });
+  const compacto = !vistaPag();
+  if (compacto){
+    if (TOMA_SEL >= 0 && (!L[TOMA_SEL] || (L[TOMA_SEL].camLetra || "A") !== camActiva())) TOMA_SEL = -1;
+    /* la primerísima toma (en blanco) se abre sola: es donde se empieza */
+    if (TOMA_SEL < 0 && idxCam.length === 1 && !tomaConDatos(L[idxCam[0]])) TOMA_SEL = idxCam[0];
+  }
   let escenaAnterior = null;
   $("listaTomas").innerHTML = idxCam.length ? idxCam.map(i => {
     const t = L[i];
@@ -7014,12 +7050,14 @@ function renderTomas(){
     }).join("");
     const cajaPersonalizados = propios ? `<div class="gsec"><div class="row">${propios}</div></div>` : "";
         const esUltima = i === ultimoIdx;
-        const abierta = esUltima || vistaPag();   /* v175: en páginas cada toma va abierta y editable */
+        /* v175: en páginas cada toma va abierta y editable.
+           v191: en lista solo la toma elegida en los números */
+        const abierta = compacto ? (i === TOMA_SEL) : true;
         /* v123: Smartfill vuelve a ser chico y discreto, en la esquina de la
            cabecera, en rojo apagado -- ya no ocupa toda la fila. Los demás
            botones (MOS/TAILS/PU/FALSO/buena) siguen en su propia fila al
            fondo de la toma. La × de borrar se queda arriba siempre. */
-        const smartfillBtn = esUltima ? `<button class="smartfill" title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill →</button>` : "";
+        const smartfillBtn = (esUltima && !compacto) ? `<button class="smartfill" title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill →</button>` : "";
         const accionesBtn = abierta ? `<div class="btnrow acciones">
           <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
           <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
@@ -7027,8 +7065,8 @@ function renderTomas(){
           <button class="${t.falso ? "mal" : ""}" title="${esc(traduce("Marcar esta toma como clip falso (equivocación, prueba, no es material real)"))}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].falso=!S.parte.tomas[${i}].falso;renderTomas()">${traduce("FALSO")}</button>
           <button class="${t.ok ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].ok=!S.parte.tomas[${i}].ok;renderTomas()">${traduce("buena")}</button>
         </div>` : "";
-        return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}" data-i="${i}"${abierta ? " open" : ""}>
-      <summary class="th">
+        return cabecera + `<details class="toma cam${t.camLetra || "A"}${t.falso ? " falso" : ""}${compacto && i === TOMA_SEL ? " sel" : ""}" data-i="${i}"${abierta ? " open" : ""}>
+      <summary class="th"${compacto ? ` onclick="event.preventDefault();selToma(${i})"` : ""}>
         <span class="camchip cam${t.camLetra || "A"}">${esc(nombreCam(t.camLetra || "A"))}</span><div class="sl">${esc(t.sc || "—")} / ${esc(t.tk || "—")}</div>
         <div class="meta">${esc(meta)}</div>
         ${smartfillBtn}
@@ -7039,6 +7077,8 @@ function renderTomas(){
       ${accionesBtn}</details>`;
   }).join("") + (vistaPag() ? `<div class="pagNueva">${LANG === "en" ? "+ New take" : "+ Nueva toma"}</div>` : "") : "";
   $("listaTomas").classList.toggle("mc", esMulticam());
+  $("listaTomas").classList.toggle("compacto", compacto);
+  pintaIdxTomas(idxCam, compacto);
   agregarAbiertos.forEach(idx => {
     const d = document.querySelector('#listaTomas .toma[data-i="' + idx + '"] > details.agregar');
     if (d) d.open = true;
@@ -7046,6 +7086,78 @@ function renderTomas(){
   renderGruposCampos();
   resumenParte(); fillParte(); updateChip(); pintaCams();
   pagTrasRender();
+}
+/* ---------- v191 · tomas como números (pedido de Waldo, 26/11) ----------
+   En Lista ya no se ven todas las tomas abiertas: cada escena es una línea
+   con sus números de toma (y sus marcas PU / TAILS / MOS / ✓). "+ Toma n"
+   crea la siguiente copiando todo lo de la anterior (como Smartfill) sin
+   abrirla; tocar un número abre esa toma completa debajo para corregirla;
+   tocarlo otra vez la cierra. "+ Escena nueva" crea la toma y la abre en la
+   Escena para escribirla. La página NUNCA se mueve sola. */
+let TOMA_SEL = -1;
+function pintaIdxTomas(idxCam, compacto){
+  const box = $("idxTomas"); if (!box) return;
+  pintaRollSig();
+  if (!compacto || !idxCam.length){ box.innerHTML = ""; return; }
+  const L = S.parte.tomas, en = LANG === "en";
+  const filas = []; let actual = null;
+  idxCam.forEach(i => { const sc = (L[i].sc || "").trim();
+    if (!actual || actual.sc !== sc){ actual = {sc, tomas: []}; filas.push(actual); }
+    actual.tomas.push(i); });
+  const ultima = L[idxCam[idxCam.length - 1]];
+  const sigTk = (parseInt(ultima.tk, 10) || 0) + 1;
+  const marca = t => t.notaEsp === "PU" ? "PU" : t.notaEsp === "TAILS" ? "TAILS" : t.mos ? "MOS" : t.ok ? "✓" : "";
+  box.innerHTML = filas.map((f, fi) =>
+    `<div class="ixRow"><div class="ixSc">${esc(traduce("Escena"))}<b>${esc(f.sc || "—")}</b></div>` +
+    f.tomas.map(i => { const t = L[i]; const m = marca(t);
+      return `<span class="ixTk${i === TOMA_SEL ? " on" : ""}${t.falso ? " falso" : ""}${i === IX_NUEVO ? " nuevo" : ""}" data-i="${i}" onclick="selToma(${i})">${esc(t.tk || "—")}${m ? `<sup>${esc(m)}</sup>` : ""}</span>`; }).join("") +
+    (fi === filas.length - 1 ? `<span class="ixMas" id="ixMas" onclick="masToma()">+<small>${en ? "TAKE" : "TOMA"} ${sigTk}</small></span>` : "") +
+    `</div>`).join("") +
+    `<span class="ixEsc" onclick="masEscena()">+ <span>${en ? "NEW SCENE" : "ESCENA NUEVA"}</span></span>`;
+  IX_NUEVO = -1;
+}
+let IX_NUEVO = -1;
+function selToma(i){
+  TOMA_SEL = (TOMA_SEL === i) ? -1 : i;
+  const y = window.scrollY;
+  renderTomas();
+  const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija);
+}
+function masToma(){
+  const L = S.parte.tomas;
+  let u = -1; for (let j = L.length - 1; j >= 0; j--) if ((L[j].camLetra || "A") === camActiva()){ u = j; break; }
+  const y = window.scrollY;
+  TOMA_SEL = -1;
+  if (u >= 0) smartfill(u); else nuevaToma(false);
+  IX_NUEVO = S.parte.tomas.length - 1; renderTomas();
+  const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija);
+}
+function masEscena(){
+  const y = window.scrollY;
+  nuevaToma(true);
+  TOMA_SEL = S.parte.tomas.length - 1; renderTomas();
+  const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija);
+  setTimeout(() => { const sc = document.querySelector('#listaTomas .toma.sel .f[data-k="sc"] input');
+    if (sc){ sc.removeAttribute("readonly"); try { sc.focus({preventScroll: true}); } catch(e){ sc.focus(); } } }, 60);
+}
+/* "+ Siguiente · A002": un toque y empieza la tarjeta siguiente (como el
+   Reload de ZoeLog). El número se puede escribir a mano igual que antes. */
+function pintaRollSig(){
+  const el = $("rollSig"); if (!el) return;
+  const r = String((S.parte.roll || {}).roll || "").trim();
+  const hay = (S.parte.tomas || []).some(t => (t.camLetra || "A") === camActiva() && tomaConDatos(t) && ((t.sc || "").trim() || (t.clip || "").trim()));
+  if (!r || !hay){ el.hidden = true; el.innerHTML = ""; return; }
+  el.hidden = false;
+  el.innerHTML = `+ ${LANG === "en" ? "NEXT" : "SIGUIENTE"} · ${esc(siguienteRollo(r))}`;
+  el.onclick = function(){
+    const i = $("r_roll"); if (!i) return;
+    const y = window.scrollY;
+    i.value = siguienteRollo(String((S.parte.roll || {}).roll || "").trim());
+    i.dispatchEvent(new Event("input", {bubbles: true}));
+    i.dispatchEvent(new Event("change", {bubbles: true}));
+    TOMA_SEL = -1; renderTomas();
+    const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija); setTimeout(fija, 120);
+  };
 }
 /* ---------- v175 · tomas en páginas, de lado (estilo ZoeLog) ----------
    Por defecto se trabaja como siempre: hacia abajo, en escalera. Si el
@@ -7433,11 +7545,11 @@ function nuevaToma(nuevaEscena){
                      const ir = () => { const el = document.querySelectorAll("#listaTomas .toma"); const u = el[el.length-1]; if (!u) return;
                        const ant = el.length > 1 ? el[el.length-2] : u;
                        window.scrollTo({top: Math.max(0, ant.getBoundingClientRect().top + scrollY - 8), behavior: "auto"}); };
-                     if (!vistaPag()){ ir(); requestAnimationFrame(() => { ir(); setTimeout(ir, 120); }); }
+                     /* v191: en Lista (números) la página no se mueve */
                      /* escena nueva: el foco va directo al campo Escena vacío,
                         para que se note que aquí se escribe CUÁL es (la toma ya
                         ha vuelto sola a 1) */
-                     if (nuevaEscena){
+                     if (nuevaEscena && vistaPag()){
                        const sc = e[e.length-1].querySelector('.f[data-k="sc"] input');
                        if (sc){ sc.removeAttribute("readonly"); sc.focus(); }
                      } }, 40);
@@ -7982,6 +8094,8 @@ function irATomaPost(i){
     renderTomas(); if (typeof guardaYa === "function") guardaYa();
   }
   if ((x.camLetra || "A") !== camActiva()) cambiaCam(x.camLetra || "A");
+  /* v191: en Lista (números) se elige esa toma para que se abra */
+  if (!vistaPag()){ TOMA_SEL = i; renderTomas(); }
   document.querySelectorAll("#listaTomas details.toma[open]").forEach(d => { if (d.getAttribute("data-i") !== String(i)) d.open = false; });
   const t = document.querySelector('#listaTomas details.toma[data-i="' + i + '"]');
   if (!t) return;
@@ -8063,7 +8177,7 @@ function rolloDeCam(d, l){
 function diaGrupos(soloCam){
   if (typeof ptArchiva === "function") ptArchiva(false);
   const P = S.prod || {}, fecha = P.fecha || "", proy = norm(P.proyecto || "");
-  const lista = ptLee().filter(x => (x.fecha || "") === fecha && (!proy || norm(x.proyecto || "") === proy) && x.d && (x.d.tomas || []).some(tomaConDatos))
+  const lista = ptLee().filter(x => (x.fecha || "") === fecha && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d && (x.d.tomas || []).some(tomaConDatos))
     .sort((a, b) => (a.t || 0) - (b.t || 0));
   const grupos = {};
   lista.forEach(x => {
@@ -8162,7 +8276,7 @@ function pintaEnvio(){
   try {
     const P = S.prod || {}, fecha = P.fecha || "", proy = norm(P.proyecto || "");
     const set = new Set(camarasEnUso());
-    ptLee().forEach(x => { if ((x.fecha || "") === fecha && (!proy || norm(x.proyecto || "") === proy) && x.d)
+    ptLee().forEach(x => { if ((x.fecha || "") === fecha && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d)
       (x.d.tomas || []).forEach(t => set.add(t.camLetra || "A")); });
     letras = CAM_LETRAS.filter(l => set.has(l));
   } catch(e){ letras = camarasEnUso(); }
