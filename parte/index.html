@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="203">
+<meta name="wallio-ver" content="204">
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
 <style>
@@ -602,6 +602,8 @@ nav button i.no{color:var(--tx3)} nav button.on i.no{color:#6a7482}
 #parte .decl b.t{font:800 7.4pt/1 var(--sans);letter-spacing:.2em;margin-bottom:6px}
 #parte .sig .rl{font:700 7.1pt/1.4 var(--sans);letter-spacing:.1em}
 #parte .sig .box{border:1pt solid #59616d;border-radius:7px;height:52px}
+/* v204 (Waldo): firmas sin recuadro -- solo la línea para firmar */
+.doc .sig .box,#parte .sig .box{border:0!important;border-bottom:.8pt solid #59616d!important;border-radius:0!important;height:40px!important;background:none!important}
 #parte .sig .nm{font:500 7.3pt/1.4 var(--sans);color:#7c8493}
 #parte .ffoot{border-top:1pt solid #9aa2ae;font:500 6.2pt/1.5 var(--sans);letter-spacing:.03em;color:#8d95a3}
 #parte .lgd{font:500 6.8pt/1.4 var(--sans)}
@@ -8480,27 +8482,8 @@ async function pdfDirecto(id, nombre){
   } finally { quita(); }
 }
 function parteCSV(){
-  const R = S.parte.roll, P = S.prod, props = S.parte.campos || [];
-  const pr = S.parte.camposRollo || [];
-  const cab = ["proyecto","fecha","jornada","camara","rollo_magazine","cuerpo","formato_rollo",
-    "codec","soporte","escena","toma","buena","descripcion","focal_mm","optica_serie","diafragma_t",
-    "filtro","distancia_foco","altura_optica","tilt","roll_grados","temperatura_color","fps",
-    "obturador","ei_iso","lut","resolucion","timecode","duracion_s","notas",
-          "tipo","archivo_clip","mos","nota_especial","num_clips","contador","metraje_toma","laboratorio","magazine",
-    "lote","carga","unidad_medida","paso","cargado_por","contador_inicial","revelado","positivado_escaneo",
-    "instrucciones_lab"].concat(pr).concat(props);
-  const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
-  const filas = S.parte.tomas.map((x, i) => { /* v48: cada fila con SU cámara */
-    const C = configDe(x.camLetra || "A"), cf = (C.tipo || "digital") === "film";
-    return [P.proyecto, P.fecha, P.jornada, C.cam || x.camLetra || "A", C.roll, C.body,
-    C.fmt, C.codec, C.media, x.sc, x.tk, x.ok ? "si" : "no", x.desc, x.focal, x.serial, x.t,
-    x.filt, x.foco, x.alt, x.tilt, x.roll, x.wb, x.fps, x.shutter, x.ei, x.lut, x.res, x.tc,
-    x.dur, x.nota,
-          C.tipo || "digital", x.clip, x.mos ? "si" : "no", x.notaEsp || "", x.nclip || "", x.dial, cf ? (piesDeToma(i) || "") : "",
-    C.lab, C.mag, C.emul, C.lote, C.carga, cf ? (C.unidad || "ft") : "", cf ? pasoTexto(C.perf) : "", C.loader,
-    C.dial0, C.rev, C.copia, C.labnotas].concat(pr.map(n => (C.extra || {})[n] || ""))
-    .concat(props.map(n => (x.extra || {})[n] || "")).map(q).join(","); });
-  descargar("﻿" + [cab.join(","), ...filas].join("\r\n"),
+  const R = S.parte.roll, tp = esFilm() ? "film" : "digital";
+  descargar("\ufeff" + [csvCompletoCab(tp), ...csvCompletoFilas(null, tp)].join("\r\n"),
             "WALLIO_parte_" + (R.roll || "rollo") + ".csv", "text/csv");
 }
 /* ================= v168 · POSTPRODUCCIÓN (Silverstack / Avid / Resolve) ================= */
@@ -8770,42 +8753,54 @@ function archivosALE(T, base){
     return {nombre: base + "_Cam" + l + ".ale", texto: lineas.join("\r\n") + "\r\n", tipo: "text/plain"};
   });
 }
-/* el CSV completo de WALLIO (todas las columnas), para las tomas que se le pasen */
-function csvCompletoFilas(soloCam){
+/* v204 (Waldo): el CSV no mezcla digital con película -- cada tipo lleva SOLO
+   sus columnas (digital: codec, LUT, clip, timecode, WB…; película: contador,
+   metraje, laboratorio, emulsión, lote, carga…). Si el día tiene los dos
+   tipos salen dos CSV. (Antes faltaba la cabecera "emulsion" y las columnas
+   de laboratorio quedaban corridas.) */
+const CSV_COLS = [
+  ["proyecto", (x,i,C,P) => P.proyecto], ["fecha", (x,i,C,P) => P.fecha], ["jornada", (x,i,C,P) => P.jornada],
+  ["camara", (x,i,C) => C.cam || x.camLetra || "A"], ["rollo_magazine", (x,i,C) => C.roll], ["cuerpo", (x,i,C) => C.body],
+  ["formato", (x,i,C) => C.fmt], ["codec", (x,i,C) => C.codec, "d"], ["soporte", (x,i,C) => C.media, "d"],
+  ["escena", x => x.sc], ["toma", x => x.tk], ["buena", x => x.ok ? "si" : "no"], ["descripcion", x => x.desc],
+  ["focal_optica", x => x.focal], ["optica_serie", x => x.serial], ["diafragma_t", x => x.t], ["filtro", x => x.filt],
+  ["distancia_foco", x => x.foco], ["altura_optica", x => x.alt], ["tilt", x => x.tilt], ["pan", x => x.pan],
+  ["temperatura_color", x => x.wb, "d"], ["cc_tinte", x => x.cc, "d"], ["fps", x => x.fps], ["obturador", x => x.shutter],
+  ["ei_iso", x => x.ei], ["lut", x => x.lut, "d"], ["resolucion", x => x.res, "d"], ["timecode", x => x.tc, "d"],
+  ["duracion_s", x => x.dur], ["notas", x => x.nota], ["tipo", (x,i,C) => (C.tipo || "digital") === "film" ? "pelicula" : "digital"],
+  ["archivo_clip", x => x.clip, "d"], ["num_clips", x => x.nclip || "", "d"], ["mos", x => x.mos ? "si" : "no"],
+  ["nota_especial", x => x.notaEsp || ""],
+  ["contador", x => x.dial, "f"], ["metraje_toma", (x,i) => piesDeToma(i) || "", "f"], ["laboratorio", (x,i,C) => C.lab, "f"],
+  ["magazine", (x,i,C) => C.mag, "f"], ["emulsion", (x,i,C) => C.emul, "f"], ["lote", (x,i,C) => C.lote, "f"],
+  ["carga", (x,i,C) => C.carga, "f"], ["unidad_medida", (x,i,C) => C.unidad || "ft", "f"], ["paso", (x,i,C) => pasoTexto(C.perf), "f"],
+  ["cargado_por", (x,i,C) => C.loader, "f"], ["contador_inicial", (x,i,C) => C.dial0, "f"], ["revelado", (x,i,C) => C.rev, "f"],
+  ["positivado_escaneo", (x,i,C) => C.copia, "f"], ["instrucciones_lab", (x,i,C) => C.labnotas, "f"]
+];
+const csvTipoDe = x => (configDe(x.camLetra || "A").tipo || "digital") === "film" ? "film" : "digital";
+const csvColsDe = tipo => CSV_COLS.filter(c => !c[2] || (tipo === "film" ? c[2] === "f" : c[2] === "d"));
+function csvCompletoFilas(soloCam, tipo){
   const P = S.prod, props = S.parte.campos || [], pr = S.parte.camposRollo || [];
   const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
-  return S.parte.tomas.map((x, i) => ({x, i})).filter(o => !soloCam || (o.x.camLetra || "A") === soloCam).map(({x, i}) => {
-    const C = configDe(x.camLetra || "A"), cf = (C.tipo || "digital") === "film";
-    return [P.proyecto, P.fecha, P.jornada, C.cam || x.camLetra || "A", C.roll, C.body,
-    C.fmt, C.codec, C.media, x.sc, x.tk, x.ok ? "si" : "no", x.desc, x.focal, x.serial, x.t,
-    x.filt, x.foco, x.alt, x.tilt, x.roll, x.wb, x.fps, x.shutter, x.ei, x.lut, x.res, x.tc,
-    x.dur, x.nota,
-          C.tipo || "digital", x.clip, x.mos ? "si" : "no", x.notaEsp || "", x.nclip || "", x.dial, cf ? (piesDeToma(i) || "") : "",
-    C.lab, C.mag, C.emul, C.lote, C.carga, cf ? (C.unidad || "ft") : "", cf ? pasoTexto(C.perf) : "", C.loader,
-    C.dial0, C.rev, C.copia, C.labnotas].concat(pr.map(n => (C.extra || {})[n] || ""))
-    .concat(props.map(n => (x.extra || {})[n] || "")).map(q).join(","); });
+  return S.parte.tomas.map((x, i) => ({x, i})).filter(o => (!soloCam || (o.x.camLetra || "A") === soloCam) && (!tipo || csvTipoDe(o.x) === tipo)).map(({x, i}) => {
+    const C = configDe(x.camLetra || "A"), cols = csvColsDe(csvTipoDe(x));
+    return cols.map(c => c[1](x, i, C, P)).concat(pr.map(n => (C.extra || {})[n] || ""))
+      .concat(props.map(n => (x.extra || {})[n] || "")).map(q).join(","); });
 }
-function csvCompletoCab(){
+function csvCompletoCab(tipo){
   const props = S.parte.campos || [], pr = S.parte.camposRollo || [];
-  return ["proyecto","fecha","jornada","camara","rollo_magazine","cuerpo","formato_rollo",
-    "codec","soporte","escena","toma","buena","descripcion","focal_mm","optica_serie","diafragma_t",
-    "filtro","distancia_foco","altura_optica","tilt","roll_grados","temperatura_color","fps",
-    "obturador","ei_iso","lut","resolucion","timecode","duracion_s","notas",
-    "tipo","archivo_clip","mos","nota_especial","num_clips","contador","metraje_toma","laboratorio","magazine",
-    "lote","carga","unidad_medida","paso","cargado_por","contador_inicial","revelado","positivado_escaneo",
-    "instrucciones_lab"].concat(pr).concat(props).join(",");
+  return csvColsDe(tipo || "digital").map(c => c[0]).concat(pr).concat(props).join(",");
 }
 /* lo que va a salir, sin generar nada: sirve para el PDF y para las pruebas */
 function paqueteDia(soloCam){
   const grupos = diaGrupos(soloCam);
-  const html = [], T = [], filasCSV = [];
+  const html = [], T = [], filasCSV = [], csvTipo = {digital: [], film: []};
   grupos.forEach(g => conParte(g.d, () => {
     renderParte(g.cam);
     html.push(document.getElementById("parte").innerHTML);
     tomasPost().filter(o => o.l === g.cam).forEach(o => T.push(o));
-    csvCompletoFilas(g.cam).forEach(f => filasCSV.push(f));
+    ["digital", "film"].forEach(tp => csvCompletoFilas(g.cam, tp).forEach(f => { csvTipo[tp].push(f); filasCSV.push(f); }));
   }, g.cam));
-  return {grupos, html, T, filasCSV};
+  return {grupos, html, T, filasCSV, csvTipo};
 }
 function pintaEnvio(){
   const el = $("envCams"); if (!el) return;
@@ -8844,7 +8839,9 @@ async function enviarTodo(soloCam){
     if (typeof aplicaIdioma === "function") aplicaIdioma();
     const base = nombreBasePost() + (soloCam ? "_Cam" + soloCam : "");
     const archivos = [];
-    archivos.push({nombre: base + ".csv", texto: "﻿" + [csvCompletoCab()].concat(pk.filasCSV).join("\r\n"), tipo: "text/csv"});
+    { const tipos = ["digital", "film"].filter(tp => pk.csvTipo[tp].length);
+      tipos.forEach(tp => archivos.push({nombre: base + (tipos.length > 1 ? (tp === "film" ? "_Pelicula" : "_Digital") : "") + ".csv",
+        texto: "\ufeff" + [csvCompletoCab(tp)].concat(pk.csvTipo[tp]).join("\r\n"), tipo: "text/csv"})); }
     const conClip = pk.T.filter(o => String(o.x.clip || "").trim());
     if (conClip.length){
       archivos.push({nombre: base + "_Silverstack.csv", texto: textoSilverstack(conClip), tipo: "text/csv"});
@@ -10825,7 +10822,9 @@ document.addEventListener("focusin", e => {
   if (t.type === "date" || t.type === "file" || t.type === "password") return;
   if ((t.id || "").indexOf("nb_") === 0) return;
   if (!t.value) return;
-  setTimeout(() => { try { if (document.activeElement === t) t.select(); } catch(_){} }, 0);
+  /* v204: solo si no se ha empezado a escribir (si no, se comía la primera letra) */
+  const v0 = t.value;
+  setTimeout(() => { try { if (document.activeElement === t && t.value === v0) t.select(); } catch(_){} }, 0);
 });
 materializaDefectos();
 ["r_body", "r_roll", "r_cam"].forEach(function(id){
@@ -10889,7 +10888,7 @@ const LENTES_CAT = [
     const cw = document.documentElement.clientWidth;
     /* v201: la lista de ópticas ocupa solo el ancho de su recuadro (no tapa el
        campo de al lado) y es corta, para que el siguiente toque llegue al campo */
-    const fl = activo && activo.hasAttribute && activo.hasAttribute("data-lente") && activo.closest(".f");
+    const fl = activo && activo.hasAttribute && activo.hasAttribute("data-solo-escribir") && activo.closest(".f");
     caja.classList.toggle("lente", !!fl);
     if (fl){ const fr = fl.getBoundingClientRect();
       caja.style.minWidth = fr.width + "px"; caja.style.maxWidth = fr.width + "px";
@@ -11020,8 +11019,12 @@ const LENTES_CAT = [
     const kitOps = (typeof kitOpciones === "function" ? kitOpciones(inp) : [])
       .filter(o => !v || (o.v + " " + (o.n || "")).toLowerCase().includes(v));
     const enKit = new Set(kitOps.map(o => o.v.toLowerCase()));
+    const g = inp.getAttribute("data-memgrupo");
+    const memOps = g ? memLista(g).filter(x => (!v || x.toLowerCase().includes(v)) && !enKit.has(x.toLowerCase())).slice(0, 8) : [];
+    const enMem = new Set(memOps.map(x => x.toLowerCase()));
     const ops = [...dl.options].map(o => o.value)
-      .filter(x => (!v || x.toLowerCase().includes(v)) && !enKit.has(x.toLowerCase()));
+      .filter(x => (!v || x.toLowerCase().includes(v)) && !enKit.has(x.toLowerCase()) && !enMem.has(x.toLowerCase()));
+    if (!kitOps.length && !memOps.length && !ops.length) return cierra();
     /* v201: primero lo que EMPIEZA por lo escrito ("50" → 50 mm antes que 150 mm) */
     if (v) ops.sort((a, b) => (b.toLowerCase().startsWith(v) ? 1 : 0) - (a.toLowerCase().startsWith(v) ? 1 : 0));
     const fk0 = inp.closest(".f") && inp.closest(".f").getAttribute("data-k");
@@ -11031,8 +11034,12 @@ const LENTES_CAT = [
     caja.innerHTML = escribirTxt + (kitOps.length
       ? '<div class="opTit">' + e1(LANG === "en" ? "From the shoot kit" : "Del kit del rodaje") + "</div>" +
         kitOps.map(o => '<div class="op kit" data-v="' + e1(o.v) + '">' + e1(o.v) + (o.n ? "<small>" + e1(o.n) + "</small>" : "") + "</div>").join("") +
-        (ops.length ? '<div class="opTit gris">' + e1(LANG === "en" ? "Full catalogue" : "Todo el catálogo") + "</div>" : "")
-      : "") + ops.slice(0, 60).map(x =>
+        ((ops.length && !memOps.length) ? '<div class="opTit gris">' + e1(LANG === "en" ? "Full catalogue" : "Todo el catálogo") + "</div>" : "")
+      : "") +
+      (memOps.length ? ((ops.length || kitOps.length) ? '<div class="opTit">' + e1(LANG === "en" ? "Used before" : "Usados antes") + "</div>" : "") +
+        memOps.map(x => '<div class="op mem">' + e1(x) + "</div>").join("") +
+        (ops.length ? '<div class="opTit gris">' + e1(LANG === "en" ? "Catalogue" : "Catálogo") + "</div>" : "") : "") +
+      ops.slice(0, 60).map(x =>
       '<div class="op">' + e1(x) + "</div>").join("");
     const r = inp.getBoundingClientRect();
     caja.style.minWidth = Math.min(r.width, document.documentElement.clientWidth - 16) + "px";
@@ -11080,12 +11087,68 @@ const LENTES_CAT = [
       inp.dispatchEvent(new Event("change", {bubbles: true}));
       try { inp.blur(); } catch(_){} });
   };
+  /* ===== v204 (Waldo): MEMORIA PERSONAL de cada aparato =====
+     Todo lo que se escribe (ópticas, filtros, personas, casas, cámaras…) se
+     guarda en ESTE aparato y vuelve como sugerencia en cualquier proyecto:
+     primero lo más reciente y lo más usado, después el catálogo; separado por
+     tipo de campo. La lista sale al escribir 3 letras (o 2 números). Los
+     números que cambian en cada toma (T, foco, WB, escena…) no se guardan. */
+  const MEM_KEY = "wallio.memoria.v1";
+  const MEM_SALTA = ["sc","tk","clip","nclip","tc","dur","dial","pies","t","foco","alt","tilt","pan","wb","cc","ei","fps","shutter"];
+  const MEM_PP = {pp_director:"personas", pp_dop:"personas", pp_ac:"personas", pp_ac2:"personas", pp_vtr:"personas", pp_dit:"personas", pp_loader:"personas", r2_loader:"personas",
+    pp_proyecto:"proyectos", pp_productora:"productoras", pp_casa:"casas", pp_unidad:"unidades", pp_localizacion:"localizaciones"};
+  const memLee = () => { try { return JSON.parse(localStorage.getItem(MEM_KEY) || "{}") || {}; } catch(e){ return {}; } };
+  const memEscribe = m => { try { localStorage.setItem(MEM_KEY, JSON.stringify(m)); } catch(e){} };
+  const memGrupo = inp => {
+    if (!inp || inp.tagName !== "INPUT" || inp.type === "date" || inp.type === "file" || inp.type === "hidden") return null;
+    if (inp.id && MEM_PP[inp.id]) return MEM_PP[inp.id];
+    if (inp.id && /^r2?_/.test(inp.id) && inp.id !== "r_roll" && inp.id !== "r_cam") return inp.id;
+    const f = inp.closest && inp.closest("#listaTomas .f[data-k]"); if (!f) return null;
+    const k = f.getAttribute("data-k"); if (MEM_SALTA.indexOf(k) >= 0) return null;
+    return k === "focal" ? "opticas" : k === "filt" ? "filtros" : "t_" + k;
+  };
+  const memAprende = (g, v, t) => {
+    v = String(v || "").trim(); if (!g || !v || v.length > 80) return;
+    if (g === "opticas" && /^[\d.,–\-\s]+(mm)?$/i.test(v)) return;      /* una focal sola ya está en el catálogo */
+    const m = memLee(), L = m[g] = m[g] || [];
+    const e = L.find(x => x.v.toLowerCase() === v.toLowerCase());
+    if (e){ e.n = (e.n || 1) + 1; e.t = Math.max(e.t || 0, t || Date.now()); e.v = v; }
+    else L.push({v, n: 1, t: t || Date.now()});
+    L.sort((a, b) => (b.t + (b.n || 1) * 1728e5) - (a.t + (a.n || 1) * 1728e5));
+    m[g] = L.slice(0, 60); memEscribe(m);
+  };
+  const memLista = g => (memLee()[g] || []).map(x => x.v);
+  window.memoriaAprende = memAprende;
+  /* la primera vez se aprende de lo que ya hay en este aparato (partes guardados y el de ahora) */
+  (function siembra(){
+    try { if (localStorage.getItem(MEM_KEY + ".sembrada")) return; } catch(e){ return; }
+    const PROD = {director:"personas", dop:"personas", ac:"personas", ac2:"personas", vtr:"personas", dit:"personas", loader:"personas",
+      proyecto:"proyectos", productora:"productoras", casa:"casas", unidad:"unidades", localizacion:"localizaciones"};
+    const ROLL = {body:"r_body", fmt:"r_fmt", aspecto:"r_aspecto", res:"r_res", lut:"r_lut", codec:"r_codec"};
+    const toma = (x, t) => { Object.keys(x || {}).forEach(k => { if (MEM_SALTA.indexOf(k) >= 0 || typeof x[k] !== "string" || k.charAt(0) === "_" || k === "camLetra") return;
+      memAprende(k === "focal" ? "opticas" : k === "filt" ? "filtros" : "t_" + k, x[k], t); }); };
+    const paquete = (d, t) => { if (!d) return;
+      Object.keys(PROD).forEach(k => memAprende(PROD[k], (d.prod || {})[k], t));
+      [d.roll].concat(Object.values(d.camsGuardadas || {})).forEach(r => Object.keys(ROLL).forEach(k => memAprende(ROLL[k], (r || {})[k], t)));
+      (d.tomas || []).forEach(x => toma(x, t)); };
+    try { (typeof ptLee === "function" ? ptLee() : []).slice().sort((a, b) => (a.t || 0) - (b.t || 0)).forEach(f => paquete(f.d, f.t || 0)); } catch(e){}
+    try { if (typeof ptPaquete === "function") paquete(ptPaquete(), Date.now()); } catch(e){}
+    try { localStorage.setItem(MEM_KEY + ".sembrada", "1"); } catch(e){}
+  })();
+  { const dlm = document.createElement("datalist"); dlm.id = "dlMem"; document.body.appendChild(dlm); }
+  document.addEventListener("change", e => { const t = e.target; const g = memGrupo(t); if (g) memAprende(g, t.value); }, true);
   const esLente = t => t && t.tagName === "INPUT" && t.closest && t.closest('#listaTomas .f[data-k="focal"]');
   const marcaLente = t => {
     if (esLente(t) && !t.hasAttribute("data-lente")){ t.setAttribute("data-lista", "dlLentesCat"); t.setAttribute("data-solo-escribir", "1"); t.setAttribute("data-lente", "1"); t.removeAttribute("inputmode"); t.setAttribute("data-im", ""); t.setAttribute("autocapitalize", "words"); }
     /* v202: con el kit de CalaveraList, el nº de serie ofrece las ópticas del kit al tocarlo */
     if (t && t.tagName === "INPUT" && t.closest && t.closest('#listaTomas .f[data-k="serial"]') && !t.hasAttribute("data-lista")
-        && typeof kitOpciones === "function" && kitOpciones(t).length) t.setAttribute("data-lista", "dlSeries");
+        && typeof kitOpciones === "function" && kitOpciones(t).length) t.setAttribute("data-lista", "dlSeries");    /* v204: memoria personal en los demás campos de texto */
+    const g = memGrupo(t);
+    if (g && !t.hasAttribute("data-memgrupo")){
+      t.setAttribute("data-memgrupo", g);
+      if (!t.hasAttribute("data-lista") && !t.hasAttribute("list")){ t.setAttribute("data-lista", "dlMem"); t.setAttribute("data-solo-escribir", "1"); }
+    }
+
   };
   /* v202: la lista de ópticas sale al escribir 3 letras (o 2 números: "50") */
   const pocoEscrito = t => { const v = (t.value || "").trim(); return v.length < (/^\d/.test(v) ? 2 : 3); };
@@ -11203,7 +11266,7 @@ const LENTES_CAT = [
     const cabeAbajo = (r.bottom + 2 + alto) <= vh && (r.top < vh * 0.5 || r.top - alto - 2 < 0);
     caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
     caja.style.top = cabeAbajo ? (r.bottom + scrollY + 2) + "px" : (r.top + scrollY - alto - 2) + "px";
-    if (activo.hasAttribute("data-lente")) ajustaAncho(r); };
+    if (activo.hasAttribute("data-solo-escribir")) ajustaAncho(r); };
   window.comboRecoloca = () => { if (!caja.hidden && activo && document.contains(activo)) recoloca(); };
   window.addEventListener("scroll", e => {
     if (caja.contains(e.target)) return;
