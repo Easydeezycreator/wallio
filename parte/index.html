@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="217">
+<meta name="wallio-ver" content="218">
 <script>window.WALLIO_ERR=null;addEventListener("error",function(e){if(!window.WALLIO_FIN_ARRANQUE&&!window.WALLIO_ERR)window.WALLIO_ERR=(e.message||"")+" @"+(e.lineno||"");});</script>
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
@@ -1804,6 +1804,13 @@ html.noche .f:focus-within input.conCompleto{color:#f2f4f7!important}
 #idxAnt .ixT2.falso{text-decoration:line-through;opacity:.45}
 #idxAnt .ixT2:active{opacity:.5}
 #idxAnt .ixEdit{font:600 12px/1.4 var(--mono);color:#3fae6a;padding:8px 0 6px}
+/* v218: barra para volver a la toma que se trabajaba */
+#idxAnt .ixVolver{display:flex;align-items:center;gap:14px;background:var(--cv);color:#111;padding:14px 16px;margin:6px 0 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+#idxAnt .ixVolver .ixVf{font:700 26px/1 var(--mono)}
+#idxAnt .ixVolver .ixVt{display:flex;flex-direction:column;gap:4px;min-width:0}
+#idxAnt .ixVolver i{font:700 11px/1 var(--mono);letter-spacing:.14em;font-style:normal}
+#idxAnt .ixVolver b{font-size:24px;line-height:1;font-weight:700}
+#idxAnt .ixVolver small{font:700 14px/1 var(--mono);letter-spacing:.08em;opacity:.75}
 #idxAnt .ixEdit u{text-underline-offset:4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 html.aire #idxAnt .ixEdit{color:#23844a}
 #idxTomas .ixPrev{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 14px;padding:2px 2px 8px}
@@ -7445,7 +7452,12 @@ function abreTarjeta(roll, tkIdx){
   const cl = o => JSON.parse(JSON.stringify(o));
   const mias = (S.parte.tomas || []).filter(t => (t.camLetra || "A") === L);
   const otras = (S.parte.tomas || []).filter(t => (t.camLetra || "A") !== L);
-  S.parte.tarjEdit = {L, roll, actual: {roll: cl(S.parte.roll || {}), tomas: cl(mias)}};
+  /* v218 (Waldo): se recuerda la toma EXACTA que se estaba trabajando para volver a ella */
+  let iTrab = -1;
+  if (vistaPag()){ const pg = pagTomas()[PAG.idx]; if (pg) iTrab = +pg.getAttribute("data-i"); }
+  else if (TOMA_SEL != null && TOMA_SEL >= 0) iTrab = TOMA_SEL;
+  let kVol = mias.indexOf(S.parte.tomas[iTrab]); if (kVol < 0) kVol = mias.length - 1;
+  S.parte.tarjEdit = {L, roll, actual: {roll: cl(S.parte.roll || {}), tomas: cl(mias)}, kVol};
   S.parte.roll = cl(rolloDeCam(g.d, L));
   S.parte.tomas = otras.concat(cl((g.d.tomas || []).filter(t => (t.camLetra || "A") === L)));
   TARJ_VER = null; TARJ_TK = null; IX_ANT = false;
@@ -7457,7 +7469,8 @@ function abreTarjeta(roll, tkIdx){
       if (j >= 0) TOMA_SEL = j; }
   }
   fillParte(); renderTomas(); updateChip(); pintaTira(); autoguarda(); pintaTarjetas();
-  if (TOMA_SEL != null) pagAToma(TOMA_SEL);
+  if (TOMA_SEL != null){ pagAToma(TOMA_SEL); const sel = TOMA_SEL;   /* v218: la página queda entera, no a medias */
+    requestAnimationFrame(() => pagAToma(sel)); setTimeout(() => pagAToma(sel), 150); }
   const fija = () => window.scrollTo(0, yAbre); fija(); requestAnimationFrame(fija);
 }
 function cierraTarjeta(){
@@ -7467,11 +7480,15 @@ function cierraTarjeta(){
   const otras = (S.parte.tomas || []).filter(t => (t.camLetra || "A") !== E.L);
   S.parte.roll = E.actual.roll; S.parte.tomas = otras.concat(E.actual.tomas);
   delete S.parte.tarjEdit;
-  if (typeof TOMA_SEL !== "undefined") TOMA_SEL = null;
+  /* v218: se vuelve a la toma exacta que se estaba trabajando, abierta */
+  const jVol = (E.kVol != null && E.kVol >= 0 && E.kVol < E.actual.tomas.length) ? otras.length + E.kVol : null;
+  if (typeof TOMA_SEL !== "undefined") TOMA_SEL = jVol;
+  if (typeof IX_ANT !== "undefined") IX_ANT = false;
   fillParte(); renderTomas(); updateChip(); pintaTira(); autoguarda();
   if (typeof ptArchiva === "function") ptArchiva(false);
   pintaTarjetas();
-  if (vistaPag() && E.pag != null && E.pag >= 0) pagIr(Math.min(E.pag, pagTomas().length - 1), false);
+  if (vistaPag()){ if (jVol != null){ pagAToma(jVol); requestAnimationFrame(() => pagAToma(jVol)); setTimeout(() => pagAToma(jVol), 150); }
+    else if (E.pag != null && E.pag >= 0) pagIr(Math.min(E.pag, pagTomas().length - 1), false); }
   const fija = () => window.scrollTo(0, yCierra); fija(); requestAnimationFrame(fija);
 }
 function renderTomas(){
@@ -7877,7 +7894,11 @@ function pintaIdxAnt(ant, o){
           `<span class="ixT2${x.i != null && x.i === TOMA_SEL ? " on" : ""}${x.t.falso ? " falso" : ""}"${x.i != null ? ` data-i="${x.i}"` : ""} onclick="${x.on}">${esc(x.t.tk || "—")}${sup(x.t)}</span>`).join("") + `</div>`).join("");
     }).join("") + `</div>`;
   }
-  if (E) a += `<div class="ixEdit">${en ? "Correcting" : "Corrigiendo"} ${esc(E.roll)} · <u onclick="cierraTarjeta()">${en ? "back to" : "volver a"} ${esc(actualRoll)}</u></div>`;
+  /* v218 (Waldo): mientras se consulta otra tarjeta, una barra ancha en el
+     color de la cámara para volver con un toque a la toma que se trabajaba */
+  if (E){ const tv = (E.actual.tomas || [])[E.kVol != null && E.kVol >= 0 ? E.kVol : (E.actual.tomas || []).length - 1] || {};
+    a = `<div class="ixVolver" style="--cv:var(--cam${E.L})" onclick="cierraTarjeta()"><span class="ixVf">←</span><span class="ixVt"><i>${en ? "BACK TO" : "VOLVER A"}</i>` +
+      `<b>${esc(String(tv.sc || "—"))} / ${esc(String(tv.tk || "—"))}<small> · ${esc(actualRoll)}</small></b></span></div>` + a; }
   ant.innerHTML = a;
 }
 let IX_NUEVO = -1, IX_ANT = false;
