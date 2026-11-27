@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="218">
+<meta name="wallio-ver" content="219">
 <script>window.WALLIO_ERR=null;addEventListener("error",function(e){if(!window.WALLIO_FIN_ARRANQUE&&!window.WALLIO_ERR)window.WALLIO_ERR=(e.message||"")+" @"+(e.lineno||"");});</script>
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
@@ -5795,6 +5795,7 @@ function proyectoNuevo(sinPreguntar){
      arranca con la lista por defecto (todo oculto salvo lo esencial). */
   const pref = prefCampos();
   const oc = camposOcultosIniciales();
+  window.ULTIMA_TOMA_ROLLO_ANTERIOR = {}; window.ROLLO_ANTERIOR_NOMBRE = "";   /* v219: nada del proyecto anterior se cuela */
   S.parte = { roll: { tipo: "digital" },
               tomas: [], campos: pref.propios.slice(), camposRollo: pref.propiosRollo.slice(),
               camposOcultos: oc.camposOcultos, camposOcultosManual: oc.camposOcultosManual,
@@ -5815,6 +5816,8 @@ function jornadaSiguiente(){
   if (!confirm(traduce("Se guarda el parte de esta jornada y se empieza la siguiente: la fecha pasa a hoy, el número de jornada sube uno y el rollo sigue la numeración. Las tomas se vacían; todo lo demás se conserva.")))
     return;
   ptArchiva(false);                          // la jornada que acaba, al archivo
+  window.ULTIMA_TOMA_ROLLO_ANTERIOR = {}; window.ROLLO_ANTERIOR_NOMBRE = "";   /* v219: nada del proyecto anterior se cuela */
+
   if ((S.prod.jornada || "").trim()) S.prod.jornada = siguienteRollo(S.prod.jornada);
   S.prod.fecha = hoyLocal();
   const R = Object.assign({}, S.parte.roll || {});
@@ -5941,6 +5944,7 @@ function ptAbre(id){
   const x = ptLee().find(function(y){ return y.id === id; });
   if (!x) return;
   ptArchiva(false);                       // lo de ahora no se pierde al cambiar
+  window.ULTIMA_TOMA_ROLLO_ANTERIOR = {}; window.ROLLO_ANTERIOR_NOMBRE = "";   /* v219 */
   const d = x.d || {};
   if (d.prod) S.prod = Object.assign({}, S.prod, d.prod);
   S.prod.uidProy = (d.prod && d.prod.uidProy) || nuevoUidProy();
@@ -6011,7 +6015,9 @@ function manejaCambioRollo(valorNuevo){
   ptArchiva(false);
   window.ROLLO_ANTERIOR_NOMBRE = anterior;
   window.ULTIMA_TOMA_ROLLO_ANTERIOR = {};
-  (S.parte.tomas || []).forEach(t => { window.ULTIMA_TOMA_ROLLO_ANTERIOR[t.camLetra || "A"] = t; });
+  /* v219: solo la cámara que cambia de tarjeta hereda (antes quedaban las
+     demás cámaras guardadas y se colaban en un proyecto nuevo) */
+  (S.parte.tomas || []).forEach(t => { if ((t.camLetra || "A") === camAqui) window.ULTIMA_TOMA_ROLLO_ANTERIOR[camAqui] = t; });
   const R = Object.assign({}, S.parte.roll || {});
   R.roll = valorNuevo;
   let camsSig = {};
