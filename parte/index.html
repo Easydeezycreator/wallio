@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="219">
+<meta name="wallio-ver" content="220">
 <script>window.WALLIO_ERR=null;addEventListener("error",function(e){if(!window.WALLIO_FIN_ARRANQUE&&!window.WALLIO_ERR)window.WALLIO_ERR=(e.message||"")+" @"+(e.lineno||"");});</script>
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
@@ -5813,17 +5813,23 @@ function proyectoNuevo(sinPreguntar){
      botón "Datos" o la propia tarjeta, para cuando él quiera rellenarlo. */
 }
 function jornadaSiguiente(){
+  if (S.parte && S.parte.tarjEdit) cierraTarjeta();   /* v220: lo que se corregía vuelve a su tarjeta antes de cerrar el día */
   if (!confirm(traduce("Se guarda el parte de esta jornada y se empieza la siguiente: la fecha pasa a hoy, el número de jornada sube uno y el rollo sigue la numeración. Las tomas se vacían; todo lo demás se conserva.")))
     return;
   ptArchiva(false);                          // la jornada que acaba, al archivo
   window.ULTIMA_TOMA_ROLLO_ANTERIOR = {}; window.ROLLO_ANTERIOR_NOMBRE = "";   /* v219: nada del proyecto anterior se cuela */
 
-  if ((S.prod.jornada || "").trim()) S.prod.jornada = siguienteRollo(S.prod.jornada);
+  /* v220 (Waldo): TODAS las cámaras que rodaron siguen su numeración en la
+     jornada nueva (A003 -> A004, B002 -> B003), no solo la que está abierta */
+  const rodo = {};
+  CAM_LETRAS.forEach(l => { rodo[l] = (S.parte.tomas || []).some(t => (t.camLetra || "A") === l && tomaReal(t)) || (typeof tarjetasDeCam === "function" && tarjetasDeCam(l).length > 0); });
+  S.prod.jornada = (S.prod.jornada || "").trim() ? siguienteRollo(S.prod.jornada) : "2";
   S.prod.fecha = hoyLocal();
   const R = Object.assign({}, S.parte.roll || {});
-  if ((R.roll || "").trim()) R.roll = siguienteRollo(R.roll);
+  if ((R.roll || "").trim() && rodo[camActiva()]) R.roll = siguienteRollo(R.roll);
   let camsSig = {};
   try { camsSig = JSON.parse(JSON.stringify(S.parte.camsGuardadas || {})); } catch(e){}
+  Object.keys(camsSig).forEach(l => { const c = camsSig[l]; if (l !== camActiva() && c && String(c.roll || "").trim() && rodo[l]) c.roll = siguienteRollo(c.roll); });
   const camasActivasSig = (S.parte.camasActivas || CAM_LETRAS.slice(0, 4)).slice();
   const camNombresSig = Object.assign({}, S.parte.camNombres || {});
   S.parte = {roll: R, tomas: [], campos: (S.parte.campos || []).slice(),
@@ -7402,7 +7408,7 @@ let TARJ_VER = null;
 function tarjetasDeCam(L){
   const P = S.prod || {}, fecha = P.fecha || "", proy = norm(P.proyecto || "");
   const g = {};
-  ptLee().filter(x => (x.fecha || "") === fecha && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d)
+  ptLee().filter(x => (x.fecha || "") === fecha && mismaJornada(x) && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d)
     .sort((a, b) => (a.t || 0) - (b.t || 0)).forEach(x => {
       const tomas = (Array.isArray(x.d.tomas) ? x.d.tomas : []).filter(t => t && typeof t === "object" && (t.camLetra || "A") === L && tomaReal(t));
       if (!tomas.length) return;
@@ -9119,6 +9125,9 @@ function tomaReal(t){
   const lleno = v => v !== undefined && v !== null && String(v).trim() !== "";
   return lleno(t.sc) || lleno(t.clip) || lleno(t.desc) || lleno(t.nota) || lleno(t.notaEsp) || !!t.ok || !!t.mos || !!t.falso;
 }
+/* v220: una jornada = misma fecha Y mismo nº de jornada (si se empieza la
+   jornada siguiente el mismo día, sus tarjetas no se mezclan con las de ayer) */
+function mismaJornada(x){ const a = String((S.prod || {}).jornada || "").trim(), b = String((x && x.jornada) || "").trim(); return !a || !b || a === b; }
 function rolloDeCam(d, l){
   const R = (l === (d.camActiva || "A")) ? (d.roll || {}) : ((d.camsGuardadas || {})[l] || {});
   return R;
@@ -9126,7 +9135,7 @@ function rolloDeCam(d, l){
 function diaGrupos(soloCam){
   if (typeof ptArchiva === "function") ptArchiva(false);
   const P = S.prod || {}, fecha = P.fecha || "", proy = norm(P.proyecto || "");
-  const lista = ptLee().filter(x => (x.fecha || "") === fecha && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d && (x.d.tomas || []).some(tomaReal))
+  const lista = ptLee().filter(x => (x.fecha || "") === fecha && mismaJornada(x) && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d && (x.d.tomas || []).some(tomaReal))
     .sort((a, b) => (a.t || 0) - (b.t || 0));
   const grupos = {};
   lista.forEach(x => {
@@ -9257,7 +9266,7 @@ function pintaEnvio(){
   try {
     const P = S.prod || {}, fecha = P.fecha || "", proy = norm(P.proyecto || "");
     const set = new Set(camarasEnUso());
-    ptLee().forEach(x => { if ((x.fecha || "") === fecha && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d)
+    ptLee().forEach(x => { if ((x.fecha || "") === fecha && mismaJornada(x) && (!proy || !norm(x.proyecto || "") || norm(x.proyecto || "") === proy) && x.d)
       (x.d.tomas || []).forEach(t => set.add(t.camLetra || "A")); });
     letras = CAM_LETRAS.filter(l => set.has(l));
   } catch(e){ letras = camarasEnUso(); }
