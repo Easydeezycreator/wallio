@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="207">
+<meta name="wallio-ver" content="208">
 <script>window.WALLIO_ERR=null;addEventListener("error",function(e){if(!window.WALLIO_FIN_ARRANQUE&&!window.WALLIO_ERR)window.WALLIO_ERR=(e.message||"")+" @"+(e.lineno||"");});</script>
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
@@ -5962,6 +5962,7 @@ function manejaCambioRollo(valorNuevo){
     return;
   }
   ptArchiva(false);
+  window.ROLLO_ANTERIOR_NOMBRE = anterior;
   window.ULTIMA_TOMA_ROLLO_ANTERIOR = {};
   (S.parte.tomas || []).forEach(t => { window.ULTIMA_TOMA_ROLLO_ANTERIOR[t.camLetra || "A"] = t; });
   const R = Object.assign({}, S.parte.roll || {});
@@ -7413,6 +7414,25 @@ function renderTomas(){
     }
     t0.camLetra = camActiva();
     t0.tk = "1";
+    /* v207 (Waldo): en la tarjeta nueva la toma SIGUE: misma escena, toma
+       siguiente (105/3 -> 105/4) y el clip empieza en esa tarjeta
+       (A001C003 -> A002C001). Sin clip antes, no se inventa. */
+    if (u){
+      const scU = String(u.sc == null ? "" : u.sc).trim();
+      if (scU){ t0.sc = scU; const n = parseInt(u.tk, 10); t0.tk = String(isNaN(n) ? 1 : n + 1); }
+      /* preparada, aún sin rodar: no cuenta como toma hasta que se toque
+         (así una tarjeta abierta por error no sale en el PDF del día) */
+      t0._nueva = true;
+      const clU = String(u.clip == null ? "" : u.clip).trim(), viejo = String(window.ROLLO_ANTERIOR_NOMBRE || "").trim(), nuevo = String((S.parte.roll || {}).roll || "").trim();
+      if (clU){
+        let c = clU;
+        if (viejo && nuevo && c.toUpperCase().indexOf(viejo.toUpperCase()) >= 0){
+          const i = c.toUpperCase().indexOf(viejo.toUpperCase()); c = c.slice(0, i) + nuevo + c.slice(i + viejo.length); }
+        const m = c.match(/^(.*?)(\d+)(\D*)$/);
+        if (m) c = m[1] + String(1).padStart(m[2].length, "0") + m[3];
+        t0.clip = c;
+      }
+    }
     t0.ts = Date.now();
     L.push(t0);
   }
@@ -7787,6 +7807,7 @@ function selToma(i){
 }
 function masToma(){
   const L = S.parte.tomas;
+  L.forEach(t => { if (t && t._nueva && (t.camLetra || "A") === camActiva()) delete t._nueva; });
   let u = -1; for (let j = L.length - 1; j >= 0; j--) if ((L[j].camLetra || "A") === camActiva()){ u = j; break; }
   const y = window.scrollY;
   TOMA_SEL = -1;
@@ -8944,7 +8965,7 @@ function exportaALE(){
    (con escena, clip, descripción, nota o marca) -- no la toma que nace sola
    al empezar una tarjeta con lo técnico heredado */
 function tomaReal(t){
-  if (!t) return false;
+  if (!t || t._nueva) return false;
   const lleno = v => v !== undefined && v !== null && String(v).trim() !== "";
   return lleno(t.sc) || lleno(t.clip) || lleno(t.desc) || lleno(t.nota) || lleno(t.notaEsp) || !!t.ok || !!t.mos || !!t.falso;
 }
@@ -11331,9 +11352,10 @@ const LENTES_CAT = [
        borde inferior -- el usuario no podía ver ni tocar las opciones de
        más abajo sin antes deslizar la página a mano. Si no cabe debajo,
        se abre hacia ARRIBA del campo en su lugar. */
-    const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+    const vv0 = window.visualViewport, vh = (vv0 ? vv0.height : window.innerHeight), vTop0 = vv0 ? vv0.offsetTop : 0;
     const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
-    const cabeAbajo = (r.bottom + 2 + alto) <= vh && (r.top < vh * 0.5 || r.top - alto - 2 < 0);
+    /* v207: medido en lo visible con el teclado del iPhone abierto */
+    const cabeAbajo = (r.bottom + 2 + alto) <= vTop0 + vh && ((r.top - vTop0) < vh * 0.5 || r.top - alto - 2 < vTop0);
     if (cabeAbajo) caja.style.top = (r.bottom + scrollY + 2) + "px";
     else caja.style.top = (r.top + scrollY - alto - 2) + "px";
     caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
@@ -11426,7 +11448,11 @@ const LENTES_CAT = [
     /* v202: con el kit de CalaveraList, el nº de serie ofrece las ópticas del kit al tocarlo */
     if (t && t.tagName === "INPUT" && t.closest && t.closest('#listaTomas .f[data-k="serial"]') && !t.hasAttribute("data-lista")
         && typeof kitOpciones === "function" && kitOpciones(t).length) t.setAttribute("data-lista", "dlSeries");    /* v205 (Waldo): en TODOS los campos con lista, la lista sale al escribir 3 letras (o 2 números), nunca solo con tocar */
-    if (t && t.tagName === "INPUT" && (t.hasAttribute("list") || t.hasAttribute("data-lista")) && !t.hasAttribute("data-solo-escribir")) t.setAttribute("data-solo-escribir", "1");
+    /* v207 (Waldo): Cámara y rollo conserva sus listas de siempre: al tocar
+       el campo sale su catálogo (cámaras, formatos, fps, ISO…); escribiendo se
+       filtra. Lo demás sigue saliendo al escribir 3 letras. */
+    if (t && t.tagName === "INPUT" && (t.hasAttribute("list") || t.hasAttribute("data-lista")) && !t.hasAttribute("data-solo-escribir")
+        && !(t.id && /^r2?_/.test(t.id))) t.setAttribute("data-solo-escribir", "1");
     /* v204: memoria personal en los demás campos de texto */
     const g = memGrupo(t);
     if (g && !t.hasAttribute("data-memgrupo")){
@@ -11545,10 +11571,11 @@ const LENTES_CAT = [
      del navegador) ya NO cierra el combo — en ese primer momento se recoloca
      bajo el campo; un scroll deliberado más tarde sí lo cierra (v42) */
   const recoloca = () => { if (!activo) return; const r = activo.getBoundingClientRect();
-    const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+    /* v207: lo visible con el teclado del iPhone abierto es visualViewport */
+    const vv = window.visualViewport, vh = (vv ? vv.height : window.innerHeight), vTop = vv ? vv.offsetTop : 0;
     ajustaAncho(r);
     const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
-    const cabeAbajo = (r.bottom + 2 + alto) <= vh && (r.top < vh * 0.5 || r.top - alto - 2 < 0);
+    const cabeAbajo = (r.bottom + 2 + alto) <= vTop + vh && ((r.top - vTop) < vh * 0.5 || r.top - alto - 2 < vTop);
     caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
     caja.style.top = cabeAbajo ? (r.bottom + scrollY + 2) + "px" : (r.top + scrollY - alto - 2) + "px";
     if (activo.hasAttribute("data-solo-escribir")) ajustaAncho(r); };
@@ -11617,6 +11644,13 @@ if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0){
 }
 </script>
 <script>
+/* v207: la toma preparada en la tarjeta nueva cuenta en cuanto se toca */
+document.addEventListener("input", function(e){ try {
+  var el = e.target && e.target.closest && e.target.closest("#listaTomas .toma[data-i]"); if (!el) return;
+  var t = S.parte.tomas[+el.getAttribute("data-i")]; if (t && t._nueva) delete t._nueva; } catch(_){} }, true);
+["change", "click"].forEach(function(ev){ document.addEventListener(ev, function(e){ try {
+  var el = e.target && e.target.closest && e.target.closest("#listaTomas .toma[data-i]"); if (!el) return;
+  var t = S.parte.tomas[+el.getAttribute("data-i")]; if (t && t._nueva) delete t._nueva; } catch(_){} }, true); });
 /* v207: red de seguridad -- si algo del arranque fallara, el trabajo se
    restaura igual y se sigue guardando (nunca se pierde en silencio) */
 if (!window.WALLIO_FIN_ARRANQUE){
