@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="205">
+<meta name="wallio-ver" content="206">
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
 <style>
@@ -1738,6 +1738,41 @@ html.noche main .unidadWrap .unidadBtn{color:#c9d1dc}
 html.noche .f > .completo{color:#f2f4f7!important}
 html.noche .f input.conCompleto{caret-color:#f2f4f7!important}
 html.noche .f:focus-within input.conCompleto{color:#f2f4f7!important}
+/* v206: escenas anteriores de la tarjeta (texto, sin cajas) */
+#idxAnt[hidden]{display:none}
+#idxAnt{margin-top:2px;margin-bottom:6px}
+#idxAnt:not([hidden]){display:block}
+#idxAnt .ixAnt{display:flex;align-items:baseline;gap:10px;padding:8px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;font:600 10.5px/1.2 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx3)}
+#idxAnt .ixAnt .ixAntT{white-space:nowrap}
+#idxAnt .ixAnt .ixAntR{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.06em;color:var(--tx3);text-transform:none;font-weight:700;font-size:13px}
+#idxAnt .ixAnt .ixAntR b{color:var(--tx2)}
+#idxAnt .ixAnt.on{display:none}
+#idxAnt .ixCard{cursor:pointer;-webkit-tap-highlight-color:transparent}
+#idxAnt .ixAnt i{font-style:normal;font-size:11px}
+#idxAnt .ixAnt:active{opacity:.5}
+#idxAnt .ixLista{padding:0 0 10px;margin-bottom:4px;border-bottom:1px solid var(--line)}
+#idxAnt .ixLista .ixCard:first-child{margin-top:2px}
+#idxAnt .ixCard{display:flex;align-items:baseline;gap:10px;margin:14px 0 2px;font:700 11px/1 var(--mono);letter-spacing:.14em;color:var(--tx3);text-transform:uppercase}
+#idxAnt .ixCard:first-child{margin-top:4px}
+#idxAnt .ixCard b{font:800 15px/1 var(--mono);letter-spacing:.02em;color:var(--tx2)}
+#idxAnt .ixCard i{flex:1;border-bottom:1px solid var(--line);transform:translateY(-4px)}
+#idxAnt .ixCard.vivo b{color:var(--boxC,var(--camA))}
+#idxAnt .ixFila{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 14px;padding:1px 0}
+#idxAnt .ixFila em{font:700 13px/1 var(--mono);font-style:normal;color:var(--tx3);width:44px}
+#idxAnt .ixT2{font:800 19px/1 var(--mono);color:var(--tx2);padding:6px 2px 4px;min-width:20px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;border-bottom:3px solid transparent}
+#idxAnt .ixT2 sup{font:700 9px/1 var(--mono);color:var(--boxC,var(--camA));margin-left:2px}
+#idxAnt .ixT2.on{color:var(--boxC,var(--camA));border-bottom-color:var(--boxC,var(--camA))}
+#idxAnt .ixT2.falso{text-decoration:line-through;opacity:.45}
+#idxAnt .ixT2:active{opacity:.5}
+#idxAnt .ixEdit{font:600 12px/1.4 var(--mono);color:#3fae6a;padding:8px 0 6px}
+#idxAnt .ixEdit u{text-underline-offset:4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+html.aire #idxAnt .ixEdit{color:#23844a}
+#idxTomas .ixPrev{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 14px;padding:2px 2px 8px}
+#idxTomas .ixPT{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx3)}
+#idxTomas .ixPS{background:none!important;border:0!important;box-shadow:none!important;padding:6px 2px;min-height:0;font:700 15px/1 var(--mono);color:var(--tx);cursor:pointer}
+#idxTomas .ixPS small{font:500 11px/1 var(--mono);color:var(--tx3);margin-left:4px}
+#idxTomas .ixPS.on{color:var(--boxC);text-decoration:underline;text-underline-offset:5px}
+#idxTomas .ixRow.ixVieja{opacity:.92;border-bottom:1px dashed var(--line);margin-bottom:6px;padding-bottom:6px}
 /* v205: tarjetas anteriores (texto, sin cajas) */
 #tarjetas .tjFila{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding:8px 2px 2px}
 #tarjetas .tjT{font:600 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tx3)}
@@ -1748,6 +1783,11 @@ html.noche .f:focus-within input.conCompleto{color:#f2f4f7!important}
 #tarjetas .tjR{display:flex;flex-wrap:wrap;gap:2px 12px;padding:7px 2px;border-bottom:1px solid var(--line);font-size:13px;color:var(--tx2)}
 #tarjetas .tjR b{font:700 13px/1.3 var(--mono);color:var(--tx);min-width:52px}
 #tarjetas .tjR .ok{font-style:normal;color:#3aa66a;font-weight:700}
+#tarjetas .tjR{align-items:baseline}
+#tarjetas .tjR .tjTk{font:700 15px/1 var(--mono);color:var(--tx);padding:6px 6px}
+#tarjetas .tjR .tjTk .ok{font-size:11px;margin-left:2px}
+#tarjetas .tjR .tjTk.on{color:var(--boxC);text-decoration:underline;text-underline-offset:5px}
+#tarjetas .tjDet{display:flex;flex-wrap:wrap;gap:2px 12px;padding:6px 2px 8px 54px;font-size:13px;color:var(--tx2);border-bottom:1px solid var(--line)}
 #tarjetas .tjAcc{display:flex;gap:22px;padding:8px 2px 2px}
 #tarjetas .tjAcc button{font:700 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
 #tarjetas .tjAcc button+button{color:var(--tx3)}
@@ -2074,6 +2114,7 @@ html body #temaPie #btnTema{background:none!important;border:0!important;box-sha
         <div id="avisoSmartfill" hidden></div>
         <div id="gruposCampos"></div>
         <div id="vistaTomas"><button data-v="lista" onclick="ponVistaTomas('lista')">↓ <span class="tv">Lista</span></button><button data-v="pag" onclick="ponVistaTomas('pag')">↔ <span class="tv">Páginas</span></button></div>
+        <div id="idxAnt" hidden></div>
         <div id="pagNav" hidden></div><div id="pagDots" hidden></div>
         <div id="idxTomas"></div>
         <div id="listaTomas"></div>
@@ -5957,7 +5998,7 @@ const CAMPOS_CLAVE = ["focal","t"];
 const INPUTMODE_TOMA = { nclip: "numeric", dial: "numeric", pies: "decimal",
   alt: "decimal", fps: "decimal", ei: "numeric", t: "decimal", dur: "decimal", /* v202: focal con teclado de letras (se escribe la óptica) */
   /* v159: más campos que son solo número -> teclado numérico en iPhone */
-  foco: "decimal", tilt: "decimal", pan: "decimal", wb: "numeric",
+  /* v206 (Waldo): foco con teclado de letras -- "5 m a 70 cm", "5m to 70cm" */ tilt: "decimal", pan: "decimal", wb: "numeric",
   /* v191: obturador y nº de toma también con el teclado de números */
   shutter: "decimal", tk: "numeric" };
 function aprendeCampo(k, v){
@@ -6962,10 +7003,14 @@ function cierraConValor(i, k){
 }
 function aplicaUnidadToma(i, k, unidad){
   guardaUnidadUltima(k, unidad);
-  const actual = String(S.parte.tomas[i][k] || "");
+  const actual = String(S.parte.tomas[i][k] || "").trim();
   const m = actual.match(/-?[\d.,]+/);
   if (!m) return;
-  S.parte.tomas[i][k] = m[0] + " " + unidad;
+  /* v206: un número solo lleva la unidad tocada; algo escrito con texto
+     ("5 m a 70 cm", "5m to 70cm") se respeta tal cual; números sin unidad
+     ("5 a 0.7") la llevan al final */
+  if (/^-?[\d.,]+(\s*(m|ft|cm|in|'|"))?$/i.test(actual)) S.parte.tomas[i][k] = m[0] + " " + unidad;
+  else if (!/[a-z'"]/i.test(actual.replace(/\b(a|to|→|-|–)\b/gi, ""))) S.parte.tomas[i][k] = actual + " " + unidad;
   if (APRENDE_TOMA.indexOf(k) >= 0) aprendeCampo(k, S.parte.tomas[i][k]);
   cierraConValor(i, k);
   renderTomas();
@@ -7230,6 +7275,8 @@ function tarjetasDeCam(L){
 function pintaTarjetas(){
   const c = document.getElementById("tarjetas"); if (!c) return;
   const en = LANG === "en", L = camActiva(), E = S.parte && S.parte.tarjEdit;
+  /* v206: en Lista todo va en la lista de tomas (pintaIdxTomas); esto queda solo para Páginas */
+  c.innerHTML = ""; return;
   if (E){
     c.innerHTML = '<div class="tjEdit"><span>' + (en ? "Editing card " : "Corrigiendo la tarjeta ") + "<b>" + esc(E.roll) + "</b></span>" +
       '<button onclick="cierraTarjeta()">← ' + (en ? "Back to " : "Volver a ") + "<b>" + esc((E.actual.roll || {}).roll || "") + "</b></button></div>";
@@ -7243,17 +7290,27 @@ function pintaTarjetas(){
       ' <small>' + g.tomas.length + "</small></button>").join("") + "</div>";
   const v = TARJ_VER && lista.find(g => g.roll === TARJ_VER);
   if (v){
-    h += '<div class="tjVer">' + v.tomas.map(t => '<div class="tjR"><b>' + esc((t.sc || "—") + "/" + (t.tk || "—")) + "</b>" +
-      [t.desc, t.focal ? focalTxt(t.focal) : "", t.t ? "T" + t.t : "", t.foco, t.filt, t.clip].filter(Boolean).map(x => "<span>" + esc(x) + "</span>").join("") +
-      (t.ok ? '<i class="ok">✓</i>' : "") + "</div>").join("") +
-      '<div class="tjAcc"><button onclick="abreTarjeta(\'' + esc(v.roll).replace(/'/g, "") + '\')">' + (en ? "Correct " : "Corregir ") + esc(v.roll) + "</button>" +
+    /* v206 (Waldo): la tarjeta se ve por ESCENAS con sus tomas (✓ = buena);
+       tocar un número despliega lo que contiene esa toma */
+    const esc2 = []; v.tomas.forEach((t, k) => { const sc = (t.sc || "—").trim() || "—";
+      let e = esc2.find(x => x.sc === sc); if (!e){ e = {sc, ks: []}; esc2.push(e); } e.ks.push(k); });
+    const rq = esc(v.roll).replace(/'/g, "");
+    h += '<div class="tjVer">' + esc2.map(e => '<div class="tjR"><b>' + (en ? "Sc " : "Esc ") + esc(e.sc) + "</b>" +
+      e.ks.map(k => { const t = v.tomas[k];
+        return '<button class="tjTk' + (TARJ_TK === k ? " on" : "") + '" onclick="verTomaTarjeta(' + k + ')">' + esc(t.tk || "—") + (t.ok ? '<i class="ok">✓</i>' : "") + "</button>"; }).join("") + "</div>" +
+      (e.ks.indexOf(TARJ_TK) >= 0 ? (t => '<div class="tjDet">' + [t.desc, t.focal ? focalTxt(t.focal) : "", t.t ? "T" + t.t : "", t.foco, t.filt, t.clip, t.nota]
+        .filter(Boolean).map(x => "<span>" + esc(x) + "</span>").join("") + "</div>")(v.tomas[TARJ_TK]) : "")).join("") +
+      '<div class="tjAcc"><button onclick="abreTarjeta(\'' + rq + '\'' + (TARJ_TK != null ? ", " + TARJ_TK : "") + ')">' + (en ? "Correct " : "Corregir ") + esc(v.roll) + (TARJ_TK != null ? " · " + (en ? "take " : "toma ") + esc((v.tomas[TARJ_TK] || {}).tk || "") : "") + "</button>" +
       '<button onclick="verTarjeta(null)">' + (en ? "Close" : "Cerrar") + "</button></div></div>";
   }
   c.innerHTML = h;
 }
 renderTomas = (function(orig){ return function(){ const r = orig.apply(this, arguments); try { pintaTarjetas(); } catch(e){} return r; }; })(renderTomas);
-function verTarjeta(roll){ TARJ_VER = (roll && TARJ_VER !== roll) ? roll : null; pintaTarjetas(); }
-function abreTarjeta(roll){
+let TARJ_TK = null;
+function verTarjeta(roll){ TARJ_VER = (roll && TARJ_VER !== roll) ? roll : null; TARJ_TK = null; pintaTarjetas(); }
+function verTomaTarjeta(k){ TARJ_TK = (TARJ_TK === k) ? null : k; pintaTarjetas(); }
+function abreTarjeta(roll, tkIdx){
+  const yAbre = window.scrollY;
   if (S.parte.tarjEdit) cierraTarjeta();
   const L = camActiva();
   if (typeof ptArchiva === "function") ptArchiva(false);           /* lo de ahora queda guardado */
@@ -7264,11 +7321,20 @@ function abreTarjeta(roll){
   S.parte.tarjEdit = {L, roll, actual: {roll: cl(S.parte.roll || {}), tomas: cl(mias)}};
   S.parte.roll = cl(rolloDeCam(g.d, L));
   S.parte.tomas = otras.concat(cl((g.d.tomas || []).filter(t => (t.camLetra || "A") === L)));
-  TARJ_VER = null;
-  if (typeof TOMA_SEL !== "undefined") TOMA_SEL = null;
+  TARJ_VER = null; TARJ_TK = null; IX_ANT = false;
+  S.parte.tarjEdit.pag = PAG.idx;
+  if (typeof TOMA_SEL !== "undefined"){
+    TOMA_SEL = null;
+    const objetivo = (tkIdx != null) ? g.tomas[tkIdx] : null;
+    if (objetivo){ const j = S.parte.tomas.findIndex(t => (t.camLetra || "A") === L && (t.ts || "") === (objetivo.ts || "") && t.sc === objetivo.sc && t.tk === objetivo.tk);
+      if (j >= 0) TOMA_SEL = j; }
+  }
   fillParte(); renderTomas(); updateChip(); pintaTira(); autoguarda(); pintaTarjetas();
+  if (TOMA_SEL != null) pagAToma(TOMA_SEL);
+  const fija = () => window.scrollTo(0, yAbre); fija(); requestAnimationFrame(fija);
 }
 function cierraTarjeta(){
+  const yCierra = window.scrollY;
   const E = S.parte && S.parte.tarjEdit; if (!E) return;
   if (typeof ptArchiva === "function") ptArchiva(false);           /* lo corregido se guarda en SU tarjeta */
   const otras = (S.parte.tomas || []).filter(t => (t.camLetra || "A") !== E.L);
@@ -7278,6 +7344,8 @@ function cierraTarjeta(){
   fillParte(); renderTomas(); updateChip(); pintaTira(); autoguarda();
   if (typeof ptArchiva === "function") ptArchiva(false);
   pintaTarjetas();
+  if (vistaPag() && E.pag != null && E.pag >= 0) pagIr(Math.min(E.pag, pagTomas().length - 1), false);
+  const fija = () => window.scrollTo(0, yCierra); fija(); requestAnimationFrame(fija);
 }
 function renderTomas(){
   setTimeout(function(){ try { pintaEnvio(); } catch(e){} }, 0);
@@ -7593,32 +7661,98 @@ function reponeCampoVivo(v){
   if (v.activo && document.activeElement !== v.el){ try { v.el.focus({preventScroll: true}); } catch(e){} }
 }
 function pintaIdxTomas(idxCam, compacto){
-  const box = $("idxTomas"); if (!box) return;
+  const box = $("idxTomas"), ant = $("idxAnt"); if (!box) return;
   aseguraRollo();
   pintaRollSig();
-  if (!compacto || !idxCam.length){ box.innerHTML = ""; return; }
-  const L = S.parte.tomas, en = LANG === "en";
-  const filas = []; let actual = null;
-  idxCam.forEach(i => { const sc = (L[i].sc || "").trim();
-    if (!actual || actual.sc !== sc){ actual = {sc, tomas: []}; filas.push(actual); }
-    actual.tomas.push(i); });
-  const ultima = L[idxCam[idxCam.length - 1]];
-  const sigTk = (parseInt(ultima.tk, 10) || 0) + 1;
+  const L = S.parte.tomas, en = LANG === "en", cam = camActiva(), E = S.parte.tarjEdit, pag = !compacto;
   const marca = t => t.notaEsp === "PU" ? "PU" : t.notaEsp === "TAILS" ? "TAILS" : t.mos ? "MOS" : t.ok ? "✓" : "";
-  /* v193 (Waldo): solo se ven los números de la escena que se está rodando;
-     las escenas anteriores dejan la pantalla y quedan guardadas en el parte
-     (y en el PDF) */
-  filas.splice(0, filas.length - 1);
-  box.innerHTML = filas.map((f, fi) =>
-    `<div class="ixRow"><div class="ixSc">${esc(traduce("Escena"))}<b>${esc(f.sc || "—")}</b></div>` +
-    f.tomas.map(i => { const t = L[i]; const m = marca(t);
-      return `<span class="ixTk${i === TOMA_SEL ? " on" : ""}${t.falso ? " falso" : ""}${i === IX_NUEVO ? " nuevo" : ""}" data-i="${i}" onclick="selToma(${i})">${esc(t.tk || "—")}${m ? `<sup>${esc(m)}</sup>` : ""}</span>`; }).join("") +
-    (fi === filas.length - 1 ? `<span class="ixMas" id="ixMas" onclick="masToma()">+<small>${en ? "TAKE" : "TOMA"} ${sigTk}</small></span>` : "") +
-    `</div>`).join("") +
-    `<span class="ixEsc" onclick="masEscena()">+ <span>${en ? "NEW SCENE" : "ESCENA NUEVA"}</span></span>`;
+  const sup = t => { const m = marca(t); return m ? `<sup>${esc(m)}</sup>` : ""; };
+  const porEsc = arr => { const f = []; arr.forEach(x => { const sc = (x.t.sc || "").trim();
+    let e = f[f.length - 1]; if (!e || e.sc !== sc){ e = {sc, xs: []}; f.push(e); } e.xs.push(x); }); return f; };
+  const q = v => JSON.stringify(String(v)).replace(/"/g, "&quot;");
+  const tkV = i => pag ? `pagVeToma(${i})` : `ixSel(${i})`;
+  /* ---- 1) LO QUE SE TRABAJA AHORA (Lista): la escena en curso, + toma,
+     + escena nueva -- igual que siempre. En Páginas manda la página. */
+  const vivas = idxCam.map(i => ({t: L[i], i}));
+  const filasVivas = porEsc(vivas);
+  let fEnCurso = null;
+  if (E){ const sel = TOMA_SEL != null && TOMA_SEL >= 0 ? TOMA_SEL : (idxCam[idxCam.length - 1]);
+    fEnCurso = filasVivas.find(f => f.xs.some(x => x.i === sel)) || null; }
+  else fEnCurso = filasVivas[filasVivas.length - 1] || null;
+  let h = "";
+  if (!pag && fEnCurso){
+    const f = fEnCurso;
+    const sigTk = (parseInt(f.xs[f.xs.length - 1].t.tk, 10) || 0) + 1;
+    h = `<div class="ixRow"><div class="ixSc">${esc(traduce("Escena"))}<b>${esc(f.sc || "—")}</b></div>` +
+      f.xs.map(x => `<span class="ixTk${x.i === TOMA_SEL ? " on" : ""}${x.t.falso ? " falso" : ""}${x.i === IX_NUEVO ? " nuevo" : ""}" data-i="${x.i}" onclick="selToma(${x.i})">${esc(x.t.tk || "—")}${sup(x.t)}</span>`).join("") +
+      (E ? "" : `<span class="ixMas" id="ixMas" onclick="masToma()">+<small>${en ? "TAKE" : "TOMA"} ${sigTk}</small></span>`) + `</div>` +
+      (E ? "" : `<span class="ixEsc" onclick="masEscena()">+ <span>${en ? "NEW SCENE" : "ESCENA NUEVA"}</span></span>`);
+  }
+  box.innerHTML = h;
   IX_NUEVO = -1;
+  if (!ant) return;
+  /* ---- 2) TOMAS ANTERIORES (v206, Waldo): solo de consulta. Una línea
+     discreta ENCIMA de lo que se trabaja; al tocarla se despliegan las
+     tarjetas de hoy con sus escenas y tomas (✓ = buena). Un toque en un
+     número abre esa toma para revisarla o corregirla y la lista se pliega. */
+  const vivo = E ? E.roll : String((S.parte.roll || {}).roll || "").trim();
+  const actualRoll = E ? String((E.actual.roll || {}).roll || "").trim() : vivo;
+  const fuera = [vivo.toUpperCase(), actualRoll.toUpperCase()];
+  const tarjetas = tarjetasDeCam(cam).filter(g => fuera.indexOf(g.roll.toUpperCase()) < 0)
+    .map(g => ({roll: g.roll, filas: porEsc(g.tomas.map((t, k) => ({t, on: `abreTarjeta(${q(g.roll)}, ${k})`})))}));
+  const vivasCons = filasVivas.filter(f => f !== fEnCurso).map(f => ({sc: f.sc, xs: f.xs.map(x => ({t: x.t, i: x.i, on: tkV(x.i)}))}));
+  if (E){
+    tarjetas.push({roll: E.roll, filas: vivasCons, vivo: true});
+    tarjetas.sort((a, b) => String(a.roll).localeCompare(String(b.roll), undefined, {numeric: true, sensitivity: "base"}));
+    const act = (E.actual.tomas || []).filter(tomaReal);
+    tarjetas.push({roll: actualRoll, filas: porEsc(act.map((t, k) => ({t, on: `vuelveATarjeta(${k})`}))), actual: true});
+  } else tarjetas.push({roll: vivo, filas: vivasCons, vivo: true, actual: true});
+  const conAlgo = tarjetas.filter(c => c.filas.length);
+  if (!conAlgo.length && !E){ ant.innerHTML = ""; ant.hidden = true; return; }
+  ant.hidden = false;
+  /* resumen de la línea plegada: tarjetas pasadas y escenas anteriores de la tarjeta en uso */
+  const res = [];
+  /* v206 (Waldo): sin rótulos ni flechas -- solo las tarjetas y escenas */
+  conAlgo.forEach(c => { if (c.actual && !E) res.push("<b>" + esc(c.roll) + "</b> " + c.filas.map(f => esc(f.sc || "—")).join(" ")); else res.push("<b>" + esc(c.roll) + "</b>"); });
+  let a = `<div class="ixAnt${IX_ANT ? " on" : ""}" onclick="ixAntToggle()"><span class="ixAntR">${res.join(" · ")}</span></div>`;
+  if (IX_ANT){
+    const varias = true;
+    a += `<div class="ixLista">` + tarjetas.map(c => {
+      if (!c.filas.length && !c.vivo) return "";
+      const n = c.filas.reduce((s, f) => s + f.xs.length, 0), buenas = c.filas.reduce((s, f) => s + f.xs.filter(x => x.t.ok).length, 0);
+      return (varias ? `<div class="ixCard${c.vivo ? " vivo" : ""}" onclick="ixAntToggle()"><b>${esc(c.roll || "—")}</b><i></i></div>` : "") +
+        c.filas.map(f => `<div class="ixFila${c.vivo ? " vivo" : ""}${c.actual ? " actual" : ""}"><em>${esc(f.sc || "—")}</em>` + f.xs.map(x =>
+          `<span class="ixT2${x.i != null && x.i === TOMA_SEL ? " on" : ""}${x.t.falso ? " falso" : ""}"${x.i != null ? ` data-i="${x.i}"` : ""} onclick="${x.on}">${esc(x.t.tk || "—")}${sup(x.t)}</span>`).join("") + `</div>`).join("");
+    }).join("") + `</div>`;
+  }
+  if (E) a += `<div class="ixEdit">${en ? "Correcting" : "Corrigiendo"} ${esc(E.roll)} · <u onclick="cierraTarjeta()">${en ? "back to" : "volver a"} ${esc(actualRoll)}</u></div>`;
+  ant.innerHTML = a;
 }
-let IX_NUEVO = -1;
+let IX_NUEVO = -1, IX_ANT = false;
+function ixSel(i){ const y = window.scrollY; IX_ANT = false; TOMA_SEL = i; renderTomas(); const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija); }
+function ixAntToggle(){ IX_ANT = !IX_ANT; const y = window.scrollY; renderTomas(); const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija); }
+/* Páginas: saltar a la página de una toma */
+function pagAToma(i){
+  if (!vistaPag() || i == null || i < 0) return;
+  const k = pagTomas().findIndex(e => e.getAttribute("data-i") === String(i));
+  if (k >= 0) pagIr(k, false);
+}
+function pagVeToma(i){
+  const y = window.scrollY;
+  IX_ANT = false; TOMA_SEL = i; renderTomas(); pagAToma(i);
+  const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija);
+}
+/* tocar una toma de la tarjeta en uso mientras se corrige otra: se vuelve a
+   la tarjeta en uso con esa toma abierta */
+function vuelveATarjeta(k){
+  const E = S.parte.tarjEdit; if (!E) return;
+  const obj = (E.actual.tomas || []).filter(tomaReal)[k];
+  const y = window.scrollY;
+  cierraTarjeta();
+  if (obj){ const j = S.parte.tomas.findIndex(t => (t.camLetra || "A") === E.L && t.sc === obj.sc && t.tk === obj.tk && (t.ts || "") === (obj.ts || ""));
+    if (j >= 0){ IX_ANT = false; TOMA_SEL = j; renderTomas(); pagAToma(j); } }
+  const fija = () => window.scrollTo(0, y); fija(); requestAnimationFrame(fija);
+}
 function selToma(i){
   TOMA_SEL = (TOMA_SEL === i) ? -1 : i;
   const y = window.scrollY;
@@ -7751,7 +7885,7 @@ function pagPintaNav(){
   /* v201 (Waldo): Smartfill en Páginas -- crea la toma siguiente con TODO lo
      de la anterior copiado y pasa a ella (si luego se cambia la escena, la
      toma vuelve a empezar en 1) */
-  if (!document.documentElement.classList.contains("soloVer")){
+  if (!document.documentElement.classList.contains("soloVer") && !(S.parte && S.parte.tarjEdit)){
     const u = ultimaTomaDeCam(camActiva());
     const sig = u ? (parseInt(u.tk, 10) || 0) + 1 : 1;
     nav.innerHTML += `<button class="pagSF" onclick="pagSmartfill()">Smartfill → ${en ? "take" : "toma"} <b>${sig}</b></button>`;
@@ -11058,19 +11192,22 @@ const LENTES_CAT = [
   const EXTRA_KEY = "wallio_combo_extra";
   const comboExtraGet = () => { try { return JSON.parse(localStorage.getItem(EXTRA_KEY) || "{}"); } catch(e){ return {}; } };
   const comboExtraSet = o => { try { localStorage.setItem(EXTRA_KEY, JSON.stringify(o)); } catch(e){} };
+  /* v206 (Waldo): cámaras y formatos que se aprenden en Digital no salen en
+     Película (ni al revés): cada tipo tiene su memoria */
+  const extraClave = id => (id === "dlBodies" || id === "dlFmts") && typeof esFilm === "function" && esFilm() ? id + "@film" : id;
   const comboExtraAdd = (dlId, val) => {
     val = (val || "").trim(); if (!val || !dlId) return;
     const dl = document.getElementById(dlId); if (!dl) return;
     const yaExiste = [...dl.options].some(o => o.value.toLowerCase() === val.toLowerCase());
     if (yaExiste) return;
     const op = document.createElement("option"); op.value = val; dl.appendChild(op);
-    const todo = comboExtraGet();
-    todo[dlId] = todo[dlId] || [];
-    if (!todo[dlId].some(x => x.toLowerCase() === val.toLowerCase())) todo[dlId].push(val);
+    const todo = comboExtraGet(), kk = extraClave(dlId);
+    todo[kk] = todo[kk] || [];
+    if (!todo[kk].some(x => x.toLowerCase() === val.toLowerCase())) todo[kk].push(val);
     comboExtraSet(todo);
   };
   const comboExtraMerge = dl => { if (!dl || dl.tagName !== "DATALIST") return;
-    const extra = comboExtraGet()[dl.id] || [];
+    const extra = comboExtraGet()[extraClave(dl.id)] || [];
     extra.forEach(val => {
       if (![...dl.options].some(o => o.value.toLowerCase() === val.toLowerCase())){
         const op = document.createElement("option"); op.value = val; dl.appendChild(op);
@@ -11119,7 +11256,7 @@ const LENTES_CAT = [
     const kitOps = (typeof kitOpciones === "function" ? kitOpciones(inp) : [])
       .filter(o => !v || (o.v + " " + (o.n || "")).toLowerCase().includes(v));
     const enKit = new Set(kitOps.map(o => o.v.toLowerCase()));
-    const g = inp.getAttribute("data-memgrupo");
+    const g = inp.getAttribute("data-memgrupo") ? memGrupo(inp) : null;
     const memOps = g ? memLista(g).filter(x => (!v || x.toLowerCase().includes(v)) && !enKit.has(x.toLowerCase())).slice(0, 8) : [];
     const enMem = new Set(memOps.map(x => x.toLowerCase()));
     const ops = [...dl.options].map(o => o.value)
@@ -11202,7 +11339,8 @@ const LENTES_CAT = [
   const memGrupo = inp => {
     if (!inp || inp.tagName !== "INPUT" || inp.type === "date" || inp.type === "file" || inp.type === "hidden") return null;
     if (inp.id && MEM_PP[inp.id]) return MEM_PP[inp.id];
-    if (inp.id && /^r2?_/.test(inp.id) && inp.id !== "r_roll" && inp.id !== "r_cam") return inp.id;
+    if (inp.id && /^r2?_/.test(inp.id) && inp.id !== "r_roll" && inp.id !== "r_cam")
+      return inp.id + ((/^r_(body|fmt|aspecto|res)$/.test(inp.id) && typeof esFilm === "function" && esFilm()) ? "@film" : "");
     const f = inp.closest && inp.closest("#listaTomas .f[data-k]"); if (!f) return null;
     const k = f.getAttribute("data-k"); if (MEM_SALTA.indexOf(k) >= 0) return null;
     return k === "focal" ? "opticas" : k === "filt" ? "filtros" : "t_" + k;
