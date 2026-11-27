@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="214">
+<meta name="wallio-ver" content="215">
 <script>window.WALLIO_ERR=null;addEventListener("error",function(e){if(!window.WALLIO_FIN_ARRANQUE&&!window.WALLIO_ERR)window.WALLIO_ERR=(e.message||"")+" @"+(e.lineno||"");});</script>
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
@@ -170,6 +170,20 @@ html.aire .f[data-k="alt"] .unidadWrap.activo .unidadBtn{background:#fff}
 .f[data-k="alt"] .unidadWrap.activo .unidadBtn:nth-of-type(1){right:76px}
 .f[data-k="alt"] .unidadWrap.activo .unidadBtn:nth-of-type(2){right:38px}
 .f[data-k="alt"] .unidadWrap.activo .unidadBtn:nth-of-type(3){right:0}
+/* v215: Filtro en escalera -- una línea por filtro, pasos al tocarla */
+.filEsc{display:flex;flex-direction:column}
+.filLn{cursor:pointer;font-size:21px;line-height:1.25;color:var(--tx);-webkit-tap-highlight-color:transparent;overflow-wrap:anywhere}
+html.aire main .filLn{color:#111}
+.filLn.abierto{color:var(--boxC,var(--camA))}
+.f.filAbierta{grid-column:1/-1}
+body #listaTomas .toma .gsec > .row > .f.filAbierta{flex-basis:100%}
+.filPasos{display:flex;flex-wrap:wrap;gap:2px 0;margin:1px 0 3px}
+.filPaso{cursor:pointer;font:700 15px/1 var(--mono);color:var(--tx3);min-width:36px;height:34px;line-height:34px;text-align:center;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.filPaso.sel{color:var(--boxC,var(--camA))}
+.filPaso.filQuita{font-weight:400;font-size:20px;margin-left:14px;opacity:.7}
+body #listaTomas .f input.filAdd{font-size:15px;letter-spacing:.06em}
+.filAdd::placeholder{color:var(--tx3);opacity:.8}
 /* v194: rueda que sube y baja (T 1/3·1/2·2/3, CC −3…+3) */
 .rueda{position:relative;flex:0 0 auto;width:52px;height:34px;overflow-y:auto;scroll-snap-type:y mandatory;
   -webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-y;overscroll-behavior:contain;
@@ -7075,6 +7089,50 @@ function aplicaSignoToma(i, k, signo){
   renderTomas();
 }
 const CC_PASOS = ["-3","-2","-1","00","+1","+2","+3"];
+/* ===== v215: filtros de la toma, uno por línea ===== */
+let FIL_ABIERTO = null;
+function filtrosDe(v){ return String(v || "").split(/\s*(?:·|,|\s\+\s)\s*/).map(x => x.trim()).filter(Boolean); }
+function filtroPasos(f){
+  let m = f.match(/^(.*?\bND\s*)(\.\d+|\d+(?:\.\d+)?)(\b.*)$/i);
+  if (m){ const n = m[2].replace(/^0(?=\.)/, ""); return {pre: m[1], post: m[3], actual: n, ops: [".3",".6",".9","1.2","1.5","1.8","2.1"]}; }
+  m = f.match(/^(.*?diopt\w*\s*)([+-]?\d+(?:\.\d+)?)(.*)$/i);
+  if (m){ let n = m[2]; if (!/^[+-]/.test(n)) n = "+" + n; return {pre: m[1], post: m[3], actual: n, ops: ["+0.5","+1","+2","+3"]}; }
+  m = f.match(/^(.*?[A-Za-zÀ-ÿ].*?\s)(1\/16|1\/8|1\/4|1\/2|1|2)$/);
+  if (m) return {pre: m[1], post: "", actual: m[2], ops: ["1/8","1/4","1/2","1","2"]};
+  return null;
+}
+function filtroGuarda(i, lista){
+  const t = S.parte.tomas[i]; if (!t) return;
+  t.filt = lista.join(" · ");
+  if (t._heredados) t._heredados = t._heredados.filter(x => x !== "filt");
+  delete t._nueva;
+  try { if (typeof aprendeCampo === "function") aprendeCampo("filt", t.filt); } catch(e){}
+  renderTomas(); try { resumenParte(); } catch(e){}
+}
+function filtroFreq(){ try { return JSON.parse(localStorage.getItem("wallio.filtrosFreq") || "{}") || {}; } catch(e){ return {}; } }
+function filtroCuenta(f){ const m = filtroFreq(), k = String(f).trim(); if (!k) return;
+  const e = Object.keys(m).find(x => x.toLowerCase() === k.toLowerCase()); if (e && e !== k){ m[k] = m[e]; delete m[e]; }
+  m[k] = (m[k] || 0) + 1; try { localStorage.setItem("wallio.filtrosFreq", JSON.stringify(m)); } catch(e){} }
+function filtrosMasUsados(){
+  const m = Object.assign({}, filtroFreq());
+  /* lo aprendido en la memoria del aparato (lo más reciente primero) también cuenta */
+  try { const mem = (JSON.parse(localStorage.getItem("wallio.memoria.v1") || "{}") || {}).filtros || [];
+    mem.forEach((e, n) => filtrosDe(e.v).forEach(f => { if (!Object.keys(m).some(x => x.toLowerCase() === f.toLowerCase())) m[f] = 0.9 - n / 1000; })); } catch(e){}
+  try { (typeof S !== "undefined" ? S.parte.tomas : []).forEach(t => filtrosDe(t.filt).forEach(f => { if (!Object.keys(m).some(x => x.toLowerCase() === f.toLowerCase())) m[f] = 0.5; })); } catch(e){}
+  return Object.keys(m).sort((a, b) => m[b] - m[a]);
+}
+function filtroAgrega(i, v){
+  v = String(v || "").trim(); const t = S.parte.tomas[i]; if (!t || !v){ return; }
+  const lista = filtrosDe(t.filt); const nuevos = filtrosDe(v);
+  nuevos.forEach(n => { if (!lista.some(x => x.toLowerCase() === n.toLowerCase())){ lista.push(n); filtroCuenta(n); } });
+  FIL_ABIERTO = null; filtroGuarda(i, lista);
+}
+function filtroAbre(i, j){ FIL_ABIERTO = (FIL_ABIERTO && FIL_ABIERTO.i === i && FIL_ABIERTO.j === j) ? null : {i, j};
+  const t = S.parte.tomas[i]; if (t && t._heredados) t._heredados = t._heredados.filter(x => x !== "filt");
+  renderTomas(); }
+function filtroCambia(i, j, nuevo){ const lista = filtrosDe(S.parte.tomas[i].filt); if (j >= lista.length) return;
+  lista[j] = nuevo; filtroCuenta(nuevo); FIL_ABIERTO = null; filtroGuarda(i, lista); }
+function filtroQuita(i, j){ const lista = filtrosDe(S.parte.tomas[i].filt); lista.splice(j, 1); FIL_ABIERTO = null; filtroGuarda(i, lista); }
 function ruedaHTML(vals, actual, accion, etiquetas, clase){
   const idx = Math.max(0, vals.indexOf(actual));
   return `<div class="rueda${clase ? " " + clase : ""}" data-idx="${idx}" data-accion="${esc(accion)}" data-vals="${esc(JSON.stringify(vals))}">` +
@@ -7226,6 +7284,26 @@ function campoToma(i, k, etiqueta, lista, ancho){
       `<span class="unidadBtn signo" onmousedown="event.preventDefault()" onclick="aplicaSignoToma(${i},'${k}','+')">+</span>` +
       `<span class="unidadBtn signo" onmousedown="event.preventDefault()" onclick="aplicaSignoToma(${i},'${k}','-')">−</span>` +
       `</div></div>`;
+  }
+  /* v215 (Waldo): Filtro en escalera -- cada filtro en su línea; tocar una
+     línea muestra sus pasos (ND .3 · .6 · .9…, 1/8 · 1/4 · 1/2…, +0.5 · +1…)
+     y un toque cambia ese filtro; « + FILTRO » abre la lista al tocar: primero
+     los más usados, después todos. El dato sigue siendo un texto « A · B ». */
+  if (k === "filt"){
+    const lista = filtrosDe(S.parte.tomas[i].filt);
+    const ab = (FIL_ABIERTO && FIL_ABIERTO.i === i) ? FIL_ABIERTO.j : -1;
+    const lineas = lista.map((f, j) => {
+      const p = filtroPasos(f);
+      const pasos = j === ab ? `<div class="filPasos">` +
+        (p ? p.ops.map(o => `<span class="filPaso${o === p.actual ? " sel" : ""}" onmousedown="event.preventDefault()" onclick="event.stopPropagation();filtroCambia(${i},${j},'${esc(p.pre + o + p.post).replace(/'/g, "\\'")}')">${esc(o)}</span>`).join("") : "") +
+        `<span class="filPaso filQuita" title="${esc(traduce("Quitar"))}" onmousedown="event.preventDefault()" onclick="event.stopPropagation();filtroQuita(${i},${j})">×</span></div>` : "";
+      return `<div class="filLn${j === ab ? " abierto" : ""}" onclick="filtroAbre(${i},${j})">${esc(f)}</div>` + pasos;
+    }).join("");
+    return `<div class="f${ancho ? " w" : ""}${claseHer}${ab >= 0 ? " filAbierta" : ""}" data-k="${k}"><label>${etiqueta}${x}</label>` +
+      `<div class="filEsc">${lineas}` +
+      `<input class="filAdd" value="" data-lista="dlFiltros" data-filtro-add="${i}" placeholder="+ ${esc(LANG === "en" ? "FILTER" : "FILTRO")}" ` +
+      `onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" ` +
+      `onchange="filtroAgrega(${i},this.value)" autocomplete="off"></div></div>`;
   }
   /* v168: Archivo / clip -- si está vacío, se sugiere el siguiente nombre
      (A001C002 → A001C003); un toque lo pone. Se puede escribir a mano igual. */
@@ -11391,12 +11469,52 @@ const LENTES_CAT = [
   ["pointerdown", "mousedown"].forEach(ev => caja.addEventListener(ev, e => {
     if (e.target && e.target.closest && e.target.closest(".op-in")) return; /* v155: el campo de escribir sí recibe el foco */
     if (e.cancelable) e.preventDefault(); }));
+  /* v215: colocar la lista junto al campo (sacado de pinta, igual que antes) */
+  const colocaCaja = (inp, despues) => {
+    const r = inp.getBoundingClientRect();
+    caja.style.minWidth = Math.min(r.width, document.documentElement.clientWidth - 16) + "px";
+    caja.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - 8 - Math.max(r.width, caja.offsetWidth || r.width))) + scrollX + "px";
+    /* v119: si el campo queda en la mitad de abajo de la pantalla, el
+       desplegable (hasta 42vh de alto) se abría hacia abajo y se salía del
+       borde inferior -- el usuario no podía ver ni tocar las opciones de
+       más abajo sin antes deslizar la página a mano. Si no cabe debajo,
+       se abre hacia ARRIBA del campo en su lugar. */
+    const vv0 = window.visualViewport, vh = (vv0 ? vv0.height : window.innerHeight), vTop0 = vv0 ? vv0.offsetTop : 0;
+    const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
+    /* v207: medido en lo visible con el teclado del iPhone abierto */
+    const cabeAbajo = (r.bottom + 2 + alto) <= vTop0 + vh && ((r.top - vTop0) < vh * 0.5 || r.top - alto - 2 < vTop0);
+    if (cabeAbajo) caja.style.top = (r.bottom + scrollY + 2) + "px";
+    else caja.style.top = (r.top + scrollY - alto - 2) + "px";
+    caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
+    caja.hidden = false; activo = inp; abiertoEn = Date.now();
+    ajustaAncho(r);
+    if (despues) despues();
+  };
   const pinta = (inp, filtrar) => {
     /* v50: al TOCAR salen TODAS las opciones (la regla de siempre);
        el filtro solo actúa cuando se ESCRIBE */
     const id = inp.getAttribute("data-lista"); const dl = id && document.getElementById(id);
     if (!dl) return cierra();
     const v = filtrar ? (inp.value || "").toLowerCase().trim() : "";
+    /* v215: « + FILTRO »: primero los más usados, después todos (sin los que ya tiene la toma) */
+    if (inp.hasAttribute("data-filtro-add")){
+      const ti = +inp.getAttribute("data-filtro-add"), ya = new Set(filtrosDe(((S.parte.tomas || [])[ti] || {}).filt).map(x => x.toLowerCase()));
+      const okF = x => !ya.has(x.toLowerCase()) && (!v || x.toLowerCase().includes(v));
+      const usados = filtrosMasUsados().filter(okF).slice(0, 8), enU = new Set(usados.map(x => x.toLowerCase()));
+      const todos = [...dl.options].map(o => o.value).filter(x => okF(x) && !enU.has(x.toLowerCase()) && filtrosDe(x).length === 1);
+      if (v) todos.sort((a, b) => (b.toLowerCase().startsWith(v) ? 1 : 0) - (a.toLowerCase().startsWith(v) ? 1 : 0));
+      if (!usados.length && !todos.length) return cierra();
+      const e2 = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+      caja.innerHTML = (usados.length ? '<div class="opTit">' + e2(LANG === "en" ? "Most used" : "Más usados") + "</div>" + usados.map(x => '<div class="op mem" data-v="' + e2(x) + '">' + e2(x) + "</div>").join("") +
+        (todos.length ? '<div class="opTit gris">' + e2(LANG === "en" ? "All" : "Todos") + "</div>" : "") : "") +
+        todos.slice(0, 80).map(x => '<div class="op" data-v="' + e2(x) + '">' + e2(x) + "</div>").join("");
+      return colocaCaja(inp, () => { [...caja.children].filter(d => d.classList.contains("op")).forEach(d => d.onclick = () => {
+        if (Date.now() - (inp._filAbre || 0) < 200) return;   /* el mismo toque que abrió la lista no elige nada */
+        const val = d.getAttribute("data-v") || d.textContent; inp.value = ""; cierra();
+        try { inp.blur(); } catch(_){}
+        try { memAprende("filtros", val); } catch(_){}
+        filtroAgrega(ti, val); }); });
+    }
     /* v172: las opciones del kit del rodaje (CalaveraList) van primero */
     const kitOps = (typeof kitOpciones === "function" ? kitOpciones(inp) : [])
       .filter(o => !v || (o.v + " " + (o.n || "")).toLowerCase().includes(v));
@@ -11431,23 +11549,7 @@ const LENTES_CAT = [
         (ops.length ? '<div class="opTit gris">' + e1(LANG === "en" ? "Catalogue" : "Catálogo") + "</div>" : "") : "") +
       ops.slice(0, 60).map(x =>
       '<div class="op">' + e1(x) + "</div>").join(""));
-    const r = inp.getBoundingClientRect();
-    caja.style.minWidth = Math.min(r.width, document.documentElement.clientWidth - 16) + "px";
-    caja.style.left = Math.max(8, Math.min(r.left, document.documentElement.clientWidth - 8 - Math.max(r.width, caja.offsetWidth || r.width))) + scrollX + "px";
-    /* v119: si el campo queda en la mitad de abajo de la pantalla, el
-       desplegable (hasta 42vh de alto) se abría hacia abajo y se salía del
-       borde inferior -- el usuario no podía ver ni tocar las opciones de
-       más abajo sin antes deslizar la página a mano. Si no cabe debajo,
-       se abre hacia ARRIBA del campo en su lugar. */
-    const vv0 = window.visualViewport, vh = (vv0 ? vv0.height : window.innerHeight), vTop0 = vv0 ? vv0.offsetTop : 0;
-    const alto = Math.min(caja.scrollHeight || 300, vh * 0.42);
-    /* v207: medido en lo visible con el teclado del iPhone abierto */
-    const cabeAbajo = (r.bottom + 2 + alto) <= vTop0 + vh && ((r.top - vTop0) < vh * 0.5 || r.top - alto - 2 < vTop0);
-    if (cabeAbajo) caja.style.top = (r.bottom + scrollY + 2) + "px";
-    else caja.style.top = (r.top + scrollY - alto - 2) + "px";
-    caja.style.maxHeight = alto + "px"; caja.style.overflowY = "auto";
-    caja.hidden = false; activo = inp; abiertoEn = Date.now();
-    ajustaAncho(r);
+    colocaCaja(inp);
     /* v147: en iPhone el teclado reduce el viewport visible (visualViewport);
        si el campo queda tapado por el teclado, se desliza a la vista dentro
        del área visible real, no de window.innerHeight (que no cambia). */
@@ -11549,7 +11651,7 @@ const LENTES_CAT = [
        el campo sale su catálogo (cámaras, formatos, fps, ISO…); escribiendo se
        filtra. Lo demás sigue saliendo al escribir 3 letras. */
     if (t && t.tagName === "INPUT" && (t.hasAttribute("list") || t.hasAttribute("data-lista")) && !t.hasAttribute("data-solo-escribir")
-        && !(t.id && /^r2?_/.test(t.id)) && t.getAttribute("data-lista") !== "dlSeries") t.setAttribute("data-solo-escribir", "1");   /* v210: los nº de serie del kit salen al tocar */
+        && !(t.id && /^r2?_/.test(t.id)) && t.getAttribute("data-lista") !== "dlSeries" && !t.hasAttribute("data-filtro-add")) t.setAttribute("data-solo-escribir", "1");   /* v210: los nº de serie del kit salen al tocar */
     /* v214 (Waldo): en Producción y Responsables el teclado sale en MAYÚSCULAS
        (se puede cambiar a minúsculas en el propio teclado) */
     if (t && t.tagName === "INPUT" && t.closest && t.closest("#pp_bloque") && !t.closest("#ppCam") && !/^(date|email|number|tel)$/.test(t.type || ""))
@@ -11574,7 +11676,8 @@ const LENTES_CAT = [
     if (t && t.tagName === "INPUT") t._valorFoco = t.value;   /* v212: lo que ya tenía el campo al tocarlo */
     marcaLente(t);
     prepara(t);
-    if (t.hasAttribute && t.hasAttribute("data-lente") && serieOpciones(t).length){ pinta(t); return; }   /* v211: con serie en uso, Focal ofrece sus focales al tocar */
+    if (t.hasAttribute && t.hasAttribute("data-lente") && serieOpciones(t).length){ pinta(t); return; }
+    if (t.hasAttribute && t.hasAttribute("data-filtro-add")){ t._filAbre = Date.now(); pinta(t); return; }   /* v215: Filtro abre su lista al tocar */   /* v211: con serie en uso, Focal ofrece sus focales al tocar */
     if (t.hasAttribute && t.hasAttribute("data-solo-escribir")) return cierra();   /* v201: la lista sale solo al escribir */
     if (t.tagName !== "INPUT" || !t.hasAttribute("data-lista")) return cierra();
     if (t.hasAttribute("data-escribir")) return cierra(); /* v149: en modo escribir, sin lista */
