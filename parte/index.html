@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="225">
+<meta name="wallio-ver" content="226">
 <script>window.WALLIO_ERR=null;addEventListener("error",function(e){if(!window.WALLIO_FIN_ARRANQUE&&!window.WALLIO_ERR)window.WALLIO_ERR=(e.message||"")+" @"+(e.lineno||"");});</script>
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
@@ -5681,8 +5681,19 @@ function cargaParte(file){
                camActiva: d.camActiva || "A", camsGuardadas: d.camsGuardadas || {},
                camasActivas: d.camasActivas || null, camNombres: d.camNombres || {},
                campos: d.campos || [], camposRollo: d.camposRollo || []};
+    /* v226: un archivo con todas las tarjetas del día las devuelve a la lista */
+    if (Array.isArray(d.tarjetas)) try {
+      const l = ptLee();
+      d.tarjetas.forEach(function(x){
+        if (!x || typeof x !== "object" || !x.id || !x.d || typeof x.d !== "object") return;
+        const i = l.findIndex(function(y){ return y.id === x.id; });
+        if (i < 0) l.push(x); else if ((l[i].t || 0) < (x.t || 0)) l[i] = x;
+      });
+      ptEscribe(l);
+    } catch(_){}
     fillProd(); fillProdParte(); fillParte(); renderTomas();
     renderCampos(); renderRollExtra(); updateChip(); autoguarda();
+    if (typeof ptLista === "function") try { ptLista(); } catch(_){}
     if (m){ m.className = "hint good";
       m.textContent = traduce("Parte cargado: ") + (S.parte.tomas.length) +
                       traduce(" tomas del rollo ") + (S.parte.roll.roll || "—") + "."; }
@@ -5932,22 +5943,66 @@ function ptMsg(t, clase){
   const m = $("pt_msg"); if (!m) return;
   m.className = "hint" + (clase ? " " + clase : ""); m.textContent = t;
 }
+/* v226 (Waldo): abajo, UNA fila por proyecto y jornada. Cada tarjeta (rollo)
+   se sigue guardando aparte como siempre (así no se pierde nada y el PDF del
+   día las junta); solo cambia cómo se enseñan. */
+function ptGrupoClave(x){
+  return [x.fecha || "", String(x.jornada || "").trim(), norm(x.proyecto || "")].join("|");
+}
+function ptGrupos(){
+  const g = new Map();
+  ptLee().forEach(function(x){
+    const k = ptGrupoClave(x);
+    if (!g.has(k)) g.set(k, []);
+    g.get(k).push(x);
+  });
+  return [...g.values()].map(function(filas){
+    filas.sort(function(a, b){ return (a.t || 0) - (b.t || 0); });
+    return {filas: filas, ultimo: filas[filas.length - 1], t: filas[filas.length - 1].t || 0};
+  }).sort(function(a, b){ return b.t - a.t; });
+}
+/* cámaras · rollos y tomas de todo el grupo (la tarjeta más nueva de cada rollo manda) */
+function ptResumen(gr){
+  const tarj = {};
+  gr.filas.forEach(function(x){
+    const d = x.d; if (!d) return;
+    const letras = [...new Set((d.tomas || []).filter(tomaReal).map(function(t){ return t.camLetra || "A"; }))];
+    if (x === gr.ultimo && String((d.roll || {}).roll || "").trim() && letras.indexOf(d.camActiva || "A") < 0) letras.push(d.camActiva || "A");
+    letras.forEach(function(l){
+      const roll = String(rolloDeCam(d, l).roll || "").trim();
+      tarj[l + "|" + roll.toUpperCase()] = {cam: l, roll: roll,
+        n: (d.tomas || []).filter(function(t){ return (t.camLetra || "A") === l && tomaReal(t); }).length};
+    });
+  });
+  const v = Object.values(tarj);
+  if (!v.length){ const u = gr.ultimo; return {txt: u.cams || [u.cam, u.roll].filter(Boolean).join(" · "), n: u.n}; }
+  const nat = function(a, b){ return String(a).localeCompare(String(b), undefined, {numeric: true, sensitivity: "base"}); };
+  const cams = [...new Set(v.map(function(x){ return x.cam; }))].sort();
+  const rollos = function(l){ return v.filter(function(x){ return x.cam === l; }).map(function(x){ return x.roll || "—"; }).sort(nat).join(", "); };
+  const txt = cams.length > 1 ? cams.map(function(l){ return l + " · " + rollos(l); }).join("  /  ")
+                              : [gr.ultimo.cam, rollos(cams[0])].filter(Boolean).join(" · ");
+  return {txt: txt, n: v.reduce(function(s, x){ return s + x.n; }, 0)};
+}
+function ptGrupoDe(id){
+  return ptGrupos().find(function(g){ return g.filas.some(function(x){ return x.id === id; }); });
+}
 function ptLista(){
   try { pintaEnvio(); } catch(e){}
   const c = $("pt_lista"); if (!c) return;
-  const l = ptLee().slice().sort(function(a, b){ return b.t - a.t; });
-  if (!l.length){
+  const gs = ptGrupos();
+  if (!gs.length){
     c.innerHTML = '<div class="empty">' +
       traduce("Aún no hay partes.") + "</div>";
     return;
   }
   const ahora = ptId();
-  c.innerHTML = l.map(function(x){
+  c.innerHTML = gs.map(function(gr){
+    const x = gr.ultimo, r = ptResumen(gr);
+    const esAhora = gr.filas.some(function(y){ return y.id === ahora; });
     return '<div class="pt"><div class="n"><b>' + esc(x.proyecto || "—") +
-      (x.id === ahora ? ' <em>· ' + traduce("el de ahora") + "</em>" : "") + "</b>" +
+      (esAhora ? ' <em>· ' + traduce("el de ahora") + "</em>" : "") + "</b>" +
       "<span>" + [x.fecha, x.jornada ? traduce("jornada ") + x.jornada : "",
-                  x.cams || [x.cam, x.roll].filter(Boolean).join(" · "),
-                  x.n + " " + traduce("tomas")].filter(Boolean).join("  ·  ") + "</span></div>" +
+                  r.txt, r.n + " " + traduce("tomas")].filter(Boolean).join("  ·  ") + "</span></div>" +
       '<button onclick="ptAbre(\'' + esc(x.id) + '\')">' + traduce("abrir") + "</button>" +
       '<button onclick="ptExporta(\'' + esc(x.id) + '\')">' + traduce("archivo") + "</button>" +
       '<button onclick="ptQuita(\'' + esc(x.id) + '\')">' + traduce("quitar") + "</button></div>";
@@ -5981,17 +6036,22 @@ function ptAbre(id){
   window.scrollTo(0, 0);
 }
 function ptExporta(id){
-  const x = ptLee().find(function(y){ return y.id === id; });
+  const gr = ptGrupoDe(id);
+  const x = gr ? gr.ultimo : ptLee().find(function(y){ return y.id === id; });
   if (!x) return;
-  descargar(JSON.stringify(x.d, null, 2),
+  const d = Object.assign({}, x.d);
+  if (gr && gr.filas.length > 1) d.tarjetas = gr.filas;     /* v226: todas las tarjetas del día viajan juntas */
+  descargar(JSON.stringify(d, null, 2),
             "WALLIO_parte_" + (x.roll || "rollo") + ".json", "application/json");
 }
 function ptQuita(id){
-  const x = ptLee().find(function(y){ return y.id === id; });
+  const gr = ptGrupoDe(id);
+  const x = gr ? gr.ultimo : ptLee().find(function(y){ return y.id === id; });
   if (!x) return;
+  const ids = new Set(gr ? gr.filas.map(function(y){ return y.id; }) : [id]);
   if (!confirm(traduce("¿Quitar este parte? Sólo se borra de aquí; si lo has subido o exportado, eso no se toca.") +
-               "\n\n" + (x.proyecto || "—") + " · " + (x.roll || "—"))) return;
-  ptEscribe(ptLee().filter(function(y){ return y.id !== id; }));
+               "\n\n" + (x.proyecto || "—") + " · " + [x.fecha, x.jornada ? traduce("jornada ") + x.jornada : "", gr ? ptResumen(gr).txt : (x.roll || "—")].filter(Boolean).join(" · "))) return;
+  ptEscribe(ptLee().filter(function(y){ return !ids.has(y.id); }));
   ptLista();
   ptMsg(traduce("Quitado."), "");
 }
