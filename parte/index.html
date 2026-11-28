@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<meta name="wallio-ver" content="226">
+<meta name="wallio-ver" content="227">
 <script>window.WALLIO_ERR=null;addEventListener("error",function(e){if(!window.WALLIO_FIN_ARRANQUE&&!window.WALLIO_ERR)window.WALLIO_ERR=(e.message||"")+" @"+(e.lineno||"");});</script>
 <script>/* v201: tema antes de pintar (sin destello) — Noche por defecto */try{document.documentElement.classList.add(localStorage.getItem("wallio.tema")==="aire"?"aire":"noche")}catch(e){document.documentElement.classList.add("noche")}</script>
 <title>WALLIO · Camera Report</title>
@@ -1610,6 +1610,13 @@ header:has(#btnNueva:not([hidden])) #btnRefrescar{display:none !important}
 #pagNav{flex-wrap:wrap}
 #pagNav button.pagSF{flex-basis:100%;text-align:center;font:700 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:10px 0 12px;color:var(--boxC,var(--camA))}
 #pagNav button.pagSF b{font-size:16px;letter-spacing:0}
+/* v227: Ditto en Páginas, en un recuadro como los de captura (línea del color de la cámara) */
+#pagNav button.pagSF{background:transparent;border:0}
+#pagNav button.pagSF>span{--dc:var(--boxC,var(--camA));display:inline-block;padding:9px 14px 9px 12px;border-radius:0;
+  background:#fff;border:1px solid color-mix(in srgb,var(--dc) 22%,#e6e8eb);border-left:4px solid var(--dc);
+  box-shadow:0 2px 6px color-mix(in srgb,var(--dc) 15%,transparent);color:color-mix(in srgb,var(--dc) 78%,#000)}
+html.noche #pagNav button.pagSF>span{background:#1b2029;border:0;border-left:3px solid var(--dc);box-shadow:none;color:color-mix(in srgb,var(--dc) 72%,#fff)}
+#pagNav button.pagSF:active>span{filter:brightness(.94)}
 #listaTomas.pag .toma .th button.smartfill{display:none}
 #pagNav button{all:unset;cursor:pointer;font:600 28px/1 var(--ui,sans-serif);color:var(--boxC,var(--camA));padding:6px 16px;-webkit-tap-highlight-color:transparent}
 #pagNav button[disabled]{opacity:.18;cursor:default}
@@ -6430,7 +6437,7 @@ function smartfill(i){
 let AVISO_SMARTFILL_TO = null;
 function avisaSmartfill(){
   const a = $("avisoSmartfill"); if (!a) return;
-  a.innerHTML = `${esc(traduce("Smartfill aplicado"))} · <span class="deshacer" onclick="deshacerSmartfill()">${esc(traduce("Deshacer"))}</span>`;
+  a.innerHTML = `${esc(traduce("Ditto aplicado"))} · <span class="deshacer" onclick="deshacerSmartfill()">${esc(traduce("Deshacer"))}</span>`;
   a.hidden = false;
   clearTimeout(AVISO_SMARTFILL_TO);
   AVISO_SMARTFILL_TO = setTimeout(() => { a.hidden = true; }, 6000);
@@ -7808,7 +7815,7 @@ function renderTomas(){
            cabecera, en rojo apagado -- ya no ocupa toda la fila. Los demás
            botones (MOS/TAILS/PU/FALSO/buena) siguen en su propia fila al
            fondo de la toma. La × de borrar se queda arriba siempre. */
-        const smartfillBtn = (esUltima && !compacto) ? `<button class="smartfill" title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Smartfill →</button>` : "";
+        const smartfillBtn = (esUltima && !compacto) ? `<button class="smartfill" title="${esc(traduce("Copia toda la información de esta toma a la siguiente, con el número consecutivo ya puesto. Todo queda editable; bórralo con la × si no hace falta."))}" onclick="event.preventDefault();event.stopPropagation();smartfill(${i})">Ditto →</button>` : "";
         const accionesBtn = abierta ? `<div class="btnrow acciones">
           <button class="${t.mos ? "si" : ""}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].mos=!S.parte.tomas[${i}].mos;renderTomas()">MOS</button>
           <button class="${t.notaEsp === 'TAILS' ? 'si' : ''}" onclick="event.preventDefault();event.stopPropagation();guarda();S.parte.tomas[${i}].notaEsp=(S.parte.tomas[${i}].notaEsp==='TAILS'?'':'TAILS');renderTomas()">TAILS</button>
@@ -8155,7 +8162,7 @@ function pagPintaNav(){
   if (!document.documentElement.classList.contains("soloVer") && !(S.parte && S.parte.tarjEdit)){
     const u = ultimaTomaDeCam(camActiva());
     const sig = u ? (parseInt(u.tk, 10) || 0) + 1 : 1;
-    nav.innerHTML += `<button class="pagSF" onclick="pagSmartfill()">Smartfill → ${en ? "take" : "toma"} <b>${sig}</b></button>`;
+    nav.innerHTML += `<button class="pagSF" onclick="pagSmartfill()"><span>Ditto → ${en ? "take" : "toma"} <b>${sig}</b></span></button>`;
   }
   if (N > 1 && N <= 30){
     dots.innerHTML = Array.from({length: N}, (_, j) => `<i class="${j === k ? "on" : ""}" onclick="pagIr(${j},true)"></i>`).join("") +
@@ -9465,7 +9472,7 @@ function descargar(texto, nombre, tipo){
 }
 
 /* ================= BILINGÜE ES / EN ================= */
-const EN = {"Quitar este campo":"Remove this field","Smartfill aplicado":"Smartfill applied","+ Archivo":"+ File","Abrir archivo":"Open file","Interno":"Internal","Externo":"External",
+const EN = {"Quitar este campo":"Remove this field","Ditto aplicado":"Ditto applied","+ Archivo":"+ File","Abrir archivo":"Open file","Interno":"Internal","Externo":"External",
 "✎ escribir…":"✎ type…",
 "Parte compartido":"Shared report","PDF · solo mi cámara":"PDF · my camera only","Enviar todo":"Send everything","PDF del día con todas las tarjetas · CSV · Silverstack · Avid/Resolve (ALE)":"Day PDF with every card · CSV · Silverstack · Avid/Resolve (ALE)","Por cámara":"By camera","Cada letra envía el PDF de esa cámara, con todas sus tarjetas del día, y todos sus archivos.":"Each letter sends that camera's PDF, with all its cards of the day, and all its files.",
 "Compartir este parte":"Share this report","Proyecto nuevo":"New project","Se guarda el parte de ahora en este dispositivo y se empieza un proyecto NUEVO desde cero. ¿Seguro?":"The current report is saved on this device and a brand NEW project starts from scratch. Sure?","Entrar":"Enter","Compartido":"Sharing","Compartir":"Share","Nuevo":"New","Introduce el nombre del proyecto":"Enter the project name","EL PRIMER DÍA":"THE FIRST DAY",
